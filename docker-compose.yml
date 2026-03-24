@@ -1,0 +1,30 @@
+# blackboard-learn-mcp — standalone stack
+# Run:  docker compose up -d
+# MCP endpoint:  http://localhost:3100/mcp
+# Health:        http://localhost:3100/health
+# Metrics:       http://localhost:3100/metrics
+
+services:
+  bb-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bb-mcp
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    env_file:
+      - .env
+    environment:
+      - PORT=3100
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3100/health',(r)=>{r.resume();r.on('end',()=>process.exit(r.statusCode===200?0:1))}).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+networks:
+  default:
+    name: bb-mcp-network

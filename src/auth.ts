@@ -1,0 +1,138 @@
+/**
+ * Identity & authorization layer.
+ *
+ * The MCP spec does not define end-user identity (that lives in the calling
+ * client — Claude Desktop, agent-board, Cursor, etc.).  This module enforces:
+ *
+ *   1. A required `caller_identity` parameter on every tool call — the client
+ *      MUST pass who is asking (userId or service account name).
+ *
+ *   2. Role-based access control: "instructor" vs "student" tools are scoped
+ *      via the `role` claim.
+ *
+ *   3. FERPA guardrails: tools marked `restricted` require the caller to
+ *      assert an explicit `ferpa_authorized: true` flag, which the calling
+ *      client (e.g. agent-board) must gate behind real identity verification.
+ *      If the flag is absent or false the tool call is rejected before any
+ *      Blackboard API call is made.
+ *
+ *   4. All access attempts are logged to stdout in a structured JSON format
+ *      suitable for ingestion by any log aggregator.
+ */
+
+import { config } from './config.js';
+
+export type Role = 'student' | 'instructor' | 'admin';
+
+export interface CallerIdentity {
+  userId: string;       // opaque identifier — Blackboard user ID or service account
+  role: Role;
+  ferpa_authorized?: boolean; // must be true to call restricted tools
+  clientApp?: string;   // "agent-board", "claude-desktop", "cursor", etc.
+}
+
+export interface AuthContext {
+  identity: CallerIdentity;
+  toolName: string;
+  courseId?: string;
+}
+
+export class AuthorizationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthorizationError';
+  }
+}
+
+/** Structured audit log — write to stdout for log aggregator pickup */
+function auditLog(
+  event: 'access.granted' | 'access.denied',
+  ctx: AuthContext,
+  reason?: string,
+): void {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    event,
+    tool: ctx.toolName,
+    userId: ctx.identity.userId,
+    role: ctx.identity.role,
+    courseId: ctx.courseId ?? null,
+    clientApp: ctx.identity.clientApp ?? null,
+    reason: reason ?? null,
+  };
+  process.stdout.write(JSON.stringify(entry) + '\n');
+}
+
+const INSTRUCTOR_ONLY_TOOLS = new Set([
+  'get_submission_status',
+  'get_grade_distribution',
+  'get_discussion_summary',
+  'get_at_risk_students',
+  'draft_announcement',
+]);
+
+const STUDENT_TOOLS = new Set([
+  'get_my_courses',
+  'get_upcoming_assignments',
+  'get_my_grades',
+  'get_course_content',
+  'get_assignment_feedback',
+  'get_announcements',
+  'get_discussion_summary',  // students can read summaries, not grade data
+]);
+
+export function checkAuthorization(ctx: AuthContext): void {
+  const { identity, toolName, courseId } = ctx;
+  const isRestricted = config.security.restrictedTools.includes(toolName);
+
+  // FERPA gate
+  if (isRestricted && !identity.ferpa_authorized) {
+    auditLog('access.denied', ctx, 'FERPA authorization required');
+    throw new AuthorizationError(
+      `Tool "${toolName}" accesses protected student data. ` +
+        'The calling application must assert ferpa_authorized=true after verifying user identity.',
+    );
+  }
+
+  // Role gate for instructor-only tools
+  if (INSTRUCTOR_ONLY_TOOLS.has(toolName) && identity.role === 'student') {
+    auditLog('access.denied', ctx, 'instructor-only tool');
+    throw new AuthorizationError(
+      `Tool "${toolName}" is only available to instructors and admins.`,
+    );
+  }
+
+  auditLog('access.granted', ctx);
+}
+
+/**
+ * Parse the `caller_identity` argument that every tool must include.
+ * Returns a validated CallerIdentity or throws a descriptive error.
+ */
+export function parseIdentity(raw: unknown): CallerIdentity {
+  if (!raw || typeof raw !== 'object') {
+    throw new AuthorizationError(
+      'caller_identity is required. Provide { userId, role } at minimum.',
+    );
+  }
+
+  const obj = raw as Record<string, unknown>;
+
+  if (!obj.userId || typeof obj.userId !== 'string') {
+    throw new AuthorizationError('caller_identity.userId must be a non-empty string.');
+  }
+
+  const validRoles: Role[] = ['student', 'instructor', 'admin'];
+  if (!validRoles.includes(obj.role as Role)) {
+    throw new AuthorizationError(
+      `caller_identity.role must be one of: ${validRoles.join(', ')}.`,
+    );
+  }
+
+  return {
+    userId: obj.userId,
+    role: obj.role as Role,
+    ferpa_authorized: obj.ferpa_authorized === true,
+    clientApp: typeof obj.clientApp === 'string' ? obj.clientApp : undefined,
+  };
+}
