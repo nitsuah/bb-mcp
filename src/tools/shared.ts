@@ -7,7 +7,7 @@ import { bbClient } from '../bb-client.js';
 import { checkAuthorization, parseIdentity } from '../auth.js';
 import { withMetrics } from '../metrics.js';
 
-const SearchCourseMaterialsInput = z.object({
+export const SearchCourseMaterialsInput = z.object({
   caller_identity: z.unknown(),
   query: z.string().min(1).max(500),
   courseId: z.string().optional(),

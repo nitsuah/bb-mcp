@@ -10,7 +10,7 @@ import { withMetrics } from '../metrics.js';
 
 // ── get_submission_status ─────────────────────────────────────────────────
 
-const GetSubmissionStatusInput = z.object({
+export const GetSubmissionStatusInput = z.object({
   caller_identity: z.unknown(),
   courseId: z.string(),
   columnId: z.string(),
@@ -82,7 +82,7 @@ export const getSubmissionStatusSchema = {
 
 // ── get_grade_distribution ────────────────────────────────────────────────
 
-const GetGradeDistributionInput = z.object({
+export const GetGradeDistributionInput = z.object({
   caller_identity: z.unknown(),
   courseId: z.string(),
   columnId: z.string(),
@@ -166,7 +166,7 @@ export const getGradeDistributionSchema = {
 
 // ── get_discussion_summary ────────────────────────────────────────────────
 
-const GetDiscussionSummaryInput = z.object({
+export const GetDiscussionSummaryInput = z.object({
   caller_identity: z.unknown(),
   courseId: z.string(),
   threadId: z.string(),
@@ -222,7 +222,7 @@ export const getDiscussionSummarySchema = {
 
 // ── get_at_risk_students ──────────────────────────────────────────────────
 
-const GetAtRiskStudentsInput = z.object({
+export const GetAtRiskStudentsInput = z.object({
   caller_identity: z.unknown(),
   courseId: z.string(),
   gradingThreshold: z.number().min(0).max(100).default(70),
@@ -296,7 +296,7 @@ export const getAtRiskStudentsSchema = {
 
 // ── draft_announcement ────────────────────────────────────────────────────
 
-const DraftAnnouncementInput = z.object({
+export const DraftAnnouncementInput = z.object({
   caller_identity: z.unknown(),
   courseId: z.string(),
   topic: z.string().min(3).max(500),

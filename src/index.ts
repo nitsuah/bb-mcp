@@ -21,34 +21,46 @@ import { getMetricsText, getMetricsSummary, pushMetrics } from './metrics.js';
 // ── Tool imports ─────────────────────────────────────────────────────────
 
 import {
+  GetMyCoursesInput,
   getMyCoursesHandler,
   getMyCoursesSchema,
+  GetUpcomingAssignmentsInput,
   getUpcomingAssignmentsHandler,
   getUpcomingAssignmentsSchema,
+  GetMyGradesInput,
   getMyGradesHandler,
   getMyGradesSchema,
+  GetCourseContentInput,
   getCourseContentHandler,
   getCourseContentSchema,
+  GetAssignmentFeedbackInput,
   getAssignmentFeedbackHandler,
   getAssignmentFeedbackSchema,
+  GetAnnouncementsInput,
   getAnnouncementsHandler,
   getAnnouncementsSchema,
 } from './tools/student.js';
 
 import {
+  GetSubmissionStatusInput,
   getSubmissionStatusHandler,
   getSubmissionStatusSchema,
+  GetGradeDistributionInput,
   getGradeDistributionHandler,
   getGradeDistributionSchema,
+  GetDiscussionSummaryInput,
   getDiscussionSummaryHandler,
   getDiscussionSummarySchema,
+  GetAtRiskStudentsInput,
   getAtRiskStudentsHandler,
   getAtRiskStudentsSchema,
+  DraftAnnouncementInput,
   draftAnnouncementHandler,
   draftAnnouncementSchema,
 } from './tools/instructor.js';
 
 import {
+  SearchCourseMaterialsInput,
   searchCourseMaterialsHandler,
   searchCourseMaterialsSchema,
 } from './tools/shared.js';
@@ -56,7 +68,9 @@ import {
 // ── MCP Server setup ──────────────────────────────────────────────────────
 
 function buildServer(): McpServer {
-  const server = new McpServer({
+  // SDK typing changed and is stricter than the JSON-schema shape used below.
+  // Keep runtime behavior intact by using a compatibility cast at the server boundary.
+  const server: any = new McpServer({
     name: 'blackboard-learn-mcp',
     version: '0.1.0',
   });
@@ -65,15 +79,15 @@ function buildServer(): McpServer {
   server.tool(
     getMyCoursesSchema.name,
     getMyCoursesSchema.description,
-    getMyCoursesSchema.inputSchema as Parameters<typeof server.tool>[2],
-    (args) => getMyCoursesHandler(args as Parameters<typeof getMyCoursesHandler>[0]),
+    GetMyCoursesInput.shape,
+    (args: any) => getMyCoursesHandler(args as Parameters<typeof getMyCoursesHandler>[0]),
   );
 
   server.tool(
     getUpcomingAssignmentsSchema.name,
     getUpcomingAssignmentsSchema.description,
-    getUpcomingAssignmentsSchema.inputSchema as Parameters<typeof server.tool>[2],
-    (args) =>
+    GetUpcomingAssignmentsInput.shape,
+    (args: any) =>
       getUpcomingAssignmentsHandler(
         args as Parameters<typeof getUpcomingAssignmentsHandler>[0],
       ),
@@ -82,23 +96,23 @@ function buildServer(): McpServer {
   server.tool(
     getMyGradesSchema.name,
     getMyGradesSchema.description,
-    getMyGradesSchema.inputSchema as Parameters<typeof server.tool>[2],
-    (args) => getMyGradesHandler(args as Parameters<typeof getMyGradesHandler>[0]),
+    GetMyGradesInput.shape,
+    (args: any) => getMyGradesHandler(args as Parameters<typeof getMyGradesHandler>[0]),
   );
 
   server.tool(
     getCourseContentSchema.name,
     getCourseContentSchema.description,
-    getCourseContentSchema.inputSchema as Parameters<typeof server.tool>[2],
-    (args) =>
+    GetCourseContentInput.shape,
+    (args: any) =>
       getCourseContentHandler(args as Parameters<typeof getCourseContentHandler>[0]),
   );
 
   server.tool(
     getAssignmentFeedbackSchema.name,
     getAssignmentFeedbackSchema.description,
-    getAssignmentFeedbackSchema.inputSchema as Parameters<typeof server.tool>[2],
-    (args) =>
+    GetAssignmentFeedbackInput.shape,
+    (args: any) =>
       getAssignmentFeedbackHandler(
         args as Parameters<typeof getAssignmentFeedbackHandler>[0],
       ),
@@ -107,24 +121,24 @@ function buildServer(): McpServer {
   server.tool(
     getAnnouncementsSchema.name,
     getAnnouncementsSchema.description,
-    getAnnouncementsSchema.inputSchema as Parameters<typeof server.tool>[2],
-    (args) => getAnnouncementsHandler(args as Parameters<typeof getAnnouncementsHandler>[0]),
+    GetAnnouncementsInput.shape,
+    (args: any) => getAnnouncementsHandler(args as Parameters<typeof getAnnouncementsHandler>[0]),
   );
 
   // Instructor tools
   server.tool(
     getSubmissionStatusSchema.name,
     getSubmissionStatusSchema.description,
-    getSubmissionStatusSchema.inputSchema as Parameters<typeof server.tool>[2],
-    (args) =>
+    GetSubmissionStatusInput.shape,
+    (args: any) =>
       getSubmissionStatusHandler(args as Parameters<typeof getSubmissionStatusHandler>[0]),
   );
 
   server.tool(
     getGradeDistributionSchema.name,
     getGradeDistributionSchema.description,
-    getGradeDistributionSchema.inputSchema as Parameters<typeof server.tool>[2],
-    (args) =>
+    GetGradeDistributionInput.shape,
+    (args: any) =>
       getGradeDistributionHandler(
         args as Parameters<typeof getGradeDistributionHandler>[0],
       ),
@@ -133,8 +147,8 @@ function buildServer(): McpServer {
   server.tool(
     getDiscussionSummarySchema.name,
     getDiscussionSummarySchema.description,
-    getDiscussionSummarySchema.inputSchema as Parameters<typeof server.tool>[2],
-    (args) =>
+    GetDiscussionSummaryInput.shape,
+    (args: any) =>
       getDiscussionSummaryHandler(
         args as Parameters<typeof getDiscussionSummaryHandler>[0],
       ),
@@ -143,16 +157,16 @@ function buildServer(): McpServer {
   server.tool(
     getAtRiskStudentsSchema.name,
     getAtRiskStudentsSchema.description,
-    getAtRiskStudentsSchema.inputSchema as Parameters<typeof server.tool>[2],
-    (args) =>
+    GetAtRiskStudentsInput.shape,
+    (args: any) =>
       getAtRiskStudentsHandler(args as Parameters<typeof getAtRiskStudentsHandler>[0]),
   );
 
   server.tool(
     draftAnnouncementSchema.name,
     draftAnnouncementSchema.description,
-    draftAnnouncementSchema.inputSchema as Parameters<typeof server.tool>[2],
-    (args) =>
+    DraftAnnouncementInput.shape,
+    (args: any) =>
       draftAnnouncementHandler(args as Parameters<typeof draftAnnouncementHandler>[0]),
   );
 
@@ -160,15 +174,15 @@ function buildServer(): McpServer {
   server.tool(
     searchCourseMaterialsSchema.name,
     searchCourseMaterialsSchema.description,
-    searchCourseMaterialsSchema.inputSchema as Parameters<typeof server.tool>[2],
-    (args) =>
+    SearchCourseMaterialsInput.shape,
+    (args: any) =>
       searchCourseMaterialsHandler(
         args as Parameters<typeof searchCourseMaterialsHandler>[0],
       ),
   );
 
   // MCP Resource: course://[courseId]
-  server.resource('course', 'course://{courseId}', async (uri) => {
+  server.resource('course', 'course://{courseId}', async (uri: any) => {
     const courseId = uri.pathname.replace(/^\/+/, '');
     const { bbClient } = await import('./bb-client.js');
     const course = await bbClient.getCourse(courseId);

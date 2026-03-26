@@ -11,7 +11,7 @@ import type { BbAssignment } from '../types.js';
 
 // ── get_my_courses ────────────────────────────────────────────────────────
 
-const GetMyCoursesInput = z.object({
+export const GetMyCoursesInput = z.object({
   caller_identity: z.unknown(),
 });
 
@@ -70,7 +70,7 @@ export const getMyCoursesSchema = {
 
 // ── get_upcoming_assignments ──────────────────────────────────────────────
 
-const GetUpcomingAssignmentsInput = z.object({
+export const GetUpcomingAssignmentsInput = z.object({
   caller_identity: z.unknown(),
   courseId: z.string().optional(),
   daysAhead: z.number().int().min(1).max(90).default(14),
@@ -149,7 +149,7 @@ export const getUpcomingAssignmentsSchema = {
 
 // ── get_my_grades ─────────────────────────────────────────────────────────
 
-const GetMyGradesInput = z.object({
+export const GetMyGradesInput = z.object({
   caller_identity: z.unknown(),
   courseId: z.string().optional(),
 });
@@ -204,7 +204,7 @@ export const getMyGradesSchema = {
 
 // ── get_course_content ────────────────────────────────────────────────────
 
-const GetCourseContentInput = z.object({
+export const GetCourseContentInput = z.object({
   caller_identity: z.unknown(),
   courseId: z.string(),
   searchQuery: z.string().optional(),
@@ -264,7 +264,7 @@ export const getCourseContentSchema = {
 
 // ── get_assignment_feedback ───────────────────────────────────────────────
 
-const GetAssignmentFeedbackInput = z.object({
+export const GetAssignmentFeedbackInput = z.object({
   caller_identity: z.unknown(),
   courseId: z.string(),
   columnId: z.string(),
@@ -325,7 +325,7 @@ export const getAssignmentFeedbackSchema = {
 
 // ── get_announcements ─────────────────────────────────────────────────────
 
-const GetAnnouncementsInput = z.object({
+export const GetAnnouncementsInput = z.object({
   caller_identity: z.unknown(),
   courseId: z.string(),
   unreadOnly: z.boolean().default(false),
