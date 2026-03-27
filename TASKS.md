@@ -1,63 +1,48 @@
-# Tasks
+# TASKS
 
-## Todo
+**Last Updated:** 2026-03-27 | PMO audit — MCP server, early-stage, half architecture complete
 
-- [ ] Implement `list_courses` tool for retrieving user-specific course enrollments (P1, M)
-- [ ] Implement `get_course_contents` tool to browse Blackboard content hierarchy (P1, L)
-- [ ] Add support for Blackboard OAuth2 Authorization Code flow (P1, L)
-- [ ] Develop RBAC middleware to restrict tool access based on Blackboard roles (P2, M)
-- [ ] Implement `get_announcements` tool for course and system updates (P2, S)
-- [ ] Add `create_assignment_submission` tool for student workflows (P2, L)
-- [ ] Implement comprehensive error mapping for Blackboard REST API status codes (P2, M)
-- [ ] Create JSON schema definitions for all MCP tool input parameters (P1, S)
-- [ ] Add telemetry and logging for MCP request/response cycles (P3, M)
-- [ ] Implement `search_users` tool for administrative directory lookups (P3, S)
+## Status
 
-## In Progress
+### In Progress (Foundation)
 
-- [ ] Refactoring stdio transport layer for MCP SDK compliance (P1, M)
-- [ ] Developing core Blackboard API client wrapper in TypeScript (P1, L)
+- [/] **Refactor stdio transport for MCP compliance** (P1, M) — Core protocol layer
+- [/] **Develop Blackboard API client wrapper** (P1, L) — TypeScript wrapper for OAuth2 + REST endpoints
 
-## Done
+### P1 — High Priority (Shipping Multiplier)
 
-- [x] Initialize TypeScript project with MCP SDK dependencies (P1, S)
-- [x] Configure ESLint and Prettier for codebase consistency (P3, S)
-- [x] Define initial project structure and server entry point (P1, S)
+- [ ] **`list_courses` tool** (P1, M) — Retrieve user's enrolled courses (foundation for all course-scoped tools)
+- [ ] **`get_course_contents` tool** (P1, M) — Browse Blackboard course hierarchy (content modules, items)
+- [ ] **OAuth2 Authorization Code flow** (P1, L) — Secure token handling for production
+- [ ] **JSON schemas for MCP tool parameters** (P1, S) — Spec compliance; input validation
+
+### P2 — Medium Priority (Polish & Security)
+
+- [ ] **RBAC middleware** (P2, M) — Role-based access control (Student vs. Instructor vs. Admin); FERPA compliance
+- [ ] **`get_announcements` tool** (P2, S) — Course and system announcements
+- [ ] **`create_assignment_submission` tool** (P2, L) — Student workflow; attachment support
+- [ ] **Error mapping** (P2, M) — Blackboard REST API status codes → user-friendly errors
+- [ ] **Telemetry & logging** (P3, M) — MCP request/response lifecycle tracing
+
+### P3 — Low Priority (Admin & Exploratory)
+
+- [ ] **`search_users` tool** (P3, S) — Admin directory lookup
+- [ ] **Audit logging** (P3, M) — Structured JSON audit trail for regulatory compliance
+
+### Done
+
+- [x] TypeScript project setup + MCP SDK + ESLint/Prettier
+
+---
 
 <!--
 AGENT INSTRUCTIONS:
-This file tracks specific actionable tasks using a structured format.
-
-CRITICAL FORMAT REQUIREMENTS:
-1. Use EXACTLY these section names: "## Todo", "## In Progress", "## Done"
-2. Tasks MUST use checkbox format: "- [ ]" for incomplete, "- [x]" for complete
-3. Keep task titles on single lines`
-1. Section headers must be ## (h2) level
-
-STATUS MARKERS:
-- [ ] = todo (not started)
-- [/] = in-progress (actively working) - OPTIONAL, use "In Progress" section instead
-- [x] = done (completed)
-
-GOOD EXAMPLES:
-## Todo
-- [ ] Add user authentication
-- [ ] Implement dark mode
-
-## In Progress
-- [ ] Refactor API endpoints
-
-## Done
-- [x] Set up database schema
-
-BAD EXAMPLES (will break parser):
-### Todo (wrong heading level)
-* [ ] Task (wrong bullet marker)
-- Task without checkbox
-- [ ] Multi-line task
-      with continuation (avoid this)
-
-When updating:
+Prioritization reflects MCP foundation-first approach:
+1. Foundation (transport, API wrapper) enables all tools
+2. P1 tools (courses, contents, OAuth) unlock base LLM workflows
+3. P2 tools (announcements, submissions, RBAC) enable real-world use
+4. P3 (admin, audit) = enterprise/governance features
+-->
 1. Move tasks between sections as status changes
 2. Mark completed tasks with [x] and move to "Done"
 3. Add new tasks to "Todo" section
