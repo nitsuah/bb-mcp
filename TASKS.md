@@ -14,7 +14,9 @@ Last Updated: 2026-03-27
   - Context: OAuth2 and Blackboard REST access still need a stable typed wrapper before more tools can ship.
   - Acceptance Criteria: the client wrapper handles auth and core Blackboard requests for downstream tool work.
 
-## P1 - High
+## Todo
+
+### P1 - High
 
 - [ ] Ship the `list_courses` tool.
   - Priority: P1
@@ -36,7 +38,7 @@ Last Updated: 2026-03-27
   - Context: input validation and spec compliance are incomplete.
   - Acceptance Criteria: core tool inputs are schema-backed and validated.
 
-## P2 - Medium
+### P2 - Medium
 
 - [ ] Add RBAC middleware.
   - Priority: P2
@@ -63,7 +65,7 @@ Last Updated: 2026-03-27
   - Context: the server needs clearer request and response tracing before shipping more workflows.
   - Acceptance Criteria: request lifecycle tracing is documented and visible.
 
-## P3 - Exploratory
+### P3 - Exploratory
 
 - [ ] Add `search_users`.
   - Priority: P3
