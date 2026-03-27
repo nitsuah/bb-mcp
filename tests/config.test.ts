@@ -27,6 +27,9 @@ describe('config', () => {
     process.env.BB_CLIENT_SECRET = 'client-secret';
     process.env.BB_BASE_URL = 'https://example.blackboard.com/';
     process.env.RESTRICTED_TOOLS = 'get_grade_distribution, draft_announcement ,';
+    delete process.env.PORT;
+    delete process.env.LOG_LEVEL;
+    delete process.env.METRICS_PUSH_URL;
 
     const { config } = await loadConfig();
 
