@@ -22,7 +22,7 @@
 - [ ] **`get_announcements` tool** (P2, S) — Course and system announcements
 - [ ] **`create_assignment_submission` tool** (P2, L) — Student workflow; attachment support
 - [ ] **Error mapping** (P2, M) — Blackboard REST API status codes → user-friendly errors
-- [ ] **Telemetry & logging** (P3, M) — MCP request/response lifecycle tracing
+- [ ] **Telemetry & logging** (P2, M) — MCP request/response lifecycle tracing
 
 ### P3 — Low Priority (Admin & Exploratory)
 
@@ -45,6 +45,6 @@ Prioritization reflects MCP foundation-first approach:
 -->
 1. Move tasks between sections as status changes
 2. Mark completed tasks with [x] and move to "Done"
-3. Add new tasks to "Todo" section
+3. Add new tasks to the appropriate P1/P2/P3 section based on priority
 4. Keep descriptions actionable and concise
 -->

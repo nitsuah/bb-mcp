@@ -13,7 +13,7 @@
 
 ---
 
-## 2025 Q2 📋 NOT STARTED (Should be complete; now 3 months overdue)
+## 2025 Q2 📋 NOT STARTED (Should be complete; now overdue)
 
 - [ ] **`list_courses` & `get_course_contents`** — Foundation tools (blocked on API wrapper)
 - [ ] **OAuth2 flow** — Secure token handling for production
