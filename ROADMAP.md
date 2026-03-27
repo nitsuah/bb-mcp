@@ -34,70 +34,52 @@
 
 **Secondary:**
 - RBAC middleware setup (blocks tools from shipping)
-- Error mapping framework
-- Telemetry hooks
+# ROADMAP
 
----
+Last Updated: 2026-03-27
 
-## 2026 Q2 📋 Read/Write Workflows
+## 2025 Q1 - Foundation
 
-- **`get_announcements`** — Course + system-level
-- **`create_assignment_submission`** — Student workflow with attachments
-- **Assignment tools** — Query assignments, check due dates
-- **Grade checking** — Student can view their scores (read-only)
+- [x] Establish the TypeScript MCP server baseline.
+- [/] Continue the core Blackboard API wrapper.
+- [/] Continue the MCP stdio transport refactor.
+- [ ] Design RBAC after auth is stable.
 
----
+## 2025 Q2 - First Core Tools
 
-## 2026 Q3+ 🏫 Enterprise & Write-Back
+- [ ] Ship `list_courses` and `get_course_contents`.
+- [ ] Finish OAuth2 flow support for production use.
+- [ ] Decide how dual transport fits after stdio is stable.
+- [ ] Improve error mapping for Blackboard API failures.
 
-- **Grades write-back** (for instructors) — Update scores, provide feedback
-- **Audit logging** — Compliance logging for FERPA/HIPAA
-- **Admin tools** — `search_users`, directory imports
-- **Advanced features** — Content creation, course cloning, bulk operations
+## 2026 Q1 - Foundation Reset
 
----
+- [ ] Complete the API wrapper and OAuth2 path.
+- [ ] Pass MCP Inspector with the stdio transport.
+- [ ] Add JSON schemas for the first tools.
+- [ ] Keep RBAC, telemetry, and error mapping ready behind the foundation work.
 
-## Architecture
+## 2026 Q2 - Read and Write Workflows
 
-```
-Clients (Claude Desktop, Cursor, agent-board, ...)
-              ↓ (MCP protocol)
-        bb-mcp Server (this repo)
-  ├─ MCP Transport layer (stdio / HTTP)
-  ├─ Auth layer (OAuth2, session management)
-  ├─ Tools (11 planned: courses, content, assignments, grades, announcements, etc.)
-  ├─ RBAC (role checking, FERPA fencing)
-  └─ Metrics (Prometheus format)
-              ↓ (REST API)
-        Blackboard Learn
-    (customer instance or sandbox)
-```
+- [ ] Add announcements support.
+- [ ] Add assignment submission support.
+- [ ] Add assignment and grade read flows.
 
----
+## 2026 Q3 - Enterprise Follow-On
 
-## Known Blockers
+- [ ] Add instructor write-back flows.
+- [ ] Add audit logging and admin tools.
+- [ ] Evaluate higher-volume content and course-management operations.
 
-| Blocker | Impact | Mitigation |
-|---|---|---|
-| API wrapper incomplete | All tools blocked | Complete by April 1 |
-| OAuth2 token handling | Can't handle production auth | Implement Authorization Code flow |
-| MCP transport needs refactor | Client integration blocked | Follow SDK v1.0 spec |
-| RBAC not designed | Security gap (Instructor can see all students) | Design matrix + middleware |
+## Notes
 
----
-
-## Success Metrics
-
-- MCP Inspector: Stdio transport passes full compliance suite
-- First 4 tools functional (courses, content, schemas, OAuth)
-- Docker deployment working (env-based config)
-- Zero FERPA violations (RBAC enforced before API call)
-
----
+- This remains a foundation-first MCP server.
+- API wrapper, auth, and transport work stay ahead of every downstream tool.
+- RBAC and compliance work should land before broader write-back features.
 
 <!--
 AGENT INSTRUCTIONS:
-2025 timeline now stale (12+ months old).
-2026 Q1 serves as reset with realistic prioritization.
-Foundation-first approach: API wrapper → auth → tools → RBAC → write-back.
+1. Keep the roadmap quarter-first and foundation-first.
+2. Use short milestones, not narrative blocks.
+3. Keep detailed task mechanics in TASKS.md.
 -->
