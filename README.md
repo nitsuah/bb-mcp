@@ -41,6 +41,27 @@ The integration logic lives here, not in the client. agent-board, Claude Desktop
 
 ## Quick start
 
+
+## Makefile & Docker-based DevOps
+
+### Local test, lint, build
+
+```sh
+make test        # Run all tests
+make lint        # Lint code
+make build       # Build TypeScript
+```
+
+### Docker-based test/build
+
+```sh
+make docker-test   # Build Docker image and run tests
+make docker-build  # Build production Docker image
+```
+
+### CI/CD
+- See .github/workflows/ci.yml for full pipeline: lint, test, build, Docker, artifact.
+
 ### Docker (recommended)
 
 ```bash
@@ -56,8 +77,6 @@ Server is live at `http://localhost:3100`.
 | `POST /mcp` | MCP protocol entry point |
 | `GET /health` | Liveness probe |
 | `GET /metrics` | Prometheus text format |
-
-### Local dev (requires Node 20+)
 
 ```bash
 cp .env.example .env
