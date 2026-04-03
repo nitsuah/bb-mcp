@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-03-27
+Last Updated: 2026-04-03
 
 ## In Progress
 
@@ -18,7 +18,7 @@ Last Updated: 2026-03-27
 
 ### P1 - High
 
-- [ ] **[Q2-CEO] Multi-persona read tools** — ship student, instructor, admin, and parent tool variants sequentially after the OAuth2 and RBAC foundations are in place.
+- [ ] **[Q2-CEO] Multi-persona tools** — ship student, instructor, admin, and parent tool variants sequentially after the OAuth2 and RBAC foundations are in place.
   - Priority: P1
   - Context: the Anthology AI Product Engineer role requires demonstrating full-stack coverage across all Blackboard user personas; this is the primary differentiator.
   - Acceptance Criteria: at minimum, student (`list_courses`, `get_course_contents`, `get_announcements`, `create_assignment_submission`) and instructor (`list_roster`, `get_grades`) tools pass MCP Inspector, have JSON schemas, and are gated behind their respective roles.
@@ -28,10 +28,10 @@ Last Updated: 2026-03-27
   - Context: agent-board treats bb-mcp as an optional MCP container; a published contract allows the frontend to load tool definitions without coupling to internals.
   - Acceptance Criteria: a discoverable manifest endpoint exists; agent-board can list bb-mcp tools dynamically.
 
-- [ ] **[Q2-CEO] Streaming SSE transport** — emit chunked / SSE responses from the MCP server so downstream clients can stream tool output.
+- [ ] **[Q2-CEO] HTTP SSE transport** — expose a dedicated HTTP SSE endpoint from the MCP server so downstream clients can stream tool output.
   - Priority: P1
-  - Context: the Anthology role explicitly requires streaming AI responses; this is the server-side half — the rendering side lives in agent-board.
-  - Acceptance Criteria: at least one tool streams results via SSE; agent-board streaming UI can consume it without buffering the full payload first.
+  - Context: the Anthology role explicitly requires streaming AI responses; this is the server-side half for agent-board over HTTP, while the MCP stdio transport remains in place for SDK/MCP Inspector compatibility.
+  - Acceptance Criteria: at least one tool streams incremental results via the HTTP SSE endpoint; agent-board streaming UI can consume it without buffering the full payload first; existing MCP stdio transport behavior continues to pass Inspector.
 
 - [ ] Ship the `list_courses` tool.
   - Priority: P1
