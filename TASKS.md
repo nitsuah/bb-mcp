@@ -23,10 +23,12 @@ Last Updated: 2026-04-03
   - Context: the Anthology AI Product Engineer role requires demonstrating full-stack coverage across all Blackboard user personas; this is the primary differentiator.
   - Acceptance Criteria: at minimum, student (`list_courses`, `get_course_contents`, `get_announcements`, `create_assignment_submission`) and instructor (`list_roster`, `get_grades`) tools pass MCP Inspector, have JSON schemas, and are gated behind their respective roles.
 
-- [ ] **[Q2-CEO] MCP provider contract** — publish a stable tool manifest and capability schema so agent-board can bind to bb-mcp as a declared MCP provider.
+- [x] **[Q2-CEO] MCP provider contract** — publish a stable tool manifest and capability schema so agent-board can bind to bb-mcp as a declared MCP provider.
   - Priority: P1
   - Context: agent-board treats bb-mcp as an optional MCP container; a published contract allows the frontend to load tool definitions without coupling to internals.
   - Acceptance Criteria: a discoverable manifest endpoint exists; agent-board can list bb-mcp tools dynamically.
+  - Completed: 2026-04-03
+  - Evidence: `GET /manifest` now returns provider capabilities + dynamic tool manifest generated from exported tool schemas.
 
 - [ ] **[Q2-CEO] HTTP SSE transport** — expose a dedicated HTTP SSE endpoint from the MCP server so downstream clients can stream tool output.
   - Priority: P1

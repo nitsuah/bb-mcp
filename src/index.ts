@@ -17,6 +17,7 @@ import { randomUUID } from 'crypto';
 import http from 'http';
 import { config } from './config.js';
 import { getMetricsText, getMetricsSummary, pushMetrics } from './metrics.js';
+import { buildProviderManifest } from './manifest.js';
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -244,6 +245,15 @@ async function startHttpServer(): Promise<void> {
       return;
     }
 
+    // ── Provider manifest ──
+    if (req.method === 'GET' && url.pathname === '/manifest') {
+      const host = req.headers.host ?? `localhost:${config.server.port}`;
+      const manifest = buildProviderManifest(`http://${host}`);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(manifest));
+      return;
+    }
+
     // ── MCP endpoint ──
     if (url.pathname === '/mcp') {
       // GET → SSE stream for existing session
@@ -314,6 +324,7 @@ async function startHttpServer(): Promise<void> {
     console.log(`  MCP endpoint : http://localhost:${config.server.port}/mcp`);
     console.log(`  Health       : http://localhost:${config.server.port}/health`);
     console.log(`  Metrics      : http://localhost:${config.server.port}/metrics`);
+    console.log(`  Manifest     : http://localhost:${config.server.port}/manifest`);
   });
 
   // Push metrics every 60s if configured
