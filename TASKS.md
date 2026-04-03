@@ -18,6 +18,21 @@ Last Updated: 2026-03-27
 
 ### P1 - High
 
+- [ ] **[Q2-CEO] Multi-persona read tools** — ship student, instructor, admin, and parent tool variants sequentially after the OAuth2 and RBAC foundations are in place.
+  - Priority: P1
+  - Context: the Anthology AI Product Engineer role requires demonstrating full-stack coverage across all Blackboard user personas; this is the primary differentiator.
+  - Acceptance Criteria: at minimum, student (`list_courses`, `get_course_contents`, `get_announcements`, `create_assignment_submission`) and instructor (`list_roster`, `get_grades`) tools pass MCP Inspector, have JSON schemas, and are gated behind their respective roles.
+
+- [ ] **[Q2-CEO] MCP provider contract** — publish a stable tool manifest and capability schema so agent-board can bind to bb-mcp as a declared MCP provider.
+  - Priority: P1
+  - Context: agent-board treats bb-mcp as an optional MCP container; a published contract allows the frontend to load tool definitions without coupling to internals.
+  - Acceptance Criteria: a discoverable manifest endpoint exists; agent-board can list bb-mcp tools dynamically.
+
+- [ ] **[Q2-CEO] Streaming SSE transport** — emit chunked / SSE responses from the MCP server so downstream clients can stream tool output.
+  - Priority: P1
+  - Context: the Anthology role explicitly requires streaming AI responses; this is the server-side half — the rendering side lives in agent-board.
+  - Acceptance Criteria: at least one tool streams results via SSE; agent-board streaming UI can consume it without buffering the full payload first.
+
 - [ ] Ship the `list_courses` tool.
   - Priority: P1
   - Context: course discovery is the base dependency for course-scoped workflows.
@@ -39,6 +54,16 @@ Last Updated: 2026-03-27
   - Acceptance Criteria: core tool inputs are schema-backed and validated.
 
 ### P2 - Medium
+
+- [ ] **[Q2-CEO] PII handling policy** — define and enforce PII scrubbing for student names, grades, and IDs in all tool outputs and server logs.
+  - Priority: P2
+  - Context: institutional compliance requires zero PII leakage into telemetry, audit logs, or error messages.
+  - Acceptance Criteria: tool outputs have a documented PII boundary; a scrub middleware runs before any log/metric emission; tests verify PII does not appear in logs.
+
+- [ ] **[Q2-CEO] Rate limiting per role** — add per-role rate limits to prevent bulk data extraction by any authenticated client.
+  - Priority: P2
+  - Context: institutional data protection requires abuse controls even for authenticated users.
+  - Acceptance Criteria: student and instructor roles have enforced per-minute call limits; 429 responses include a retry-after header.
 
 - [ ] Add RBAC middleware.
   - Priority: P2
