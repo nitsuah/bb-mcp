@@ -77,6 +77,7 @@ Server is live at `http://localhost:3100`.
 | `POST /mcp` | MCP protocol entry point |
 | `GET /health` | Liveness probe |
 | `GET /metrics` | Prometheus text format |
+| `GET /manifest` | Provider contract with capabilities and tool manifest |
 
 ```bash
 cp .env.example .env

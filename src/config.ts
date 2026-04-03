@@ -15,6 +15,9 @@ export const config = {
   server: {
     port: parseInt(process.env.PORT ?? '3100', 10),
     logLevel: process.env.LOG_LEVEL ?? 'info',
+    // Trusted base URL for manifest endpoint generation (e.g. https://mcp.example.com).
+    // Falls back to http://localhost:<PORT> when not set.
+    publicBaseUrl: process.env.PUBLIC_BASE_URL ?? null,
   },
   metrics: {
     pushUrl: process.env.METRICS_PUSH_URL ?? null,

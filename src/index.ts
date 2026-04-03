@@ -17,6 +17,8 @@ import { randomUUID } from 'crypto';
 import http from 'http';
 import { config } from './config.js';
 import { getMetricsText, getMetricsSummary, pushMetrics } from './metrics.js';
+import { buildProviderManifest } from './manifest.js';
+import { SERVER_NAME, SERVER_VERSION } from './constants.js';
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -71,8 +73,8 @@ function buildServer(): McpServer {
   // SDK typing changed and is stricter than the JSON-schema shape used below.
   // Keep runtime behavior intact by using a compatibility cast at the server boundary.
   const server: any = new McpServer({
-    name: 'blackboard-learn-mcp',
-    version: '0.1.0',
+    name: SERVER_NAME,
+    version: SERVER_VERSION,
   });
 
   // Student tools
@@ -228,8 +230,8 @@ async function startHttpServer(): Promise<void> {
       res.end(
         JSON.stringify({
           status: 'ok',
-          name: 'blackboard-learn-mcp',
-          version: '0.1.0',
+          name: SERVER_NAME,
+          version: SERVER_VERSION,
           uptime: process.uptime(),
           metrics: getMetricsSummary(),
         }),
@@ -241,6 +243,16 @@ async function startHttpServer(): Promise<void> {
     if (req.method === 'GET' && url.pathname === '/metrics') {
       res.writeHead(200, { 'Content-Type': 'text/plain; version=0.0.4' });
       res.end(getMetricsText());
+      return;
+    }
+
+    // ── Provider manifest ──
+    if (req.method === 'GET' && url.pathname === '/manifest') {
+      const baseUrl =
+        config.server.publicBaseUrl ?? `http://localhost:${config.server.port}`;
+      const manifest = buildProviderManifest(baseUrl);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(manifest));
       return;
     }
 
@@ -314,6 +326,7 @@ async function startHttpServer(): Promise<void> {
     console.log(`  MCP endpoint : http://localhost:${config.server.port}/mcp`);
     console.log(`  Health       : http://localhost:${config.server.port}/health`);
     console.log(`  Metrics      : http://localhost:${config.server.port}/metrics`);
+    console.log(`  Manifest     : http://localhost:${config.server.port}/manifest`);
   });
 
   // Push metrics every 60s if configured
