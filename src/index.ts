@@ -18,6 +18,7 @@ import http from 'http';
 import { config } from './config.js';
 import { getMetricsText, getMetricsSummary, pushMetrics } from './metrics.js';
 import { buildProviderManifest } from './manifest.js';
+import { SERVER_NAME, SERVER_VERSION } from './constants.js';
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -72,8 +73,8 @@ function buildServer(): McpServer {
   // SDK typing changed and is stricter than the JSON-schema shape used below.
   // Keep runtime behavior intact by using a compatibility cast at the server boundary.
   const server: any = new McpServer({
-    name: 'blackboard-learn-mcp',
-    version: '0.1.0',
+    name: SERVER_NAME,
+    version: SERVER_VERSION,
   });
 
   // Student tools
@@ -229,8 +230,8 @@ async function startHttpServer(): Promise<void> {
       res.end(
         JSON.stringify({
           status: 'ok',
-          name: 'blackboard-learn-mcp',
-          version: '0.1.0',
+          name: SERVER_NAME,
+          version: SERVER_VERSION,
           uptime: process.uptime(),
           metrics: getMetricsSummary(),
         }),
@@ -247,8 +248,9 @@ async function startHttpServer(): Promise<void> {
 
     // ── Provider manifest ──
     if (req.method === 'GET' && url.pathname === '/manifest') {
-      const host = req.headers.host ?? `localhost:${config.server.port}`;
-      const manifest = buildProviderManifest(`http://${host}`);
+      const baseUrl =
+        config.server.publicBaseUrl ?? `http://localhost:${config.server.port}`;
+      const manifest = buildProviderManifest(baseUrl);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(manifest));
       return;

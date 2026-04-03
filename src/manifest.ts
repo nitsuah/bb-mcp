@@ -14,9 +14,7 @@ import {
   draftAnnouncementSchema,
 } from './tools/instructor.js';
 import { searchCourseMaterialsSchema } from './tools/shared.js';
-
-const SERVER_NAME = 'blackboard-learn-mcp';
-const SERVER_VERSION = '0.1.0';
+import { SERVER_NAME, SERVER_VERSION } from './constants.js';
 
 const TOOL_MANIFEST = [
   { ...getMyCoursesSchema, roles: ['student', 'instructor', 'admin'] },
@@ -29,7 +27,7 @@ const TOOL_MANIFEST = [
   { ...getGradeDistributionSchema, roles: ['instructor', 'admin'] },
   { ...getDiscussionSummarySchema, roles: ['instructor', 'admin'] },
   { ...getAtRiskStudentsSchema, roles: ['instructor', 'admin'] },
-  { ...draftAnnouncementSchema, roles: ['instructor'] },
+  { ...draftAnnouncementSchema, roles: ['instructor', 'admin'] },
   { ...searchCourseMaterialsSchema, roles: ['student', 'instructor', 'admin'] },
 ];
 
@@ -54,7 +52,7 @@ export function buildProviderManifest(baseUrl: string) {
         supported: ['course://{courseId}'],
       },
       auth: {
-        oauth2: true,
+        callerIdentity: true,
       },
     },
     endpoints: {
