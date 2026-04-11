@@ -1,14 +1,13 @@
-import { describe, expect, it } from 'vitest';
-import {
-  buildDoctorReport,
-  formatProbeReport,
-  formatToolCatalog,
-  getCliHelpText,
-  parseCliCommand,
-} from '../src/cli.js';
+import { beforeAll, describe, expect, it } from 'vitest';
+
+beforeAll(() => {
+  process.env.BB_CLIENT_ID ??= 'test-client-id';
+  process.env.BB_CLIENT_SECRET ??= 'test-client-secret';
+});
 
 describe('bb-mcp CLI', () => {
-  it('parses help, manifest, tools, doctor, and stdio server modes', () => {
+  it('parses help, manifest, tools, doctor, and stdio server modes', async () => {
+    const { parseCliCommand } = await import('../src/cli.js');
     expect(parseCliCommand(['--help'])).toEqual({ mode: 'help' });
     expect(parseCliCommand(['--version'])).toEqual({ mode: 'version' });
     expect(parseCliCommand(['--manifest', '--base-url', 'https://example.test'])).toEqual({
@@ -27,7 +26,8 @@ describe('bb-mcp CLI', () => {
     expect(parseCliCommand([])).toEqual({ mode: 'server', useStdio: false });
   });
 
-  it('builds a doctor report without exposing secrets', () => {
+  it('builds a doctor report without exposing secrets', async () => {
+    const { buildDoctorReport } = await import('../src/cli.js');
     const report = buildDoctorReport({
       BB_CLIENT_ID: 'client-id',
       BB_CLIENT_SECRET: 'secret',
@@ -48,7 +48,8 @@ describe('bb-mcp CLI', () => {
     expect(report.readiness.blackboardCredentialsReady).toBe(true);
   });
 
-  it('formats help text and tool catalog for inspection commands', () => {
+  it('formats help text and tool catalog for inspection commands', async () => {
+    const { formatProbeReport, formatToolCatalog, getCliHelpText } = await import('../src/cli.js');
     const help = getCliHelpText();
     const catalog = formatToolCatalog('https://example.test');
     const probe = formatProbeReport({

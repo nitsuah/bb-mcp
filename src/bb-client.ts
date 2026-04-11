@@ -107,6 +107,13 @@ export class BlackboardClient {
     return res.data.results ?? [];
   }
 
+  async probeConnectivity(): Promise<number> {
+    const res = await this.http.get<{ results: BbCourse[] }>('/courses', {
+      params: { limit: 1, fields: 'id' },
+    });
+    return (res.data.results ?? []).length;
+  }
+
   async getCourse(courseId: string): Promise<BbCourse> {
     const res = await this.http.get<BbCourse>(`/courses/${courseId}`);
     return res.data;

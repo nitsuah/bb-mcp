@@ -10,6 +10,7 @@
  *   GET /metrics  — Prometheus text format
  */
 
+import 'dotenv/config';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
@@ -493,7 +494,7 @@ switch (command.mode) {
     break;
   case 'manifest': {
     const manifest = buildProviderManifest(getManifestBaseUrl(command.baseUrl));
-    console.log(JSON.stringify(manifest, null, command.json ? 2 : 2));
+    console.log(JSON.stringify(manifest, null, command.json ? 2 : 0));
     break;
   }
   case 'tools': {

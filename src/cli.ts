@@ -191,7 +191,7 @@ export async function runBlackboardProbe(): Promise<BlackboardProbeReport> {
   const { bbClient } = await import('./bb-client.js');
 
   try {
-    const courses = await bbClient.getCourses();
+    const sampleCourseCount = await bbClient.probeConnectivity();
     return {
       provider: {
         name: SERVER_NAME,
@@ -201,7 +201,7 @@ export async function runBlackboardProbe(): Promise<BlackboardProbeReport> {
         baseUrl: (process.env.BB_BASE_URL ?? 'https://developer.blackboard.com').replace(/\/$/, ''),
         oauth: true,
         api: true,
-        sampleCourseCount: courses.length,
+        sampleCourseCount,
         message: 'OAuth token exchange succeeded and Blackboard API returned a course list.',
       },
     };
