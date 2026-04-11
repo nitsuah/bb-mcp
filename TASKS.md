@@ -35,20 +35,30 @@ Last Updated: 2026-04-03
   - Context: the Anthology role explicitly requires streaming AI responses; this is the server-side half for agent-board over HTTP, while the MCP stdio transport remains in place for SDK/MCP Inspector compatibility.
   - Acceptance Criteria: at least one tool streams incremental results via the HTTP SSE endpoint; agent-board streaming UI can consume it without buffering the full payload first; existing MCP stdio transport behavior continues to pass Inspector.
 
-- [ ] Backport standalone Docker/compose commands from agent-board.
+- [x] Backport standalone Docker/compose commands from agent-board.
   - Priority: P1
   - Context: agent-board currently carries the most practical bb-mcp compose wiring (`BB_MCP_ENABLED`, opt-in profile, sibling-repo env loading); bb-mcp should gain its own confined standalone commands/config without removing the agent-board integration.
   - Acceptance Criteria: bb-mcp documents and ships a standalone container path with repo-local compose commands/env expectations, while agent-board can keep its existing integration unchanged.
+  - Completed: 2026-04-11
+  - Evidence: `docker-compose.yml` now defines a more confined standalone runtime with read-only filesystem, dropped capabilities, `no-new-privileges`, and repo-local `PUBLIC_BASE_URL` defaults.
+  - Evidence: `Makefile` now exposes `docker-up`, `docker-down`, `docker-logs`, `docker-doctor`, `docker-probe`, `docker-manifest`, and `docker-tools`.
+  - Evidence: `README.md` and `.env.example` document the standalone command set and env expectations.
 
-- [ ] Ship the `list_courses` tool.
+- [x] Ship the `list_courses` tool.
   - Priority: P1
   - Context: course discovery is the base dependency for course-scoped workflows.
   - Acceptance Criteria: a user can retrieve enrolled courses through the MCP server.
+  - Completed: 2026-04-11
+  - Evidence: `src/tools/student.ts` now exposes `list_courses` as a compatibility alias backed by the existing course retrieval handler.
+  - Evidence: `src/index.ts`, `src/manifest.ts`, and manifest/schema tests now publish and validate the alias tool.
 
-- [ ] Ship the `get_course_contents` tool.
+- [x] Ship the `get_course_contents` tool.
   - Priority: P1
   - Context: content navigation is required before announcements, assignments, and grading workflows.
   - Acceptance Criteria: the tool returns usable course hierarchy data.
+  - Completed: 2026-04-11
+  - Evidence: `src/tools/student.ts` now exposes `get_course_contents` as a compatibility alias backed by the existing course content handler.
+  - Evidence: `src/index.ts`, `src/manifest.ts`, and manifest/schema tests now publish and validate the alias tool.
 
 - [ ] Finish OAuth2 Authorization Code flow support.
   - Priority: P1

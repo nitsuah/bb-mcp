@@ -10,6 +10,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: bb-mcp
+    init: true
     restart: unless-stopped
     ports:
       - "3100:3100"
@@ -18,6 +19,15 @@ services:
     environment:
       - PORT=3100
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:3100}
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3100/health',(r)=>{r.resume();r.on('end',()=>process.exit(r.statusCode===200?0:1))}).on('error',()=>process.exit(1))"]
       interval: 30s

@@ -29,7 +29,7 @@ Last Updated: 2026-04-03
 > Build bb-mcp beyond a prototype and into a demonstration-grade MCP server that shows full-stack AI product engineering across every Blackboard user persona.
 
 #### Multi-Persona Tool Coverage
-- [ ] **Student tools**: course discovery, content navigation, assignment submission, grade read-back, announcement read.
+- [/] **Student tools**: course discovery and content navigation now ship via `list_courses` / `get_course_contents` aliases; assignment submission, grade read-back, and announcement read still need completion.
 - [ ] **Teacher/Instructor tools**: assignment management, grade write-back, course announcement publish, attendance/roster read.
 - [ ] **Admin tools**: user management (read), enrollment management, institutional audit log access.
 - [ ] **Parent tools** (read-only, guardian-scoped): student enrollment view, grade summary, upcoming assignment alerts.
@@ -41,6 +41,7 @@ Last Updated: 2026-04-03
 - [ ] **MCP provider contract**: publish a stable tool manifest and capability schema so agent-board can bind to bb-mcp as a first-class MCP provider without internal coupling.
 - [x] **CLI inspection surface**: support manifest/tool inspection and environment doctor commands so implementers can validate the server without booting a full MCP client.
 - [x] **Blackboard probe command**: validate credential readiness and a minimal Blackboard API call from the CLI for standalone operator checks.
+- [x] **Standalone container backport**: keep agent-board's integration intact while giving bb-mcp its own repo-local compose commands and a more confined standalone runtime.
 
 #### Event-Driven Pipeline
 - [ ] **Blackboard activity ingestion**: define an event schema for grade posts, submission events, login activity, and course changes.
@@ -53,7 +54,7 @@ Last Updated: 2026-04-03
 - [ ] **Rate limiting and abuse protection**: per-role rate limits to prevent bulk data extraction.
 
 #### Foundation Completion
-- [ ] Finish `list_courses` and `get_course_contents` tools (carry from prior roadmap).
+- [x] Finish `list_courses` and `get_course_contents` tools (carry from prior roadmap).
 - [ ] Finish OAuth2 Authorization Code flow for production token handling.
 - [ ] Pass MCP Inspector with stdio transport.
 - [ ] Add JSON schemas for all shipped tool inputs.

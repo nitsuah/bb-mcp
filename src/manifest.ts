@@ -1,8 +1,10 @@
 import {
   getMyCoursesSchema,
+  listCoursesSchema,
   getUpcomingAssignmentsSchema,
   getMyGradesSchema,
   getCourseContentSchema,
+  getCourseContentsSchema,
   getAssignmentFeedbackSchema,
   getAnnouncementsSchema,
 } from './tools/student.js';
@@ -18,9 +20,11 @@ import { SERVER_NAME, SERVER_VERSION } from './constants.js';
 
 const TOOL_MANIFEST = [
   { ...getMyCoursesSchema, roles: ['student', 'instructor', 'admin'] },
+  { ...listCoursesSchema, roles: ['student', 'instructor', 'admin'] },
   { ...getUpcomingAssignmentsSchema, roles: ['student'] },
   { ...getMyGradesSchema, roles: ['student'] },
   { ...getCourseContentSchema, roles: ['student', 'instructor', 'admin'] },
+  { ...getCourseContentsSchema, roles: ['student', 'instructor', 'admin'] },
   { ...getAssignmentFeedbackSchema, roles: ['student'] },
   { ...getAnnouncementsSchema, roles: ['student', 'instructor', 'admin'] },
   { ...getSubmissionStatusSchema, roles: ['instructor', 'admin'] },

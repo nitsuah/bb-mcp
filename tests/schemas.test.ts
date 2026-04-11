@@ -26,6 +26,22 @@ describe('zod input schemas', () => {
     expect(parsed.unreadOnly).toBe(false);
   });
 
+  it('keeps alias schemas aligned for list_courses and get_course_contents', async () => {
+    const { ListCoursesInput, GetCourseContentsInput } = await import('../src/tools/student.js');
+
+    const listCourses = ListCoursesInput.parse({
+      caller_identity: { userId: 'u1', role: 'student' },
+    });
+
+    const courseContents = GetCourseContentsInput.parse({
+      caller_identity: { userId: 'u1', role: 'student' },
+      courseId: 'course-1',
+    });
+
+    expect(listCourses.caller_identity).toBeDefined();
+    expect(courseContents.courseId).toBe('course-1');
+  });
+
   it('validates draft announcement topic length and default tone', async () => {
     const { DraftAnnouncementInput } = await import('../src/tools/instructor.js');
 

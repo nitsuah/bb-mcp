@@ -68,6 +68,19 @@ export const getMyCoursesSchema = {
   },
 };
 
+export const ListCoursesInput = GetMyCoursesInput;
+
+export const listCoursesHandler = withMetrics(
+  'list_courses',
+  async (args: z.infer<typeof ListCoursesInput>) => getMyCoursesHandler(args),
+);
+
+export const listCoursesSchema = {
+  name: 'list_courses',
+  description: 'Compatibility alias for get_my_courses. Returns all courses the caller is enrolled in.',
+  inputSchema: getMyCoursesSchema.inputSchema,
+};
+
 // ── get_upcoming_assignments ──────────────────────────────────────────────
 
 export const GetUpcomingAssignmentsInput = z.object({
@@ -260,6 +273,19 @@ export const getCourseContentSchema = {
     },
     required: ['caller_identity', 'courseId'],
   },
+};
+
+export const GetCourseContentsInput = GetCourseContentInput;
+
+export const getCourseContentsHandler = withMetrics(
+  'get_course_contents',
+  async (args: z.infer<typeof GetCourseContentsInput>) => getCourseContentHandler(args),
+);
+
+export const getCourseContentsSchema = {
+  name: 'get_course_contents',
+  description: 'Compatibility alias for get_course_content. Returns course modules and materials.',
+  inputSchema: getCourseContentSchema.inputSchema,
 };
 
 // ── get_assignment_feedback ───────────────────────────────────────────────

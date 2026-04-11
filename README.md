@@ -70,6 +70,20 @@ cp .env.example .env
 docker compose up -d
 ```
 
+Repo-local standalone commands:
+
+```bash
+make docker-up        # Build and start the standalone bb-mcp container
+make docker-logs      # Follow container logs
+make docker-doctor    # Safe env readiness report from inside the container
+make docker-probe     # Validate Blackboard credentials + minimal API call
+make docker-manifest  # Print the provider manifest from the built image
+make docker-tools     # Print the published tool catalog from the built image
+make docker-down      # Stop the standalone stack
+```
+
+The standalone compose stack keeps the same Dockerfile path used by agent-board, but now adds a more confined runtime posture: read-only filesystem, dropped Linux capabilities, `no-new-privileges`, and a small `/tmp` tmpfs for Node runtime needs.
+
 Server is live at `http://localhost:3100`.
 
 | Endpoint | Description |

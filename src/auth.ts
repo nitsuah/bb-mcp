@@ -73,9 +73,11 @@ const INSTRUCTOR_ONLY_TOOLS = new Set([
 
 const STUDENT_TOOLS = new Set([
   'get_my_courses',
+  'list_courses',
   'get_upcoming_assignments',
   'get_my_grades',
   'get_course_content',
+  'get_course_contents',
   'get_assignment_feedback',
   'get_announcements',
   'get_discussion_summary',  // students can read summaries, not grade data

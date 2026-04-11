@@ -25,13 +25,21 @@ describe('provider manifest', () => {
     const names = manifest.tools.map((t: { name: string }) => t.name);
 
     expect(names).toContain('get_my_courses');
+    expect(names).toContain('list_courses');
     expect(names).toContain('get_course_content');
+    expect(names).toContain('get_course_contents');
     expect(names).toContain('draft_announcement');
     expect(new Set(names).size).toBe(names.length);
 
     const getMyCourses = manifest.tools.find((t: { name: string }) => t.name === 'get_my_courses');
     expect(getMyCourses?.inputSchema?.type).toBe('object');
     expect(getMyCourses?.roles).toContain('student');
+
+    const listCourses = manifest.tools.find((t: { name: string }) => t.name === 'list_courses');
+    expect(listCourses?.roles).toContain('student');
+
+    const getCourseContents = manifest.tools.find((t: { name: string }) => t.name === 'get_course_contents');
+    expect(getCourseContents?.roles).toContain('admin');
 
     const draftAnnouncement = manifest.tools.find((t: { name: string }) => t.name === 'draft_announcement');
     expect(draftAnnouncement?.roles).toContain('instructor');

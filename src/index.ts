@@ -35,6 +35,9 @@ import {
   GetMyCoursesInput,
   getMyCoursesHandler,
   getMyCoursesSchema,
+  ListCoursesInput,
+  listCoursesHandler,
+  listCoursesSchema,
   GetUpcomingAssignmentsInput,
   getUpcomingAssignmentsHandler,
   getUpcomingAssignmentsSchema,
@@ -44,6 +47,9 @@ import {
   GetCourseContentInput,
   getCourseContentHandler,
   getCourseContentSchema,
+  GetCourseContentsInput,
+  getCourseContentsHandler,
+  getCourseContentsSchema,
   GetAssignmentFeedbackInput,
   getAssignmentFeedbackHandler,
   getAssignmentFeedbackSchema,
@@ -95,6 +101,13 @@ function buildServer(): McpServer {
   );
 
   server.tool(
+    listCoursesSchema.name,
+    listCoursesSchema.description,
+    ListCoursesInput.shape,
+    (args: any) => listCoursesHandler(args as Parameters<typeof listCoursesHandler>[0]),
+  );
+
+  server.tool(
     getUpcomingAssignmentsSchema.name,
     getUpcomingAssignmentsSchema.description,
     GetUpcomingAssignmentsInput.shape,
@@ -117,6 +130,14 @@ function buildServer(): McpServer {
     GetCourseContentInput.shape,
     (args: any) =>
       getCourseContentHandler(args as Parameters<typeof getCourseContentHandler>[0]),
+  );
+
+  server.tool(
+    getCourseContentsSchema.name,
+    getCourseContentsSchema.description,
+    GetCourseContentsInput.shape,
+    (args: any) =>
+      getCourseContentsHandler(args as Parameters<typeof getCourseContentsHandler>[0]),
   );
 
   server.tool(
