@@ -30,10 +30,13 @@ Last Updated: 2026-04-03
   - Completed: 2026-04-03
   - Evidence: `GET /manifest` now returns provider capabilities + dynamic tool manifest generated from exported tool schemas.
 
-- [ ] **[Q2-CEO] HTTP SSE transport** — expose a dedicated HTTP SSE endpoint from the MCP server so downstream clients can stream tool output.
+- [x] **[Q2-CEO] HTTP SSE transport** — expose a dedicated HTTP SSE endpoint from the MCP server so downstream clients can stream tool output.
   - Priority: P1
   - Context: the Anthology role explicitly requires streaming AI responses; this is the server-side half for agent-board over HTTP, while the MCP stdio transport remains in place for SDK/MCP Inspector compatibility.
   - Acceptance Criteria: at least one tool streams incremental results via the HTTP SSE endpoint; agent-board streaming UI can consume it without buffering the full payload first; existing MCP stdio transport behavior continues to pass Inspector.
+  - Completed: 2026-04-11
+  - Evidence: `src/index.ts` now exposes `GET /sse/search-course-materials` and streams incremental `chunk` events for `search_course_materials` results.
+  - Evidence: `README.md` documents the dedicated SSE endpoint alongside existing MCP/health/metrics/manifest routes.
 
 - [x] Backport standalone Docker/compose commands from agent-board.
   - Priority: P1
@@ -72,15 +75,19 @@ Last Updated: 2026-04-03
 
 ### P2 - Medium
 
-- [ ] **[Q2-CEO] PII handling policy** — define and enforce PII scrubbing for student names, grades, and IDs in all tool outputs and server logs.
+- [/] **[Q2-CEO] PII handling policy** — define and enforce PII scrubbing for student names, grades, and IDs in all tool outputs and server logs.
   - Priority: P2
   - Context: institutional compliance requires zero PII leakage into telemetry, audit logs, or error messages.
   - Acceptance Criteria: tool outputs have a documented PII boundary; a scrub middleware runs before any log/metric emission; tests verify PII does not appear in logs.
+  - Progress: `src/auth.ts` audit logs now emit hashed `subject` values instead of raw `userId`, and `src/privacy.ts` scrubs sensitive text patterns before log emission.
+  - Progress: `tests/auth-privacy.test.ts` verifies no raw caller identifier appears in granted/denied audit log lines.
 
-- [ ] **[Q2-CEO] Rate limiting per role** — add per-role rate limits to prevent bulk data extraction by any authenticated client.
+- [/] **[Q2-CEO] Rate limiting per role** — add per-role rate limits to prevent bulk data extraction by any authenticated client.
   - Priority: P2
   - Context: institutional data protection requires abuse controls even for authenticated users.
   - Acceptance Criteria: student and instructor roles have enforced per-minute call limits; 429 responses include a retry-after header.
+  - Progress: `src/auth.ts` now enforces in-memory per-role per-minute limits before tool execution and includes retry-after guidance in denial messages.
+  - Progress: `src/config.ts` and `.env.example` now expose `RATE_LIMIT_*_PER_MINUTE` configuration; `tests/rate-limit.test.ts` verifies enforcement behavior.
 
 - [ ] Add RBAC middleware.
   - Priority: P2

@@ -21,6 +21,7 @@
  */
 
 import { config } from './config.js';
+import { scrubLogText, toAuditSubject } from './privacy.js';
 
 export type Role = 'student' | 'instructor' | 'admin';
 
@@ -44,6 +45,47 @@ export class AuthorizationError extends Error {
   }
 }
 
+interface RateWindow {
+  startedAt: number;
+  count: number;
+}
+
+const RATE_WINDOW_MS = 60_000;
+const rateWindows = new Map<string, RateWindow>();
+
+function getRateLimit(role: Role): number {
+  return config.security.rateLimitPerMinute[role] ?? 60;
+}
+
+function assertWithinRateLimit(identity: CallerIdentity): void {
+  const now = Date.now();
+  const key = `${identity.role}:${identity.userId}`;
+  const limit = getRateLimit(identity.role);
+  const existing = rateWindows.get(key);
+
+  if (!existing || now - existing.startedAt >= RATE_WINDOW_MS) {
+    rateWindows.set(key, { startedAt: now, count: 1 });
+    return;
+  }
+
+  if (existing.count >= limit) {
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil((existing.startedAt + RATE_WINDOW_MS - now) / 1000),
+    );
+    throw new AuthorizationError(
+      `Rate limit exceeded for role "${identity.role}". Retry after ${retryAfterSeconds}s.`,
+    );
+  }
+
+  existing.count += 1;
+  rateWindows.set(key, existing);
+}
+
+export function __resetRateLimiterForTests(): void {
+  rateWindows.clear();
+}
+
 /** Structured audit log — write to stdout for log aggregator pickup */
 function auditLog(
   event: 'access.granted' | 'access.denied',
@@ -54,11 +96,12 @@ function auditLog(
     timestamp: new Date().toISOString(),
     event,
     tool: ctx.toolName,
-    userId: ctx.identity.userId,
+    subject: toAuditSubject(ctx.identity.userId),
     role: ctx.identity.role,
     courseId: ctx.courseId ?? null,
     clientApp: ctx.identity.clientApp ?? null,
-    reason: reason ?? null,
+    reason: reason ? scrubLogText(reason) : null,
+    piiRedaction: 'hashed-subject',
   };
   process.stdout.write(JSON.stringify(entry) + '\n');
 }
@@ -86,6 +129,13 @@ const STUDENT_TOOLS = new Set([
 export function checkAuthorization(ctx: AuthContext): void {
   const { identity, toolName, courseId } = ctx;
   const isRestricted = config.security.restrictedTools.includes(toolName);
+
+  try {
+    assertWithinRateLimit(identity);
+  } catch (error) {
+    auditLog('access.denied', ctx, error instanceof Error ? error.message : 'rate limit exceeded');
+    throw error;
+  }
 
   // FERPA gate
   if (isRestricted && !identity.ferpa_authorized) {

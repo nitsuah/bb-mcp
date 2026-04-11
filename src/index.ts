@@ -243,6 +243,35 @@ function readBody(req: http.IncomingMessage): Promise<string> {
   });
 }
 
+function chunkText(text: string, maxChunkSize = 600): string[] {
+  if (!text) {
+    return [''];
+  }
+
+  const chunks: string[] = [];
+  for (let index = 0; index < text.length; index += maxChunkSize) {
+    chunks.push(text.slice(index, index + maxChunkSize));
+  }
+  return chunks;
+}
+
+function writeSseEvent(
+  res: http.ServerResponse,
+  event: string,
+  payload: Record<string, unknown>,
+): void {
+  res.write(`event: ${event}\n`);
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
+}
+
+function isTruthy(value: string | null): boolean {
+  if (!value) {
+    return false;
+  }
+
+  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+}
+
 // ── HTTP mode (default) ───────────────────────────────────────────────────
 
 async function startHttpServer(): Promise<void> {
@@ -284,6 +313,82 @@ async function startHttpServer(): Promise<void> {
       const manifest = buildProviderManifest(baseUrl);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(manifest));
+      return;
+    }
+
+    // ── Dedicated SSE endpoint: search_course_materials ──
+    if (req.method === 'GET' && url.pathname === '/sse/search-course-materials') {
+      const query = url.searchParams.get('query')?.trim();
+      if (!query) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            error: 'Missing required query parameter: query',
+            example:
+              '/sse/search-course-materials?query=syllabus&userId=student-1&role=student',
+          }),
+        );
+        return;
+      }
+
+      const roleRaw = (url.searchParams.get('role') ?? 'student').toLowerCase();
+      const role = roleRaw === 'instructor' || roleRaw === 'admin' ? roleRaw : 'student';
+
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+      });
+
+      writeSseEvent(res, 'start', {
+        tool: 'search_course_materials',
+        query,
+        role,
+      });
+
+      try {
+        writeSseEvent(res, 'status', { step: 'authorizing' });
+
+        const result = await searchCourseMaterialsHandler({
+          caller_identity: {
+            userId: url.searchParams.get('userId') ?? 'sse-user',
+            role,
+            ferpa_authorized: isTruthy(url.searchParams.get('ferpa_authorized')),
+            clientApp: url.searchParams.get('clientApp') ?? 'bb-mcp-sse',
+          },
+          query,
+          courseId: url.searchParams.get('courseId') ?? undefined,
+        });
+
+        const textResult =
+          result.content[0]?.type === 'text'
+            ? result.content[0].text
+            : JSON.stringify(result);
+
+        const chunks = chunkText(textResult);
+        writeSseEvent(res, 'status', { step: 'streaming', chunks: chunks.length });
+
+        chunks.forEach((chunk, index) => {
+          writeSseEvent(res, 'chunk', {
+            index,
+            total: chunks.length,
+            text: chunk,
+          });
+        });
+
+        writeSseEvent(res, 'complete', {
+          success: true,
+          chunks: chunks.length,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        writeSseEvent(res, 'error', {
+          success: false,
+          message,
+        });
+      }
+
+      res.end();
       return;
     }
 

@@ -92,6 +92,7 @@ Server is live at `http://localhost:3100`.
 | `GET /health` | Liveness probe |
 | `GET /metrics` | Prometheus text format |
 | `GET /manifest` | Provider contract with capabilities and tool manifest |
+| `GET /sse/search-course-materials` | Dedicated SSE stream for incremental `search_course_materials` output |
 
 ```bash
 cp .env.example .env

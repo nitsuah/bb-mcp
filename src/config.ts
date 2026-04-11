@@ -27,5 +27,10 @@ export const config = {
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean),
+    rateLimitPerMinute: {
+      student: parseInt(process.env.RATE_LIMIT_STUDENT_PER_MINUTE ?? '60', 10),
+      instructor: parseInt(process.env.RATE_LIMIT_INSTRUCTOR_PER_MINUTE ?? '120', 10),
+      admin: parseInt(process.env.RATE_LIMIT_ADMIN_PER_MINUTE ?? '180', 10),
+    },
   },
 } as const;

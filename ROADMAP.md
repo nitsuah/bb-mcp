@@ -36,7 +36,7 @@ Last Updated: 2026-04-03
 - [ ] **Analytics/Product Owner tools**: event telemetry tap, engagement metrics aggregation, AI recommendation signal export.
 
 #### AI Orchestration Surface
-- [ ] **Streaming response support**: emit SSE / chunked-transfer responses from the MCP server layer so downstream clients can stream results.
+- [x] **Streaming response support**: emit SSE / chunked-transfer responses from the MCP server layer so downstream clients can stream results.
 - [ ] **Structured output schemas**: emit typed, schema-validated outputs for every tool so agent clients can reliably parse results.
 - [ ] **MCP provider contract**: publish a stable tool manifest and capability schema so agent-board can bind to bb-mcp as a first-class MCP provider without internal coupling.
 - [x] **CLI inspection surface**: support manifest/tool inspection and environment doctor commands so implementers can validate the server without booting a full MCP client.
@@ -50,8 +50,8 @@ Last Updated: 2026-04-03
 #### User Safety & Institutional Compliance
 - [ ] **RBAC enforcement**: student, instructor, admin, parent, and analytics roles must each see only their permitted data.
 - [ ] **Data access audit logging**: structured audit events for every privileged read/write operation; institutional compliance ready.
-- [ ] **PII handling policy**: define and enforce PII boundaries (student names, grades, IDs) in all tool outputs; scrub and redact in logs.
-- [ ] **Rate limiting and abuse protection**: per-role rate limits to prevent bulk data extraction.
+- [/] **PII handling policy**: define and enforce PII boundaries (student names, grades, IDs) in all tool outputs; scrub and redact in logs.
+- [/] **Rate limiting and abuse protection**: per-role rate limits to prevent bulk data extraction.
 
 #### Foundation Completion
 - [x] Finish `list_courses` and `get_course_contents` tools (carry from prior roadmap).
