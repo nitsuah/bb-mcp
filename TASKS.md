@@ -35,6 +35,11 @@ Last Updated: 2026-04-03
   - Context: the Anthology role explicitly requires streaming AI responses; this is the server-side half for agent-board over HTTP, while the MCP stdio transport remains in place for SDK/MCP Inspector compatibility.
   - Acceptance Criteria: at least one tool streams incremental results via the HTTP SSE endpoint; agent-board streaming UI can consume it without buffering the full payload first; existing MCP stdio transport behavior continues to pass Inspector.
 
+- [ ] Backport standalone Docker/compose commands from agent-board.
+  - Priority: P1
+  - Context: agent-board currently carries the most practical bb-mcp compose wiring (`BB_MCP_ENABLED`, opt-in profile, sibling-repo env loading); bb-mcp should gain its own confined standalone commands/config without removing the agent-board integration.
+  - Acceptance Criteria: bb-mcp documents and ships a standalone container path with repo-local compose commands/env expectations, while agent-board can keep its existing integration unchanged.
+
 - [ ] Ship the `list_courses` tool.
   - Priority: P1
   - Context: course discovery is the base dependency for course-scoped workflows.
@@ -105,6 +110,16 @@ Last Updated: 2026-04-03
   - Acceptance Criteria: structured audit events are captured for privileged operations.
 
 ## Done
+
+- [x] Add CLI inspection and doctor commands.
+  - Completed: 2026-04-11
+  - Evidence: `src/cli.ts` now supports `--help`, `--version`, `--manifest`, `--tools`, and `--doctor` without requiring Blackboard credentials.
+  - Evidence: `tests/cli.test.ts` validates argument parsing, safe doctor reporting, and tool catalog formatting.
+
+- [x] Add Blackboard probe command.
+  - Completed: 2026-04-11
+  - Evidence: `src/cli.ts` now supports `--probe` to validate Blackboard credentials and a minimal API request.
+  - Evidence: `tests/cli.test.ts` covers probe CLI parsing and formatted probe output.
 
 - [x] TypeScript project setup with MCP SDK and baseline tooling.
 

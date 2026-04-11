@@ -15,10 +15,19 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { randomUUID } from 'crypto';
 import http from 'http';
-import { config } from './config.js';
 import { getMetricsText, getMetricsSummary, pushMetrics } from './metrics.js';
 import { buildProviderManifest } from './manifest.js';
 import { SERVER_NAME, SERVER_VERSION } from './constants.js';
+import {
+  buildDoctorReport,
+  formatDoctorReport,
+  formatProbeReport,
+  formatToolCatalog,
+  getCliHelpText,
+  getManifestBaseUrl,
+  parseCliCommand,
+  runBlackboardProbe,
+} from './cli.js';
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -216,6 +225,7 @@ function readBody(req: http.IncomingMessage): Promise<string> {
 // ── HTTP mode (default) ───────────────────────────────────────────────────
 
 async function startHttpServer(): Promise<void> {
+  const { config } = await import('./config.js');
   const server = buildServer();
 
   // Per-session transports (stateful SSE / streamable HTTP)
@@ -338,6 +348,7 @@ async function startHttpServer(): Promise<void> {
 // ── stdio mode (Claude Desktop, Cursor) ──────────────────────────────────
 
 async function startStdioServer(): Promise<void> {
+  await import('./config.js');
   const server = buildServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
@@ -345,15 +356,57 @@ async function startStdioServer(): Promise<void> {
 
 // ── Entrypoint ────────────────────────────────────────────────────────────
 
-const useStdio = process.argv.includes('--stdio');
-if (useStdio) {
-  startStdioServer().catch((err) => {
-    console.error('Fatal:', err);
-    process.exit(1);
-  });
-} else {
-  startHttpServer().catch((err) => {
-    console.error('Fatal:', err);
-    process.exit(1);
-  });
+const command = parseCliCommand(process.argv.slice(2));
+
+switch (command.mode) {
+  case 'help':
+    console.log(getCliHelpText());
+    break;
+  case 'version':
+    console.log(`${SERVER_NAME} v${SERVER_VERSION}`);
+    break;
+  case 'manifest': {
+    const manifest = buildProviderManifest(getManifestBaseUrl(command.baseUrl));
+    console.log(JSON.stringify(manifest, null, command.json ? 2 : 2));
+    break;
+  }
+  case 'tools': {
+    if (command.json) {
+      const manifest = buildProviderManifest(getManifestBaseUrl(command.baseUrl));
+      console.log(JSON.stringify(manifest.tools, null, 2));
+    } else {
+      console.log(formatToolCatalog(command.baseUrl));
+    }
+    break;
+  }
+  case 'doctor': {
+    const report = buildDoctorReport();
+    if (command.json) {
+      console.log(JSON.stringify(report, null, 2));
+    } else {
+      console.log(formatDoctorReport(report));
+    }
+    break;
+  }
+  case 'probe': {
+    const report = await runBlackboardProbe();
+    if (command.json) {
+      console.log(JSON.stringify(report, null, 2));
+    } else {
+      console.log(formatProbeReport(report));
+    }
+
+    if (!report.blackboard.api) {
+      process.exitCode = 1;
+    }
+    break;
+  }
+  case 'server': {
+    const runner = command.useStdio ? startStdioServer : startHttpServer;
+    runner().catch((err) => {
+      console.error('Fatal:', err);
+      process.exit(1);
+    });
+    break;
+  }
 }

@@ -92,6 +92,25 @@ npm run build
 node dist/index.js --stdio
 ```
 
+### CLI inspection commands
+
+```bash
+# Show available runtime modes and inspection commands
+node dist/index.js --help
+
+# Print the provider manifest without starting the server
+node dist/index.js --manifest
+
+# List the published tools with role coverage
+node dist/index.js --tools
+
+# Emit a safe environment readiness report (no secrets printed)
+node dist/index.js --doctor
+
+# Validate Blackboard credentials and a minimal API call
+node dist/index.js --probe
+```
+
 Claude Desktop config (`claude_desktop_config.json`):
 
 ```json

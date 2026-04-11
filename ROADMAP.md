@@ -39,6 +39,8 @@ Last Updated: 2026-04-03
 - [ ] **Streaming response support**: emit SSE / chunked-transfer responses from the MCP server layer so downstream clients can stream results.
 - [ ] **Structured output schemas**: emit typed, schema-validated outputs for every tool so agent clients can reliably parse results.
 - [ ] **MCP provider contract**: publish a stable tool manifest and capability schema so agent-board can bind to bb-mcp as a first-class MCP provider without internal coupling.
+- [x] **CLI inspection surface**: support manifest/tool inspection and environment doctor commands so implementers can validate the server without booting a full MCP client.
+- [x] **Blackboard probe command**: validate credential readiness and a minimal Blackboard API call from the CLI for standalone operator checks.
 
 #### Event-Driven Pipeline
 - [ ] **Blackboard activity ingestion**: define an event schema for grade posts, submission events, login activity, and course changes.
