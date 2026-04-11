@@ -34,9 +34,12 @@ describe('provider manifest', () => {
     const getMyCourses = manifest.tools.find((t: { name: string }) => t.name === 'get_my_courses');
     expect(getMyCourses?.inputSchema?.type).toBe('object');
     expect(getMyCourses?.roles).toContain('student');
+    expect(getMyCourses?.outputSchema?.type).toBe('object');
+    expect(getMyCourses?.outputSchema?.properties?.content?.type).toBe('array');
 
     const listCourses = manifest.tools.find((t: { name: string }) => t.name === 'list_courses');
     expect(listCourses?.roles).toContain('student');
+    expect(listCourses?.outputSchema?.required).toContain('content');
 
     const getCourseContents = manifest.tools.find((t: { name: string }) => t.name === 'get_course_contents');
     expect(getCourseContents?.roles).toContain('admin');

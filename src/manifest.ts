@@ -18,6 +18,25 @@ import {
 import { searchCourseMaterialsSchema } from './tools/shared.js';
 import { SERVER_NAME, SERVER_VERSION } from './constants.js';
 
+const DEFAULT_TEXT_OUTPUT_SCHEMA = {
+  type: 'object',
+  properties: {
+    content: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', enum: ['text'] },
+          text: { type: 'string' },
+        },
+        required: ['type', 'text'],
+      },
+      minItems: 1,
+    },
+  },
+  required: ['content'],
+} as const;
+
 const TOOL_MANIFEST = [
   { ...getMyCoursesSchema, roles: ['student', 'instructor', 'admin'] },
   { ...listCoursesSchema, roles: ['student', 'instructor', 'admin'] },
@@ -33,7 +52,10 @@ const TOOL_MANIFEST = [
   { ...getAtRiskStudentsSchema, roles: ['instructor', 'admin'] },
   { ...draftAnnouncementSchema, roles: ['instructor', 'admin'] },
   { ...searchCourseMaterialsSchema, roles: ['student', 'instructor', 'admin'] },
-];
+].map((tool) => ({
+  ...tool,
+  outputSchema: DEFAULT_TEXT_OUTPUT_SCHEMA,
+}));
 
 export function buildProviderManifest(baseUrl: string) {
   return {

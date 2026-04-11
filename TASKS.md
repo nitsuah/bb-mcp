@@ -68,10 +68,12 @@ Last Updated: 2026-04-03
   - Context: production-safe token handling is still a blocking foundation item.
   - Acceptance Criteria: the server completes a secure OAuth2 flow and manages tokens correctly.
 
-- [ ] Add JSON schemas for MCP tool parameters.
+- [/] Add JSON schemas for MCP tool parameters.
   - Priority: P1
   - Context: input validation and spec compliance are incomplete.
   - Acceptance Criteria: core tool inputs are schema-backed and validated.
+  - Progress: `src/manifest.ts` now publishes a shared `outputSchema` for every tool so clients can parse a typed text-content envelope consistently.
+  - Progress: `tests/manifest.test.ts` now validates output schema presence for published tools.
 
 ### P2 - Medium
 
