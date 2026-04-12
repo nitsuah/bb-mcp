@@ -91,10 +91,11 @@ Last Updated: 2026-04-11
   - Progress: `src/auth.ts` now enforces in-memory per-role per-minute limits before tool execution and includes retry-after guidance in denial messages.
   - Progress: `src/config.ts` and `.env.example` now expose `RATE_LIMIT_*_PER_MINUTE` configuration; `tests/rate-limit.test.ts` verifies enforcement behavior.
 
-- [ ] Add RBAC middleware.
+- [x] Add RBAC middleware.
   - Priority: P2
   - Context: role separation is required before broader classroom workflows can ship safely.
   - Acceptance Criteria: student, instructor, and admin paths are constrained before the API call layer.
+  - Evidence: `src/rbac.ts` now defines a shared role-policy matrix used by both `src/auth.ts` enforcement and `src/manifest.ts` role publication; auth now denies unknown/unregistered tools by default.
 
 - [ ] Ship `get_announcements`.
   - Priority: P2

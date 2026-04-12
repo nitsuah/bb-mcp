@@ -22,6 +22,7 @@
 
 import { config } from './config.js';
 import { scrubLogText, toAuditSubject } from './privacy.js';
+import { canRoleAccessTool, getAllowedRolesForTool } from './rbac.js';
 
 export type Role = 'student' | 'instructor' | 'admin';
 
@@ -106,26 +107,6 @@ function auditLog(
   process.stdout.write(JSON.stringify(entry) + '\n');
 }
 
-const INSTRUCTOR_ONLY_TOOLS = new Set([
-  'get_submission_status',
-  'get_grade_distribution',
-  'get_discussion_summary',
-  'get_at_risk_students',
-  'draft_announcement',
-]);
-
-const STUDENT_TOOLS = new Set([
-  'get_my_courses',
-  'list_courses',
-  'get_upcoming_assignments',
-  'get_my_grades',
-  'get_course_content',
-  'get_course_contents',
-  'get_assignment_feedback',
-  'get_announcements',
-  'get_discussion_summary',  // students can read summaries, not grade data
-]);
-
 export function checkAuthorization(ctx: AuthContext): void {
   const { identity, toolName, courseId } = ctx;
   const isRestricted = config.security.restrictedTools.includes(toolName);
@@ -146,11 +127,20 @@ export function checkAuthorization(ctx: AuthContext): void {
     );
   }
 
-  // Role gate for instructor-only tools
-  if (INSTRUCTOR_ONLY_TOOLS.has(toolName) && identity.role === 'student') {
-    auditLog('access.denied', ctx, 'instructor-only tool');
+  // Role gate for all tools (deny by default when a tool is missing from policy).
+  if (!canRoleAccessTool(identity.role, toolName)) {
+    const allowed = getAllowedRolesForTool(toolName);
+    const message =
+      allowed.length > 0
+        ? `role \"${identity.role}\" cannot access tool \"${toolName}\"`
+        : `tool \"${toolName}\" is not registered in RBAC policy`;
+
+    auditLog('access.denied', ctx, message);
+
+    const allowedText =
+      allowed.length > 0 ? ` Allowed roles: ${allowed.join(', ')}.` : '';
     throw new AuthorizationError(
-      `Tool "${toolName}" is only available to instructors and admins.`,
+      `Tool "${toolName}" is not available to role "${identity.role}".${allowedText}`,
     );
   }
 

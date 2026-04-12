@@ -7,7 +7,7 @@ Last Updated: 2026-04-11
 - [x] Establish the TypeScript MCP server baseline.
 - [/] Continue the core Blackboard API wrapper.
 - [/] Continue the MCP stdio transport refactor.
-- [ ] Design RBAC after auth is stable.
+- [x] Design RBAC after auth is stable.
 
 ## 2025 Q2 - First Core Tools
 

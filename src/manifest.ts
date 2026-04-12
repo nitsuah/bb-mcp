@@ -17,6 +17,7 @@ import {
 } from './tools/instructor.js';
 import { searchCourseMaterialsSchema } from './tools/shared.js';
 import { SERVER_NAME, SERVER_VERSION } from './constants.js';
+import { getAllowedRolesForTool } from './rbac.js';
 
 const DEFAULT_TEXT_OUTPUT_SCHEMA = {
   type: 'object',
@@ -38,22 +39,23 @@ const DEFAULT_TEXT_OUTPUT_SCHEMA = {
 } as const;
 
 const TOOL_MANIFEST = [
-  { ...getMyCoursesSchema, roles: ['student', 'instructor', 'admin'] },
-  { ...listCoursesSchema, roles: ['student', 'instructor', 'admin'] },
-  { ...getUpcomingAssignmentsSchema, roles: ['student'] },
-  { ...getMyGradesSchema, roles: ['student'] },
-  { ...getCourseContentSchema, roles: ['student', 'instructor', 'admin'] },
-  { ...getCourseContentsSchema, roles: ['student', 'instructor', 'admin'] },
-  { ...getAssignmentFeedbackSchema, roles: ['student'] },
-  { ...getAnnouncementsSchema, roles: ['student', 'instructor', 'admin'] },
-  { ...getSubmissionStatusSchema, roles: ['instructor', 'admin'] },
-  { ...getGradeDistributionSchema, roles: ['instructor', 'admin'] },
-  { ...getDiscussionSummarySchema, roles: ['instructor', 'admin'] },
-  { ...getAtRiskStudentsSchema, roles: ['instructor', 'admin'] },
-  { ...draftAnnouncementSchema, roles: ['instructor', 'admin'] },
-  { ...searchCourseMaterialsSchema, roles: ['student', 'instructor', 'admin'] },
+  getMyCoursesSchema,
+  listCoursesSchema,
+  getUpcomingAssignmentsSchema,
+  getMyGradesSchema,
+  getCourseContentSchema,
+  getCourseContentsSchema,
+  getAssignmentFeedbackSchema,
+  getAnnouncementsSchema,
+  getSubmissionStatusSchema,
+  getGradeDistributionSchema,
+  getDiscussionSummarySchema,
+  getAtRiskStudentsSchema,
+  draftAnnouncementSchema,
+  searchCourseMaterialsSchema,
 ].map((tool) => ({
   ...tool,
+  roles: getAllowedRolesForTool(tool.name),
   outputSchema: DEFAULT_TEXT_OUTPUT_SCHEMA,
 }));
 

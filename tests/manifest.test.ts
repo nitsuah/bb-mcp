@@ -57,4 +57,16 @@ describe('provider manifest', () => {
     expect((manifest.capabilities.auth as Record<string, unknown>).oauth2).toBeUndefined();
     expect((manifest.capabilities.auth as Record<string, unknown>).callerIdentity).toBe(true);
   });
+
+  it('keeps manifest roles aligned with shared RBAC policy', async () => {
+    const { buildProviderManifest } = await import('../src/manifest.js');
+    const { getAllowedRolesForTool } = await import('../src/rbac.js');
+
+    const manifest = buildProviderManifest('http://localhost:3100');
+
+    for (const tool of manifest.tools) {
+      expect(tool.roles).toEqual(getAllowedRolesForTool(tool.name));
+      expect(tool.roles.length).toBeGreaterThan(0);
+    }
+  });
 });

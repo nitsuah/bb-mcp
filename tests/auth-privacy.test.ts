@@ -55,7 +55,18 @@ describe('auth privacy logging', () => {
     }
 
     const line = writes.find((entry) => entry.includes('access.denied')) ?? '';
-    expect(line).toContain('"reason":"instructor-only tool"');
+    expect(line).toContain('"reason":"FERPA authorization required"');
     expect(line).not.toContain('student-12345@example.edu');
+  });
+
+  it('denies unknown tools by default in RBAC policy', async () => {
+    const { checkAuthorization } = await import('../src/auth.js');
+
+    expect(() =>
+      checkAuthorization({
+        identity: { userId: 'admin-1', role: 'admin' },
+        toolName: 'unregistered_tool_name',
+      }),
+    ).toThrow(/not available to role/);
   });
 });
