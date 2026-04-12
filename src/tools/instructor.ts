@@ -8,6 +8,60 @@ import { bbClient } from '../bb-client.js';
 import { checkAuthorization, parseIdentity } from '../auth.js';
 import { withMetrics } from '../metrics.js';
 
+// ── list_roster ───────────────────────────────────────────────────────────
+
+export const ListRosterInput = z.object({
+  caller_identity: z.unknown(),
+  courseId: z.string(),
+});
+
+export const listRosterHandler = withMetrics(
+  'list_roster',
+  async (args: z.infer<typeof ListRosterInput>) => {
+    const identity = parseIdentity(args.caller_identity);
+    checkAuthorization({ identity, toolName: 'list_roster', courseId: args.courseId });
+
+    const enrolled = await bbClient.getEnrolledUsers(args.courseId);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              courseId: args.courseId,
+              count: enrolled.length,
+              users: enrolled.map((user) => ({
+                userId: user.id,
+                userName: user.userName,
+                name: user.name
+                  ? `${user.name.given ?? ''} ${user.name.family ?? ''}`.trim() || null
+                  : null,
+                emailAddress: user.emailAddress ?? null,
+              })),
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+    };
+  },
+);
+
+export const listRosterSchema = {
+  name: 'list_roster',
+  description: 'Returns the enrolled user roster for a course. Requires instructor or admin role.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      caller_identity: { type: 'object', required: ['userId', 'role'] },
+      courseId: { type: 'string' },
+    },
+    required: ['caller_identity', 'courseId'],
+  },
+};
+
 // ── get_submission_status ─────────────────────────────────────────────────
 
 export const GetSubmissionStatusInput = z.object({

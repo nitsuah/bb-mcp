@@ -63,6 +63,17 @@ describe('zod input schemas', () => {
     expect(tooShort.success).toBe(false);
   });
 
+  it('validates list_roster requires a courseId', async () => {
+    const { ListRosterInput } = await import('../src/tools/instructor.js');
+
+    const valid = ListRosterInput.parse({
+      caller_identity: { userId: 'u2', role: 'instructor' },
+      courseId: 'course-1',
+    });
+
+    expect(valid.courseId).toBe('course-1');
+  });
+
   it('requires non-empty query for searchCourseMaterials', async () => {
     const { SearchCourseMaterialsInput } = await import('../src/tools/shared.js');
 
@@ -87,6 +98,7 @@ describe('structured output schemas', () => {
       'get_course_content',
       'get_course_contents',
       'get_announcements',
+      'list_roster',
       'get_submission_status',
       'get_grade_distribution',
       'get_discussion_summary',
@@ -142,6 +154,20 @@ describe('structured output schemas', () => {
     expect(announcementItem.properties.body).toBeDefined();
     expect(announcementItem.required).toContain('id');
     expect(announcementItem.required).toContain('title');
+  });
+
+  it('provides a roster schema with typed enrolled users', async () => {
+    const { OUTPUT_SCHEMAS } = await import('../src/schemas.js');
+
+    const schema = OUTPUT_SCHEMAS.rosterSchema;
+    expect(schema.properties.users).toBeDefined();
+    expect(schema.properties.users.type).toBe('array');
+
+    const rosterItem = schema.properties.users.items;
+    expect(rosterItem.properties.userId).toBeDefined();
+    expect(rosterItem.properties.userName).toBeDefined();
+    expect(rosterItem.required).toContain('userId');
+    expect(rosterItem.required).toContain('userName');
   });
 
   it('provides a grade distribution schema with statistics', async () => {

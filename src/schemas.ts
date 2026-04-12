@@ -145,6 +145,29 @@ export const OUTPUT_SCHEMAS = {
     required: ['announcements'],
   },
 
+  // Instructor roster schema
+  rosterSchema: {
+    type: 'object',
+    properties: {
+      courseId: { type: 'string' },
+      count: { type: 'number' },
+      users: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            userId: { type: 'string' },
+            userName: { type: 'string' },
+            name: { type: ['string', 'null'] },
+            emailAddress: { type: ['string', 'null'] },
+          },
+          required: ['userId', 'userName'],
+        },
+      },
+    },
+    required: ['courseId', 'count', 'users'],
+  },
+
   // Submission status / "who submitted" schema
   submissionStatusSchema: {
     type: 'object',
@@ -320,6 +343,7 @@ export function getOutputSchemaForTool(
     get_course_contents: OUTPUT_SCHEMAS.courseContentSchema,
     get_assignment_feedback: OUTPUT_SCHEMAS.courseContentSchema,
     get_announcements: OUTPUT_SCHEMAS.announcementsSchema,
+    list_roster: OUTPUT_SCHEMAS.rosterSchema,
     get_submission_status: OUTPUT_SCHEMAS.submissionStatusSchema,
     get_grade_distribution: OUTPUT_SCHEMAS.gradeDistributionSchema,
     get_discussion_summary: OUTPUT_SCHEMAS.discussionSummarySchema,

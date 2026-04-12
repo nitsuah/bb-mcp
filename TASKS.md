@@ -22,6 +22,8 @@ Last Updated: 2026-04-11
   - Priority: P1
   - Context: the Anthology AI Product Engineer role requires demonstrating full-stack coverage across all Blackboard user personas; this is the primary differentiator.
   - Acceptance Criteria: at minimum, student (`list_courses`, `get_course_contents`, `get_announcements`, `create_assignment_submission`) and instructor (`list_roster`, `get_grades`) tools pass MCP Inspector, have JSON schemas, and are gated behind their respective roles.
+  - Progress: student read tools (`list_courses`, `get_course_contents`, `get_announcements`) now ship with role gating and structured output schemas.
+  - Progress: instructor read tool `list_roster` now ships with RBAC enforcement, manifest exposure, and schema-backed output.
 
 - [x] **[Q2-CEO] MCP provider contract** — publish a stable tool manifest and capability schema so agent-board can bind to bb-mcp as a declared MCP provider.
   - Priority: P1

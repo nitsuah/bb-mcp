@@ -65,6 +65,9 @@ import {
 } from './tools/student.js';
 
 import {
+  ListRosterInput,
+  listRosterHandler,
+  listRosterSchema,
   GetSubmissionStatusInput,
   getSubmissionStatusHandler,
   getSubmissionStatusSchema,
@@ -164,6 +167,13 @@ function buildServer(): McpServer {
   );
 
   // Instructor tools
+  server.tool(
+    listRosterSchema.name,
+    listRosterSchema.description,
+    ListRosterInput.shape,
+    (args: any) => listRosterHandler(args as Parameters<typeof listRosterHandler>[0]),
+  );
+
   server.tool(
     getSubmissionStatusSchema.name,
     getSubmissionStatusSchema.description,
