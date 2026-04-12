@@ -29,6 +29,11 @@ import {
   parseCliCommand,
   runBlackboardProbe,
 } from './cli.js';
+import {
+  completeAuthorizationCodeFlow,
+  getOAuthSession,
+  startAuthorizationCodeFlow,
+} from './oauth.js';
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -314,6 +319,69 @@ async function startHttpServer(): Promise<void> {
       const manifest = buildProviderManifest(baseUrl);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(manifest));
+      return;
+    }
+
+    // ── OAuth authorization code flow ──
+    if (req.method === 'GET' && url.pathname === '/oauth/authorize') {
+      const flow = startAuthorizationCodeFlow();
+      const format = url.searchParams.get('format');
+
+      if (format === 'json') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            authorizationUrl: flow.authorizationUrl,
+            state: flow.state,
+            redirectUri: flow.redirectUri,
+          }),
+        );
+        return;
+      }
+
+      res.writeHead(302, { Location: flow.authorizationUrl });
+      res.end();
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/oauth/callback') {
+      const error = url.searchParams.get('error');
+      const code = url.searchParams.get('code');
+      const state = url.searchParams.get('state');
+
+      if (error) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error, message: 'OAuth authorization was denied by the provider.' }));
+        return;
+      }
+
+      if (!code || !state) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'invalid_request', message: 'Missing OAuth code or state.' }));
+        return;
+      }
+
+      try {
+        const session = await completeAuthorizationCodeFlow({ code, state });
+        const stored = getOAuthSession(session.sessionId);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            success: true,
+            sessionId: session.sessionId,
+            tokenType: stored?.token.tokenType ?? session.token.tokenType,
+            expiresAt: stored?.token.expiresAt ?? session.token.expiresAt,
+            scope: stored?.token.scope ?? session.token.scope,
+            refreshable: Boolean(stored?.token.refreshToken ?? session.token.refreshToken),
+          }),
+        );
+      } catch (oauthError) {
+        const message = oauthError instanceof Error ? oauthError.message : String(oauthError);
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'oauth_exchange_failed', message }));
+      }
+
       return;
     }
 

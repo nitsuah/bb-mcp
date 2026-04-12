@@ -63,10 +63,13 @@ Last Updated: 2026-04-11
   - Evidence: `src/tools/student.ts` now exposes `get_course_contents` as a compatibility alias backed by the existing course content handler.
   - Evidence: `src/index.ts`, `src/manifest.ts`, and manifest/schema tests now publish and validate the alias tool.
 
-- [ ] Finish OAuth2 Authorization Code flow support.
+- [x] Finish OAuth2 Authorization Code flow support.
   - Priority: P1
   - Context: production-safe token handling is still a blocking foundation item.
   - Acceptance Criteria: the server completes a secure OAuth2 flow and manages tokens correctly.
+  - Completed: 2026-04-12
+  - Evidence: `src/oauth.ts` now implements PKCE-backed authorization URL generation, state validation, code exchange, refresh-aware in-memory session storage, and test-only reset hooks.
+  - Evidence: `src/index.ts` now exposes `GET /oauth/authorize` and `GET /oauth/callback`; `src/manifest.ts` publishes the auth-code capability and endpoints; `tests/oauth.test.ts` covers PKCE URL generation, token exchange, and invalid state rejection.
 
 - [x] Add JSON schemas for MCP tool parameters.
   - Priority: P1

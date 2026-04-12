@@ -12,13 +12,13 @@ Last Updated: 2026-04-11
 ## 2025 Q2 - First Core Tools
 
 - [x] Ship student read tools: `list_courses`, `get_course_contents`, `get_announcements`.
-- [ ] Finish OAuth2 flow support for production use.
+- [x] Finish OAuth2 flow support for production use.
 - [ ] Decide how dual transport fits after stdio is stable.
 - [ ] Improve error mapping for Blackboard API failures.
 
 ## 2026 Q1 - Foundation Reset
 
-- [ ] Complete the API wrapper and OAuth2 path.
+- [x] Complete the API wrapper and OAuth2 path.
 - [ ] Pass MCP Inspector with the stdio transport.
 - [ ] Add JSON schemas for the first tools.
 - [ ] Keep RBAC, telemetry, and error mapping ready behind the foundation work.
@@ -55,7 +55,7 @@ Last Updated: 2026-04-11
 
 #### Foundation Completion
 - [x] Finish `list_courses` and `get_course_contents` tools (carry from prior roadmap).
-- [ ] Finish OAuth2 Authorization Code flow for production token handling.
+- [x] Finish OAuth2 Authorization Code flow for production token handling.
 - [ ] Pass MCP Inspector with stdio transport.
 - [ ] Add JSON schemas for all shipped tool inputs.
 

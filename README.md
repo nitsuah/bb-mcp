@@ -92,6 +92,8 @@ Server is live at `http://localhost:3100`.
 | `GET /health` | Liveness probe |
 | `GET /metrics` | Prometheus text format |
 | `GET /manifest` | Provider contract with capabilities and tool manifest |
+| `GET /oauth/authorize` | Start the OAuth Authorization Code flow |
+| `GET /oauth/callback` | Complete OAuth code exchange and return a managed session |
 | `GET /sse/search-course-materials` | Dedicated SSE stream for incremental `search_course_materials` output |
 
 ```bash
@@ -150,6 +152,10 @@ Copy `.env.example` to `.env` and set:
 | `BB_CLIENT_ID` | ✅ | OAuth2 app client ID from [developer.blackboard.com](https://developer.blackboard.com) |
 | `BB_CLIENT_SECRET` | ✅ | OAuth2 app client secret |
 | `BB_BASE_URL` | ✅ | Base URL of your Blackboard Learn instance |
+| `BB_OAUTH_REDIRECT_URI` | — | Override the OAuth callback URL (defaults to `PUBLIC_BASE_URL + /oauth/callback`) |
+| `BB_OAUTH_SCOPE` | — | Optional scope string for the authorization code flow |
+| `BB_OAUTH_AUTHORIZATION_PATH` | — | Override Blackboard authorization endpoint path |
+| `BB_OAUTH_TOKEN_PATH` | — | Override Blackboard token endpoint path |
 | `PORT` | — | HTTP port (default `3100`) |
 | `LOG_LEVEL` | — | `info` or `debug` (default `info`) |
 | `METRICS_PUSH_URL` | — | Prometheus push gateway URL (optional) |
@@ -157,6 +163,16 @@ Copy `.env.example` to `.env` and set:
 
 **Getting Blackboard credentials:**  
 Register a REST API application at [developer.blackboard.com](https://developer.blackboard.com/portal/applications). Use the free developer sandbox for testing — no live Blackboard instance required.
+
+### Authorization Code flow
+
+bb-mcp now supports an operator-driven OAuth Authorization Code flow in addition to the existing client credentials probe path.
+
+1. Visit `GET /oauth/authorize` to start the flow.
+2. Blackboard redirects back to `GET /oauth/callback`.
+3. bb-mcp validates the `state`, performs PKCE-backed token exchange, and returns a managed session payload.
+
+For non-browser operators, `GET /oauth/authorize?format=json` returns the authorization URL and redirect URI without issuing an HTTP redirect.
 
 ---
 

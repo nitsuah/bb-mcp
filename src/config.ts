@@ -12,6 +12,12 @@ export const config = {
     clientSecret: required('BB_CLIENT_SECRET'),
     baseUrl: (process.env.BB_BASE_URL ?? 'https://developer.blackboard.com').replace(/\/$/, ''),
   },
+  oauth: {
+    authorizationPath: process.env.BB_OAUTH_AUTHORIZATION_PATH ?? '/learn/api/public/v1/oauth2/authorizationcode',
+    tokenPath: process.env.BB_OAUTH_TOKEN_PATH ?? '/learn/api/public/v1/oauth2/token',
+    redirectUri: process.env.BB_OAUTH_REDIRECT_URI ?? null,
+    scope: process.env.BB_OAUTH_SCOPE ?? null,
+  },
   server: {
     port: parseInt(process.env.PORT ?? '3100', 10),
     logLevel: process.env.LOG_LEVEL ?? 'info',

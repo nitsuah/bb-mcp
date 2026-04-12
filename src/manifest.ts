@@ -19,6 +19,7 @@ import { searchCourseMaterialsSchema } from './tools/shared.js';
 import { SERVER_NAME, SERVER_VERSION } from './constants.js';
 import { getAllowedRolesForTool } from './rbac.js';
 import { getOutputSchemaForTool } from './schemas.js';
+import { config } from './config.js';
 
 /**
  * Wraps a specific output schema in the MCP text-content envelope.
@@ -69,6 +70,8 @@ const TOOL_MANIFEST = [
 }));
 
 export function buildProviderManifest(baseUrl: string) {
+  const oauthRedirectUri = config.oauth.redirectUri ?? `${baseUrl}/oauth/callback`;
+
   return {
     provider: {
       id: SERVER_NAME,
@@ -90,6 +93,13 @@ export function buildProviderManifest(baseUrl: string) {
       },
       auth: {
         callerIdentity: true,
+        authorizationCode: {
+          enabled: true,
+          authorizeEndpoint: `${baseUrl}/oauth/authorize`,
+          callbackEndpoint: `${baseUrl}/oauth/callback`,
+          redirectUri: oauthRedirectUri,
+          scope: config.oauth.scope,
+        },
       },
     },
     endpoints: {
@@ -97,6 +107,8 @@ export function buildProviderManifest(baseUrl: string) {
       metrics: `${baseUrl}/metrics`,
       manifest: `${baseUrl}/manifest`,
       mcp: `${baseUrl}/mcp`,
+      oauthAuthorize: `${baseUrl}/oauth/authorize`,
+      oauthCallback: `${baseUrl}/oauth/callback`,
     },
     tools: TOOL_MANIFEST,
   };

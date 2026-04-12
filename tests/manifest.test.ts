@@ -56,6 +56,11 @@ describe('provider manifest', () => {
 
     expect((manifest.capabilities.auth as Record<string, unknown>).oauth2).toBeUndefined();
     expect((manifest.capabilities.auth as Record<string, unknown>).callerIdentity).toBe(true);
+    expect((manifest.capabilities.auth as Record<string, any>).authorizationCode.enabled).toBe(true);
+    expect((manifest.capabilities.auth as Record<string, any>).authorizationCode.authorizeEndpoint).toBe('http://localhost:3100/oauth/authorize');
+    expect((manifest.capabilities.auth as Record<string, any>).authorizationCode.callbackEndpoint).toBe('http://localhost:3100/oauth/callback');
+    expect((manifest.endpoints as Record<string, string>).oauthAuthorize).toBe('http://localhost:3100/oauth/authorize');
+    expect((manifest.endpoints as Record<string, string>).oauthCallback).toBe('http://localhost:3100/oauth/callback');
   });
 
   it('keeps manifest roles aligned with shared RBAC policy', async () => {
