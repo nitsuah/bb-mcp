@@ -400,3 +400,72 @@ export const getAnnouncementsSchema = {
     required: ['caller_identity', 'courseId'],
   },
 };
+
+// ── create_assignment_submission ──────────────────────────────────────────
+
+export const CreateAssignmentSubmissionInput = z.object({
+  caller_identity: z.unknown(),
+  courseId: z.string(),
+  columnId: z.string().describe('Grade column ID for the assignment'),
+  studentComments: z.string().optional().describe('Optional student comments'),
+});
+
+export const createAssignmentSubmissionHandler = withMetrics(
+  'create_assignment_submission',
+  async (args: z.infer<typeof CreateAssignmentSubmissionInput>) => {
+    const identity = parseIdentity(args.caller_identity);
+    checkAuthorization({
+      identity,
+      toolName: 'create_assignment_submission',
+      courseId: args.courseId,
+    });
+
+    const attempt = await bbClient.createAttempt(
+      args.courseId,
+      args.columnId,
+      identity.userId,
+      args.studentComments,
+    );
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              id: attempt.id,
+              userId: attempt.userId,
+              status: attempt.status ?? null,
+              created: attempt.created ?? null,
+              modified: attempt.modified ?? null,
+              studentComments: attempt.studentComments ?? null,
+              feedback: attempt.feedback ?? null,
+              score: attempt.score ?? null,
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+    };
+  },
+);
+
+export const createAssignmentSubmissionSchema = {
+  name: 'create_assignment_submission',
+  description:
+    'Creates a new assignment attempt submission for the caller. Returns the created attempt with ID and timestamp.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      caller_identity: { type: 'object', required: ['userId', 'role'] },
+      courseId: { type: 'string', description: 'Blackboard course ID' },
+      columnId: { type: 'string', description: 'Grade column ID for the assignment' },
+      studentComments: {
+        type: 'string',
+        description: 'Optional student comments to attach to the submission',
+      },
+    },
+    required: ['caller_identity', 'courseId', 'columnId'],
+  },
+};

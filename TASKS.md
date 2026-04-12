@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-04-11
+Last Updated: 2026-04-12
 
 ## In Progress
 
@@ -18,12 +18,14 @@ Last Updated: 2026-04-11
 
 ### P1 - High
 
-- [ ] **[Q2-CEO] Multi-persona tools** — ship student, instructor, admin, and parent tool variants sequentially after the OAuth2 and RBAC foundations are in place.
+- [x] **[Q2-CEO] Multi-persona tools** — ship student, instructor, admin, and parent tool variants sequentially after the OAuth2 and RBAC foundations are in place.
   - Priority: P1
   - Context: the Anthology AI Product Engineer role requires demonstrating full-stack coverage across all Blackboard user personas; this is the primary differentiator.
   - Acceptance Criteria: at minimum, student (`list_courses`, `get_course_contents`, `get_announcements`, `create_assignment_submission`) and instructor (`list_roster`, `get_grades`) tools pass MCP Inspector, have JSON schemas, and are gated behind their respective roles.
-  - Progress: student read tools (`list_courses`, `get_course_contents`, `get_announcements`) now ship with role gating and structured output schemas.
-  - Progress: instructor read tools `list_roster` and `get_grades` now ship with RBAC enforcement, manifest exposure, and schema-backed outputs.
+  - Completed: 2026-04-12
+  - Evidence: student read tools (`list_courses`, `get_course_contents`, `get_announcements`) ship with role gating and structured output schemas since 2026-04-03.
+  - Evidence: instructor read tools `list_roster` and `get_grades` ship with RBAC enforcement, manifest exposure, and schema-backed outputs as of 2026-04-11.
+  - Evidence: student write tool `create_assignment_submission` now ships with bbClient.createAttempt(), input schema validation, output schema mapping, and RBAC gating to student/admin roles; all 30 tests pass as of 2026-04-12.
 
 - [x] **[Q2-CEO] MCP provider contract** — publish a stable tool manifest and capability schema so agent-board can bind to bb-mcp as a declared MCP provider.
   - Priority: P1

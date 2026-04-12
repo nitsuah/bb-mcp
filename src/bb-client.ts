@@ -154,6 +154,23 @@ export class BlackboardClient {
     return res.data.results ?? [];
   }
 
+  async createAttempt(
+    courseId: string,
+    columnId: string,
+    userId: string,
+    studentComments?: string,
+  ): Promise<BbAttempt> {
+    const payload: Record<string, unknown> = { userId };
+    if (studentComments) {
+      payload.studentComments = studentComments;
+    }
+    const res = await this.http.post<BbAttempt>(
+      `/courses/${courseId}/gradebook/columns/${columnId}/attempts`,
+      payload,
+    );
+    return res.data;
+  }
+
   // ── Announcements ────────────────────────────────────────────────────────
 
   async getAnnouncements(courseId: string): Promise<BbAnnouncement[]> {

@@ -375,6 +375,22 @@ export const OUTPUT_SCHEMAS = {
     },
     required: ['query', 'count', 'results'],
   },
+
+  // Submission attempt schema (for created attempts)
+  submissionAttemptSchema: {
+    type: 'object',
+    properties: {
+      id: { type: 'string' },
+      userId: { type: 'string' },
+      status: { type: ['string', 'null'] },
+      created: { type: ['string', 'null'] },
+      modified: { type: ['string', 'null'] },
+      studentComments: { type: ['string', 'null'] },
+      feedback: { type: ['string', 'null'] },
+      score: { type: ['number', 'null'] },
+    },
+    required: ['id', 'userId'],
+  },
 } as const;
 
 /**
@@ -402,6 +418,7 @@ export function getOutputSchemaForTool(
     get_grade_distribution: OUTPUT_SCHEMAS.gradeDistributionSchema,
     get_discussion_summary: OUTPUT_SCHEMAS.discussionSummarySchema,
     get_at_risk_students: OUTPUT_SCHEMAS.atRiskStudentsSchema,
+    create_assignment_submission: OUTPUT_SCHEMAS.submissionAttemptSchema,
     draft_announcement: OUTPUT_SCHEMAS.announcementsSchema,
     search_course_materials: OUTPUT_SCHEMAS.searchResultsSchema,
   };

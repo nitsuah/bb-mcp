@@ -7,6 +7,7 @@ import {
   getCourseContentsSchema,
   getAssignmentFeedbackSchema,
   getAnnouncementsSchema,
+  createAssignmentSubmissionSchema,
 } from './tools/student.js';
 import {
   listRosterSchema,
@@ -59,6 +60,7 @@ const TOOL_MANIFEST = [
   getCourseContentsSchema,
   getAssignmentFeedbackSchema,
   getAnnouncementsSchema,
+  createAssignmentSubmissionSchema,
   listRosterSchema,
   getGradesSchema,
   getSubmissionStatusSchema,

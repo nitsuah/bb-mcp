@@ -202,6 +202,7 @@ For FERPA-restricted tools, add `"ferpa_authorized": true` — the calling appli
 | `get_course_content` | Course modules and materials, with optional keyword search |
 | `get_assignment_feedback` | Instructor comments, rubric scores, and annotations |
 | `get_announcements` | Course announcements |
+| `create_assignment_submission` | Submit an assignment attempt with optional student comments |
 
 ### Instructor tools
 

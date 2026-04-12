@@ -62,6 +62,9 @@ import {
   GetAnnouncementsInput,
   getAnnouncementsHandler,
   getAnnouncementsSchema,
+  CreateAssignmentSubmissionInput,
+  createAssignmentSubmissionHandler,
+  createAssignmentSubmissionSchema,
 } from './tools/student.js';
 
 import {
@@ -167,6 +170,16 @@ function buildServer(): McpServer {
     getAnnouncementsSchema.description,
     GetAnnouncementsInput.shape,
     (args: any) => getAnnouncementsHandler(args as Parameters<typeof getAnnouncementsHandler>[0]),
+  );
+
+  server.tool(
+    createAssignmentSubmissionSchema.name,
+    createAssignmentSubmissionSchema.description,
+    CreateAssignmentSubmissionInput.shape,
+    (args: any) =>
+      createAssignmentSubmissionHandler(
+        args as Parameters<typeof createAssignmentSubmissionHandler>[0],
+      ),
   );
 
   // Instructor tools
