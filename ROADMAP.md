@@ -11,7 +11,7 @@ Last Updated: 2026-04-11
 
 ## 2025 Q2 - First Core Tools
 
-- [ ] Ship `list_courses` and `get_course_contents`.
+- [x] Ship student read tools: `list_courses`, `get_course_contents`, `get_announcements`.
 - [ ] Finish OAuth2 flow support for production use.
 - [ ] Decide how dual transport fits after stdio is stable.
 - [ ] Improve error mapping for Blackboard API failures.

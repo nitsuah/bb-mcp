@@ -97,10 +97,12 @@ Last Updated: 2026-04-11
   - Acceptance Criteria: student, instructor, and admin paths are constrained before the API call layer.
   - Evidence: `src/rbac.ts` now defines a shared role-policy matrix used by both `src/auth.ts` enforcement and `src/manifest.ts` role publication; auth now denies unknown/unregistered tools by default.
 
-- [ ] Ship `get_announcements`.
+- [x] Ship `get_announcements`.
   - Priority: P2
   - Context: announcements are a low-risk read flow that should follow course and content support.
   - Acceptance Criteria: the tool returns course and system announcements.
+  - Completed: 2026-04-12
+  - Evidence: `src/tools/student.ts` exports `getAnnouncementsHandler` with full auth/metrics wrapping and zod schema; tool is registered in `src/index.ts` and `src/manifest.ts`; RBAC policy includes `get_announcements: ['student', 'instructor', 'admin']`; Docker test suite passes.
 
 - [ ] Ship `create_assignment_submission`.
   - Priority: P2
