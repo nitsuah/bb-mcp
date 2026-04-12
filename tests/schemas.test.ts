@@ -74,3 +74,91 @@ describe('zod input schemas', () => {
     expect(invalid.success).toBe(false);
   });
 });
+
+describe('structured output schemas', () => {
+  it('defines output schemas for all registered tools', async () => {
+    const { getOutputSchemaForTool } = await import('../src/schemas.js');
+
+    const toolNames = [
+      'get_my_courses',
+      'list_courses',
+      'get_upcoming_assignments',
+      'get_my_grades',
+      'get_course_content',
+      'get_course_contents',
+      'get_announcements',
+      'get_submission_status',
+      'get_grade_distribution',
+      'get_discussion_summary',
+      'get_at_risk_students',
+      'search_course_materials',
+    ];
+
+    for (const toolName of toolNames) {
+      const schema = getOutputSchemaForTool(toolName);
+      expect(schema).toBeDefined();
+      expect(schema).toHaveProperty('type');
+      expect(schema?.type).toBe('object');
+    }
+  });
+
+  it('ensures manifest output schemas wrap specific tool schemas', async () => {
+    const { buildProviderManifest } = await import('../src/manifest.js');
+
+    const manifest = buildProviderManifest('http://localhost:3100');
+    const courseListTool = manifest.tools.find((t: { name: string }) => t.name === 'list_courses');
+
+    expect(courseListTool).toBeDefined();
+    expect(courseListTool.outputSchema).toBeDefined();
+    expect(courseListTool.outputSchema.properties.content).toBeDefined();
+    expect(courseListTool.outputSchema.required).toContain('content');
+  });
+
+  it('provides a course list schema with typed course objects', async () => {
+    const { OUTPUT_SCHEMAS } = await import('../src/schemas.js');
+
+    const schema = OUTPUT_SCHEMAS.courseListSchema;
+    expect(schema.properties.courses).toBeDefined();
+    expect(schema.properties.courses.type).toBe('array');
+
+    const courseItem = schema.properties.courses.items;
+    expect(courseItem.properties.id).toBeDefined();
+    expect(courseItem.properties.courseId).toBeDefined();
+    expect(courseItem.properties.name).toBeDefined();
+    expect(courseItem.required).toContain('id');
+    expect(courseItem.required).toContain('courseId');
+  });
+
+  it('provides an announcements schema with typed announcement objects', async () => {
+    const { OUTPUT_SCHEMAS } = await import('../src/schemas.js');
+
+    const schema = OUTPUT_SCHEMAS.announcementsSchema;
+    expect(schema.properties.announcements).toBeDefined();
+    expect(schema.properties.announcements.type).toBe('array');
+
+    const announcementItem = schema.properties.announcements.items;
+    expect(announcementItem.properties.id).toBeDefined();
+    expect(announcementItem.properties.title).toBeDefined();
+    expect(announcementItem.properties.body).toBeDefined();
+    expect(announcementItem.required).toContain('id');
+    expect(announcementItem.required).toContain('title');
+  });
+
+  it('provides a grade distribution schema with statistics', async () => {
+    const { OUTPUT_SCHEMAS } = await import('../src/schemas.js');
+
+    const schema = OUTPUT_SCHEMAS.gradeDistributionSchema;
+    expect(schema.properties.statistics).toBeDefined();
+    expect(schema.properties.distribution).toBeDefined();
+
+    const stats = schema.properties.statistics;
+    expect(stats.properties.mean).toBeDefined();
+    expect(stats.properties.median).toBeDefined();
+    expect(stats.properties.stddev).toBeDefined();
+
+    const dist = schema.properties.distribution;
+    expect(dist.properties.A).toBeDefined();
+    expect(dist.properties.B).toBeDefined();
+    expect(dist.properties.F).toBeDefined();
+  });
+});

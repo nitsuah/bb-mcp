@@ -18,8 +18,16 @@ import {
 import { searchCourseMaterialsSchema } from './tools/shared.js';
 import { SERVER_NAME, SERVER_VERSION } from './constants.js';
 import { getAllowedRolesForTool } from './rbac.js';
+import { getOutputSchemaForTool } from './schemas.js';
 
-const DEFAULT_TEXT_OUTPUT_SCHEMA = {
+/**
+ * Wraps a specific output schema in the MCP text-content envelope.
+ * The agent client will:
+ *   1. Receive the text-content message
+ *   2. Parse the JSON in the text field using the specific outputSchema
+ *   3. Type-check the result against the schema
+ */
+const DEFAULT_TEXT_OUTPUT_SCHEMA = (dataSchema: Record<string, unknown> | null) => ({
   type: 'object',
   properties: {
     content: {
@@ -29,6 +37,7 @@ const DEFAULT_TEXT_OUTPUT_SCHEMA = {
         properties: {
           type: { type: 'string', enum: ['text'] },
           text: { type: 'string' },
+          dataSchema: dataSchema ?? undefined,
         },
         required: ['type', 'text'],
       },
@@ -36,7 +45,7 @@ const DEFAULT_TEXT_OUTPUT_SCHEMA = {
     },
   },
   required: ['content'],
-} as const;
+});
 
 const TOOL_MANIFEST = [
   getMyCoursesSchema,
@@ -56,7 +65,7 @@ const TOOL_MANIFEST = [
 ].map((tool) => ({
   ...tool,
   roles: getAllowedRolesForTool(tool.name),
-  outputSchema: DEFAULT_TEXT_OUTPUT_SCHEMA,
+  outputSchema: DEFAULT_TEXT_OUTPUT_SCHEMA(getOutputSchemaForTool(tool.name)),
 }));
 
 export function buildProviderManifest(baseUrl: string) {
