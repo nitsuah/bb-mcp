@@ -30,7 +30,7 @@ Last Updated: 2026-04-11
 
 #### Multi-Persona Tool Coverage
 - [/] **Student tools**: course discovery and content navigation now ship via `list_courses` / `get_course_contents` aliases; assignment submission, grade read-back, and announcement read still need completion.
-- [/] **Teacher/Instructor tools**: roster read now ships via `list_roster`; assignment management, grade write-back, and course announcement publish still need completion.
+- [/] **Teacher/Instructor tools**: instructor read coverage now ships via `list_roster` and `get_grades`; assignment management, grade write-back, and course announcement publish still need completion.
 - [ ] **Admin tools**: user management (read), enrollment management, institutional audit log access.
 - [ ] **Parent tools** (read-only, guardian-scoped): student enrollment view, grade summary, upcoming assignment alerts.
 - [ ] **Analytics/Product Owner tools**: event telemetry tap, engagement metrics aggregation, AI recommendation signal export.

@@ -68,6 +68,9 @@ import {
   ListRosterInput,
   listRosterHandler,
   listRosterSchema,
+  GetGradesInput,
+  getGradesHandler,
+  getGradesSchema,
   GetSubmissionStatusInput,
   getSubmissionStatusHandler,
   getSubmissionStatusSchema,
@@ -172,6 +175,13 @@ function buildServer(): McpServer {
     listRosterSchema.description,
     ListRosterInput.shape,
     (args: any) => listRosterHandler(args as Parameters<typeof listRosterHandler>[0]),
+  );
+
+  server.tool(
+    getGradesSchema.name,
+    getGradesSchema.description,
+    GetGradesInput.shape,
+    (args: any) => getGradesHandler(args as Parameters<typeof getGradesHandler>[0]),
   );
 
   server.tool(

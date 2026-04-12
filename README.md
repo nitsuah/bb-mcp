@@ -208,6 +208,7 @@ For FERPA-restricted tools, add `"ferpa_authorized": true` — the calling appli
 | Tool | Description | FERPA required |
 |---|---|---|
 | `list_roster` | Enrolled users for a course, including user IDs and usernames | — |
+| `get_grades` | Course-wide or user-scoped grade details, optionally filtered to one column | ✅ |
 | `get_submission_status` | Who submitted, who hasn't, timestamps | ✅ |
 | `get_grade_distribution` | Mean, median, std dev, A/B/C/D/F buckets | ✅ |
 | `get_discussion_summary` | Participant count and post excerpts for a thread | — |

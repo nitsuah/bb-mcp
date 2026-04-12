@@ -74,6 +74,21 @@ describe('zod input schemas', () => {
     expect(valid.courseId).toBe('course-1');
   });
 
+  it('accepts optional filters for get_grades', async () => {
+    const { GetGradesInput } = await import('../src/tools/instructor.js');
+
+    const parsed = GetGradesInput.parse({
+      caller_identity: { userId: 'u2', role: 'instructor' },
+      courseId: 'course-1',
+      userId: 'student-1',
+      columnId: 'column-1',
+    });
+
+    expect(parsed.courseId).toBe('course-1');
+    expect(parsed.userId).toBe('student-1');
+    expect(parsed.columnId).toBe('column-1');
+  });
+
   it('requires non-empty query for searchCourseMaterials', async () => {
     const { SearchCourseMaterialsInput } = await import('../src/tools/shared.js');
 
@@ -99,6 +114,7 @@ describe('structured output schemas', () => {
       'get_course_contents',
       'get_announcements',
       'list_roster',
+      'get_grades',
       'get_submission_status',
       'get_grade_distribution',
       'get_discussion_summary',
@@ -168,6 +184,21 @@ describe('structured output schemas', () => {
     expect(rosterItem.properties.userName).toBeDefined();
     expect(rosterItem.required).toContain('userId');
     expect(rosterItem.required).toContain('userName');
+  });
+
+  it('provides an instructor grades schema with typed grade entries', async () => {
+    const { OUTPUT_SCHEMAS } = await import('../src/schemas.js');
+
+    const schema = OUTPUT_SCHEMAS.instructorGradesSchema;
+    expect(schema.properties.users).toBeDefined();
+
+    const userItem = schema.properties.users.items;
+    expect(userItem.properties.userId).toBeDefined();
+    expect(userItem.properties.grades).toBeDefined();
+
+    const gradeItem = userItem.properties.grades.items;
+    expect(gradeItem.properties.columnId).toBeDefined();
+    expect(gradeItem.properties.score).toBeDefined();
   });
 
   it('provides a grade distribution schema with statistics', async () => {

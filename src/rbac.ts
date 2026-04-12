@@ -10,6 +10,7 @@ export const TOOL_ROLE_RULES: Readonly<Record<string, readonly Role[]>> = {
   get_assignment_feedback: ['student'],
   get_announcements: ['student', 'instructor', 'admin'],
   list_roster: ['instructor', 'admin'],
+  get_grades: ['instructor', 'admin'],
   get_submission_status: ['instructor', 'admin'],
   get_grade_distribution: ['instructor', 'admin'],
   get_discussion_summary: ['instructor', 'admin'],

@@ -29,6 +29,7 @@ describe('provider manifest', () => {
     expect(names).toContain('get_course_content');
     expect(names).toContain('get_course_contents');
     expect(names).toContain('list_roster');
+    expect(names).toContain('get_grades');
     expect(names).toContain('draft_announcement');
     expect(new Set(names).size).toBe(names.length);
 
@@ -48,6 +49,10 @@ describe('provider manifest', () => {
     const listRoster = manifest.tools.find((t: { name: string }) => t.name === 'list_roster');
     expect(listRoster?.roles).toContain('instructor');
     expect(listRoster?.roles).toContain('admin');
+
+    const getGrades = manifest.tools.find((t: { name: string }) => t.name === 'get_grades');
+    expect(getGrades?.roles).toContain('instructor');
+    expect(getGrades?.roles).toContain('admin');
 
     const draftAnnouncement = manifest.tools.find((t: { name: string }) => t.name === 'draft_announcement');
     expect(draftAnnouncement?.roles).toContain('instructor');

@@ -168,6 +168,59 @@ export const OUTPUT_SCHEMAS = {
     required: ['courseId', 'count', 'users'],
   },
 
+  // Instructor grade read schema
+  instructorGradesSchema: {
+    type: 'object',
+    properties: {
+      courseId: { type: 'string' },
+      columnId: { type: ['string', 'null'] },
+      count: { type: 'number' },
+      users: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            userId: { type: 'string' },
+            userName: { type: 'string' },
+            name: { type: ['string', 'null'] },
+            grades: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  columnId: { type: 'string' },
+                  status: { type: ['string', 'null'] },
+                  score: { type: ['number', 'null'] },
+                  text: { type: ['string', 'null'] },
+                  feedback: { type: ['string', 'null'] },
+                },
+                required: ['columnId'],
+              },
+            },
+          },
+          required: ['userId', 'userName', 'grades'],
+        },
+      },
+      grades: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            userId: { type: 'string' },
+            userName: { type: ['string', 'null'] },
+            name: { type: ['string', 'null'] },
+            status: { type: ['string', 'null'] },
+            score: { type: ['number', 'null'] },
+            text: { type: ['string', 'null'] },
+            feedback: { type: ['string', 'null'] },
+          },
+          required: ['userId'],
+        },
+      },
+    },
+    required: ['courseId', 'count'],
+  },
+
   // Submission status / "who submitted" schema
   submissionStatusSchema: {
     type: 'object',
@@ -344,6 +397,7 @@ export function getOutputSchemaForTool(
     get_assignment_feedback: OUTPUT_SCHEMAS.courseContentSchema,
     get_announcements: OUTPUT_SCHEMAS.announcementsSchema,
     list_roster: OUTPUT_SCHEMAS.rosterSchema,
+    get_grades: OUTPUT_SCHEMAS.instructorGradesSchema,
     get_submission_status: OUTPUT_SCHEMAS.submissionStatusSchema,
     get_grade_distribution: OUTPUT_SCHEMAS.gradeDistributionSchema,
     get_discussion_summary: OUTPUT_SCHEMAS.discussionSummarySchema,
