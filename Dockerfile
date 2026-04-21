@@ -1,3 +1,17 @@
+# ── Test stage ───────────────────────────────────────────────────────────────
+FROM node:22-slim AS test
+
+WORKDIR /app
+
+COPY package.json ./
+COPY tsconfig.json ./
+COPY vitest.config.ts ./
+COPY src ./src
+COPY tests ./tests
+RUN npm install
+RUN npm run build
+
+CMD ["npm", "test"]
 # ── Build stage ───────────────────────────────────────────────────────────────
 FROM node:22-slim AS builder
 

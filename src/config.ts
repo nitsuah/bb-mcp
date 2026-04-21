@@ -29,7 +29,7 @@ export const config = {
     pushUrl: process.env.METRICS_PUSH_URL ?? null,
   },
   security: {
-    restrictedTools: (process.env.RESTRICTED_TOOLS ?? '')
+    restrictedTools: (process.env.RESTRICTED_TOOLS ?? 'get_at_risk_students,get_grade_distribution,get_submission_status,get_grades')
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean),
