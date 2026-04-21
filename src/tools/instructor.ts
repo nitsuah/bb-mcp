@@ -8,6 +8,173 @@ import { bbClient } from '../bb-client.js';
 import { checkAuthorization, parseIdentity } from '../auth.js';
 import { withMetrics } from '../metrics.js';
 
+// ── list_roster ───────────────────────────────────────────────────────────
+
+export const ListRosterInput = z.object({
+  caller_identity: z.unknown(),
+  courseId: z.string(),
+});
+
+export const listRosterHandler = withMetrics(
+  'list_roster',
+  async (args: z.infer<typeof ListRosterInput>) => {
+    const identity = parseIdentity(args.caller_identity);
+    checkAuthorization({ identity, toolName: 'list_roster', courseId: args.courseId });
+
+    const enrolled = await bbClient.getEnrolledUsers(args.courseId);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              courseId: args.courseId,
+              count: enrolled.length,
+              users: enrolled.map((user) => ({
+                userId: user.id,
+                userName: user.userName,
+                name: user.name
+                  ? `${user.name.given ?? ''} ${user.name.family ?? ''}`.trim() || null
+                  : null,
+                emailAddress: user.emailAddress ?? null,
+              })),
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+    };
+  },
+);
+
+export const listRosterSchema = {
+  name: 'list_roster',
+  description: 'Returns the enrolled user roster for a course. Requires instructor or admin role.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      caller_identity: { type: 'object', required: ['userId', 'role'] },
+      courseId: { type: 'string' },
+    },
+    required: ['caller_identity', 'courseId'],
+  },
+};
+
+// ── get_grades ────────────────────────────────────────────────────────────
+
+export const GetGradesInput = z.object({
+  caller_identity: z.unknown(),
+  courseId: z.string(),
+  userId: z.string().optional(),
+  columnId: z.string().optional(),
+});
+
+export const getGradesHandler = withMetrics(
+  'get_grades',
+  async (args: z.infer<typeof GetGradesInput>) => {
+    const identity = parseIdentity(args.caller_identity);
+    checkAuthorization({ identity, toolName: 'get_grades', courseId: args.courseId });
+
+    const enrolled = await bbClient.getEnrolledUsers(args.courseId);
+    const enrolledMap = new Map(enrolled.map((user) => [user.id, user]));
+
+    if (args.columnId && !args.userId) {
+      const grades = await bbClient.getColumnGrades(args.courseId, args.columnId);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                courseId: args.courseId,
+                columnId: args.columnId,
+                count: grades.length,
+                grades: grades.map((grade) => ({
+                  userId: grade.userId,
+                  userName: enrolledMap.get(grade.userId)?.userName ?? null,
+                  name: enrolledMap.get(grade.userId)?.name
+                    ? `${enrolledMap.get(grade.userId)?.name?.given ?? ''} ${enrolledMap.get(grade.userId)?.name?.family ?? ''}`.trim() || null
+                    : null,
+                  status: grade.status ?? null,
+                  score: grade.score ?? null,
+                  text: grade.text ?? null,
+                  feedback: grade.feedback ?? null,
+                })),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }
+
+    const usersToQuery = args.userId
+      ? enrolled.filter((user) => user.id === args.userId)
+      : enrolled;
+
+    const results = await Promise.all(
+      usersToQuery.map(async (user) => {
+        const grades = await bbClient.getGrades(args.courseId, user.id);
+        const filteredGrades = args.columnId
+          ? grades.filter((grade) => grade.columnId === args.columnId)
+          : grades;
+
+        return {
+          userId: user.id,
+          userName: user.userName,
+          name: user.name
+            ? `${user.name.given ?? ''} ${user.name.family ?? ''}`.trim() || null
+            : null,
+          grades: filteredGrades.map((grade) => ({
+            columnId: grade.columnId,
+            status: grade.status ?? null,
+            score: grade.score ?? null,
+            text: grade.text ?? null,
+            feedback: grade.feedback ?? null,
+          })),
+        };
+      }),
+    );
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              courseId: args.courseId,
+              columnId: args.columnId ?? null,
+              count: results.length,
+              users: results,
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+    };
+  },
+);
+
+export const getGradesSchema = {
+  name: 'get_grades',
+  description:
+    'Returns grade details for one student or an entire course. Optional filters: userId, columnId. Requires instructor or admin role.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      caller_identity: { type: 'object', required: ['userId', 'role'] },
+      courseId: { type: 'string' },
+      userId: { type: 'string' },
+      columnId: { type: 'string' },
+    },
+    required: ['caller_identity', 'courseId'],
+  },
+};
+
 // ── get_submission_status ─────────────────────────────────────────────────
 
 export const GetSubmissionStatusInput = z.object({

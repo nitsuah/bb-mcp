@@ -70,6 +70,20 @@ cp .env.example .env
 docker compose up -d
 ```
 
+Repo-local standalone commands:
+
+```bash
+make docker-up        # Build and start the standalone bb-mcp container
+make docker-logs      # Follow container logs
+make docker-doctor    # Safe env readiness report from inside the container
+make docker-probe     # Validate Blackboard credentials + minimal API call
+make docker-manifest  # Print the provider manifest from the built image
+make docker-tools     # Print the published tool catalog from the built image
+make docker-down      # Stop the standalone stack
+```
+
+The standalone compose stack keeps the same Dockerfile path used by agent-board, but now adds a more confined runtime posture: read-only filesystem, dropped Linux capabilities, `no-new-privileges`, and a small `/tmp` tmpfs for Node runtime needs.
+
 Server is live at `http://localhost:3100`.
 
 | Endpoint | Description |
@@ -78,6 +92,9 @@ Server is live at `http://localhost:3100`.
 | `GET /health` | Liveness probe |
 | `GET /metrics` | Prometheus text format |
 | `GET /manifest` | Provider contract with capabilities and tool manifest |
+| `GET /oauth/authorize` | Start the OAuth Authorization Code flow |
+| `GET /oauth/callback` | Complete OAuth code exchange and return a managed session |
+| `GET /sse/search-course-materials` | Dedicated SSE stream for incremental `search_course_materials` output |
 
 ```bash
 cp .env.example .env
@@ -90,6 +107,25 @@ npm run dev        # tsx watch — hot reload
 ```bash
 npm run build
 node dist/index.js --stdio
+```
+
+### CLI inspection commands
+
+```bash
+# Show available runtime modes and inspection commands
+node dist/index.js --help
+
+# Print the provider manifest without starting the server
+node dist/index.js --manifest
+
+# List the published tools with role coverage
+node dist/index.js --tools
+
+# Emit a safe environment readiness report (no secrets printed)
+node dist/index.js --doctor
+
+# Validate Blackboard credentials and a minimal API call
+node dist/index.js --probe
 ```
 
 Claude Desktop config (`claude_desktop_config.json`):
@@ -116,6 +152,10 @@ Copy `.env.example` to `.env` and set:
 | `BB_CLIENT_ID` | ✅ | OAuth2 app client ID from [developer.blackboard.com](https://developer.blackboard.com) |
 | `BB_CLIENT_SECRET` | ✅ | OAuth2 app client secret |
 | `BB_BASE_URL` | ✅ | Base URL of your Blackboard Learn instance |
+| `BB_OAUTH_REDIRECT_URI` | — | Override the OAuth callback URL (defaults to `PUBLIC_BASE_URL + /oauth/callback`) |
+| `BB_OAUTH_SCOPE` | — | Optional scope string for the authorization code flow |
+| `BB_OAUTH_AUTHORIZATION_PATH` | — | Override Blackboard authorization endpoint path |
+| `BB_OAUTH_TOKEN_PATH` | — | Override Blackboard token endpoint path |
 | `PORT` | — | HTTP port (default `3100`) |
 | `LOG_LEVEL` | — | `info` or `debug` (default `info`) |
 | `METRICS_PUSH_URL` | — | Prometheus push gateway URL (optional) |
@@ -123,6 +163,16 @@ Copy `.env.example` to `.env` and set:
 
 **Getting Blackboard credentials:**  
 Register a REST API application at [developer.blackboard.com](https://developer.blackboard.com/portal/applications). Use the free developer sandbox for testing — no live Blackboard instance required.
+
+### Authorization Code flow
+
+bb-mcp now supports an operator-driven OAuth Authorization Code flow in addition to the existing client credentials probe path.
+
+1. Visit `GET /oauth/authorize` to start the flow.
+2. Blackboard redirects back to `GET /oauth/callback`.
+3. bb-mcp validates the `state`, performs PKCE-backed token exchange, and returns a managed session payload.
+
+For non-browser operators, `GET /oauth/authorize?format=json` returns the authorization URL and redirect URI without issuing an HTTP redirect.
 
 ---
 
@@ -152,11 +202,14 @@ For FERPA-restricted tools, add `"ferpa_authorized": true` — the calling appli
 | `get_course_content` | Course modules and materials, with optional keyword search |
 | `get_assignment_feedback` | Instructor comments, rubric scores, and annotations |
 | `get_announcements` | Course announcements |
+| `create_assignment_submission` | Submit an assignment attempt with optional student comments |
 
 ### Instructor tools
 
 | Tool | Description | FERPA required |
 |---|---|---|
+| `list_roster` | Enrolled users for a course, including user IDs and usernames | — |
+| `get_grades` | Course-wide or user-scoped grade details, optionally filtered to one column | ✅ |
 | `get_submission_status` | Who submitted, who hasn't, timestamps | ✅ |
 | `get_grade_distribution` | Mean, median, std dev, A/B/C/D/F buckets | ✅ |
 | `get_discussion_summary` | Participant count and post excerpts for a thread | — |

@@ -26,6 +26,7 @@ describe('config', () => {
     process.env.BB_CLIENT_ID = 'client-id';
     process.env.BB_CLIENT_SECRET = 'client-secret';
     process.env.BB_BASE_URL = 'https://example.blackboard.com/';
+    process.env.PUBLIC_BASE_URL = 'https://mcp.example.edu';
     process.env.RESTRICTED_TOOLS = 'get_grade_distribution, draft_announcement ,';
     delete process.env.PORT;
     delete process.env.LOG_LEVEL;
@@ -36,8 +37,13 @@ describe('config', () => {
     expect(config.bb.clientId).toBe('client-id');
     expect(config.bb.clientSecret).toBe('client-secret');
     expect(config.bb.baseUrl).toBe('https://example.blackboard.com');
+    expect(config.oauth.authorizationPath).toBe('/learn/api/public/v1/oauth2/authorizationcode');
+    expect(config.oauth.tokenPath).toBe('/learn/api/public/v1/oauth2/token');
+    expect(config.oauth.redirectUri).toBeNull();
+    expect(config.oauth.scope).toBeNull();
     expect(config.server.port).toBe(3100);
     expect(config.server.logLevel).toBe('info');
+    expect(config.server.publicBaseUrl).toBe('https://mcp.example.edu');
     expect(config.metrics.pushUrl).toBeNull();
     expect(config.security.restrictedTools).toEqual([
       'get_grade_distribution',

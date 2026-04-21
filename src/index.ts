@@ -10,15 +10,30 @@
  *   GET /metrics  — Prometheus text format
  */
 
+import 'dotenv/config';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { randomUUID } from 'crypto';
 import http from 'http';
-import { config } from './config.js';
 import { getMetricsText, getMetricsSummary, pushMetrics } from './metrics.js';
 import { buildProviderManifest } from './manifest.js';
 import { SERVER_NAME, SERVER_VERSION } from './constants.js';
+import {
+  buildDoctorReport,
+  formatDoctorReport,
+  formatProbeReport,
+  formatToolCatalog,
+  getCliHelpText,
+  getManifestBaseUrl,
+  parseCliCommand,
+  runBlackboardProbe,
+} from './cli.js';
+import {
+  completeAuthorizationCodeFlow,
+  getOAuthSession,
+  startAuthorizationCodeFlow,
+} from './oauth.js';
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -26,6 +41,9 @@ import {
   GetMyCoursesInput,
   getMyCoursesHandler,
   getMyCoursesSchema,
+  ListCoursesInput,
+  listCoursesHandler,
+  listCoursesSchema,
   GetUpcomingAssignmentsInput,
   getUpcomingAssignmentsHandler,
   getUpcomingAssignmentsSchema,
@@ -35,15 +53,27 @@ import {
   GetCourseContentInput,
   getCourseContentHandler,
   getCourseContentSchema,
+  GetCourseContentsInput,
+  getCourseContentsHandler,
+  getCourseContentsSchema,
   GetAssignmentFeedbackInput,
   getAssignmentFeedbackHandler,
   getAssignmentFeedbackSchema,
   GetAnnouncementsInput,
   getAnnouncementsHandler,
   getAnnouncementsSchema,
+  CreateAssignmentSubmissionInput,
+  createAssignmentSubmissionHandler,
+  createAssignmentSubmissionSchema,
 } from './tools/student.js';
 
 import {
+  ListRosterInput,
+  listRosterHandler,
+  listRosterSchema,
+  GetGradesInput,
+  getGradesHandler,
+  getGradesSchema,
   GetSubmissionStatusInput,
   getSubmissionStatusHandler,
   getSubmissionStatusSchema,
@@ -86,6 +116,13 @@ function buildServer(): McpServer {
   );
 
   server.tool(
+    listCoursesSchema.name,
+    listCoursesSchema.description,
+    ListCoursesInput.shape,
+    (args: any) => listCoursesHandler(args as Parameters<typeof listCoursesHandler>[0]),
+  );
+
+  server.tool(
     getUpcomingAssignmentsSchema.name,
     getUpcomingAssignmentsSchema.description,
     GetUpcomingAssignmentsInput.shape,
@@ -111,6 +148,14 @@ function buildServer(): McpServer {
   );
 
   server.tool(
+    getCourseContentsSchema.name,
+    getCourseContentsSchema.description,
+    GetCourseContentsInput.shape,
+    (args: any) =>
+      getCourseContentsHandler(args as Parameters<typeof getCourseContentsHandler>[0]),
+  );
+
+  server.tool(
     getAssignmentFeedbackSchema.name,
     getAssignmentFeedbackSchema.description,
     GetAssignmentFeedbackInput.shape,
@@ -127,7 +172,31 @@ function buildServer(): McpServer {
     (args: any) => getAnnouncementsHandler(args as Parameters<typeof getAnnouncementsHandler>[0]),
   );
 
+  server.tool(
+    createAssignmentSubmissionSchema.name,
+    createAssignmentSubmissionSchema.description,
+    CreateAssignmentSubmissionInput.shape,
+    (args: any) =>
+      createAssignmentSubmissionHandler(
+        args as Parameters<typeof createAssignmentSubmissionHandler>[0],
+      ),
+  );
+
   // Instructor tools
+  server.tool(
+    listRosterSchema.name,
+    listRosterSchema.description,
+    ListRosterInput.shape,
+    (args: any) => listRosterHandler(args as Parameters<typeof listRosterHandler>[0]),
+  );
+
+  server.tool(
+    getGradesSchema.name,
+    getGradesSchema.description,
+    GetGradesInput.shape,
+    (args: any) => getGradesHandler(args as Parameters<typeof getGradesHandler>[0]),
+  );
+
   server.tool(
     getSubmissionStatusSchema.name,
     getSubmissionStatusSchema.description,
@@ -213,9 +282,39 @@ function readBody(req: http.IncomingMessage): Promise<string> {
   });
 }
 
+function chunkText(text: string, maxChunkSize = 600): string[] {
+  if (!text) {
+    return [''];
+  }
+
+  const chunks: string[] = [];
+  for (let index = 0; index < text.length; index += maxChunkSize) {
+    chunks.push(text.slice(index, index + maxChunkSize));
+  }
+  return chunks;
+}
+
+function writeSseEvent(
+  res: http.ServerResponse,
+  event: string,
+  payload: Record<string, unknown>,
+): void {
+  res.write(`event: ${event}\n`);
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
+}
+
+function isTruthy(value: string | null): boolean {
+  if (!value) {
+    return false;
+  }
+
+  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+}
+
 // ── HTTP mode (default) ───────────────────────────────────────────────────
 
 async function startHttpServer(): Promise<void> {
+  const { config } = await import('./config.js');
   const server = buildServer();
 
   // Per-session transports (stateful SSE / streamable HTTP)
@@ -253,6 +352,145 @@ async function startHttpServer(): Promise<void> {
       const manifest = buildProviderManifest(baseUrl);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(manifest));
+      return;
+    }
+
+    // ── OAuth authorization code flow ──
+    if (req.method === 'GET' && url.pathname === '/oauth/authorize') {
+      const flow = startAuthorizationCodeFlow();
+      const format = url.searchParams.get('format');
+
+      if (format === 'json') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            authorizationUrl: flow.authorizationUrl,
+            state: flow.state,
+            redirectUri: flow.redirectUri,
+          }),
+        );
+        return;
+      }
+
+      res.writeHead(302, { Location: flow.authorizationUrl });
+      res.end();
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/oauth/callback') {
+      const error = url.searchParams.get('error');
+      const code = url.searchParams.get('code');
+      const state = url.searchParams.get('state');
+
+      if (error) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error, message: 'OAuth authorization was denied by the provider.' }));
+        return;
+      }
+
+      if (!code || !state) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'invalid_request', message: 'Missing OAuth code or state.' }));
+        return;
+      }
+
+      try {
+        const session = await completeAuthorizationCodeFlow({ code, state });
+        const stored = getOAuthSession(session.sessionId);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            success: true,
+            sessionId: session.sessionId,
+            tokenType: stored?.token.tokenType ?? session.token.tokenType,
+            expiresAt: stored?.token.expiresAt ?? session.token.expiresAt,
+            scope: stored?.token.scope ?? session.token.scope,
+            refreshable: Boolean(stored?.token.refreshToken ?? session.token.refreshToken),
+          }),
+        );
+      } catch (oauthError) {
+        const message = oauthError instanceof Error ? oauthError.message : String(oauthError);
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'oauth_exchange_failed', message }));
+      }
+
+      return;
+    }
+
+    // ── Dedicated SSE endpoint: search_course_materials ──
+    if (req.method === 'GET' && url.pathname === '/sse/search-course-materials') {
+      const query = url.searchParams.get('query')?.trim();
+      if (!query) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            error: 'Missing required query parameter: query',
+            example:
+              '/sse/search-course-materials?query=syllabus&userId=student-1&role=student',
+          }),
+        );
+        return;
+      }
+
+      const roleRaw = (url.searchParams.get('role') ?? 'student').toLowerCase();
+      const role = roleRaw === 'instructor' || roleRaw === 'admin' ? roleRaw : 'student';
+
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+      });
+
+      writeSseEvent(res, 'start', {
+        tool: 'search_course_materials',
+        query,
+        role,
+      });
+
+      try {
+        writeSseEvent(res, 'status', { step: 'authorizing' });
+
+        const result = await searchCourseMaterialsHandler({
+          caller_identity: {
+            userId: url.searchParams.get('userId') ?? 'sse-user',
+            role,
+            ferpa_authorized: isTruthy(url.searchParams.get('ferpa_authorized')),
+            clientApp: url.searchParams.get('clientApp') ?? 'bb-mcp-sse',
+          },
+          query,
+          courseId: url.searchParams.get('courseId') ?? undefined,
+        });
+
+        const textResult =
+          result.content[0]?.type === 'text'
+            ? result.content[0].text
+            : JSON.stringify(result);
+
+        const chunks = chunkText(textResult);
+        writeSseEvent(res, 'status', { step: 'streaming', chunks: chunks.length });
+
+        chunks.forEach((chunk, index) => {
+          writeSseEvent(res, 'chunk', {
+            index,
+            total: chunks.length,
+            text: chunk,
+          });
+        });
+
+        writeSseEvent(res, 'complete', {
+          success: true,
+          chunks: chunks.length,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        writeSseEvent(res, 'error', {
+          success: false,
+          message,
+        });
+      }
+
+      res.end();
       return;
     }
 
@@ -338,6 +576,7 @@ async function startHttpServer(): Promise<void> {
 // ── stdio mode (Claude Desktop, Cursor) ──────────────────────────────────
 
 async function startStdioServer(): Promise<void> {
+  await import('./config.js');
   const server = buildServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
@@ -345,15 +584,57 @@ async function startStdioServer(): Promise<void> {
 
 // ── Entrypoint ────────────────────────────────────────────────────────────
 
-const useStdio = process.argv.includes('--stdio');
-if (useStdio) {
-  startStdioServer().catch((err) => {
-    console.error('Fatal:', err);
-    process.exit(1);
-  });
-} else {
-  startHttpServer().catch((err) => {
-    console.error('Fatal:', err);
-    process.exit(1);
-  });
+const command = parseCliCommand(process.argv.slice(2));
+
+switch (command.mode) {
+  case 'help':
+    console.log(getCliHelpText());
+    break;
+  case 'version':
+    console.log(`${SERVER_NAME} v${SERVER_VERSION}`);
+    break;
+  case 'manifest': {
+    const manifest = buildProviderManifest(getManifestBaseUrl(command.baseUrl));
+    console.log(JSON.stringify(manifest, null, command.json ? 2 : 0));
+    break;
+  }
+  case 'tools': {
+    if (command.json) {
+      const manifest = buildProviderManifest(getManifestBaseUrl(command.baseUrl));
+      console.log(JSON.stringify(manifest.tools, null, 2));
+    } else {
+      console.log(formatToolCatalog(command.baseUrl));
+    }
+    break;
+  }
+  case 'doctor': {
+    const report = buildDoctorReport();
+    if (command.json) {
+      console.log(JSON.stringify(report, null, 2));
+    } else {
+      console.log(formatDoctorReport(report));
+    }
+    break;
+  }
+  case 'probe': {
+    const report = await runBlackboardProbe();
+    if (command.json) {
+      console.log(JSON.stringify(report, null, 2));
+    } else {
+      console.log(formatProbeReport(report));
+    }
+
+    if (!report.blackboard.api) {
+      process.exitCode = 1;
+    }
+    break;
+  }
+  case 'server': {
+    const runner = command.useStdio ? startStdioServer : startHttpServer;
+    runner().catch((err) => {
+      console.error('Fatal:', err);
+      process.exit(1);
+    });
+    break;
+  }
 }

@@ -107,6 +107,13 @@ export class BlackboardClient {
     return res.data.results ?? [];
   }
 
+  async probeConnectivity(): Promise<number> {
+    const res = await this.http.get<{ results: BbCourse[] }>('/courses', {
+      params: { limit: 1, fields: 'id' },
+    });
+    return (res.data.results ?? []).length;
+  }
+
   async getCourse(courseId: string): Promise<BbCourse> {
     const res = await this.http.get<BbCourse>(`/courses/${courseId}`);
     return res.data;
@@ -145,6 +152,23 @@ export class BlackboardClient {
       { params: { limit: 500 } },
     );
     return res.data.results ?? [];
+  }
+
+  async createAttempt(
+    courseId: string,
+    columnId: string,
+    userId: string,
+    studentComments?: string,
+  ): Promise<BbAttempt> {
+    const payload: Record<string, unknown> = { userId };
+    if (studentComments) {
+      payload.studentComments = studentComments;
+    }
+    const res = await this.http.post<BbAttempt>(
+      `/courses/${courseId}/gradebook/columns/${columnId}/attempts`,
+      payload,
+    );
+    return res.data;
   }
 
   // ── Announcements ────────────────────────────────────────────────────────

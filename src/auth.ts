@@ -21,6 +21,8 @@
  */
 
 import { config } from './config.js';
+import { scrubLogText, toAuditSubject } from './privacy.js';
+import { canRoleAccessTool, getAllowedRolesForTool } from './rbac.js';
 
 export type Role = 'student' | 'instructor' | 'admin';
 
@@ -44,6 +46,47 @@ export class AuthorizationError extends Error {
   }
 }
 
+interface RateWindow {
+  startedAt: number;
+  count: number;
+}
+
+const RATE_WINDOW_MS = 60_000;
+const rateWindows = new Map<string, RateWindow>();
+
+function getRateLimit(role: Role): number {
+  return config.security.rateLimitPerMinute[role] ?? 60;
+}
+
+function assertWithinRateLimit(identity: CallerIdentity): void {
+  const now = Date.now();
+  const key = `${identity.role}:${identity.userId}`;
+  const limit = getRateLimit(identity.role);
+  const existing = rateWindows.get(key);
+
+  if (!existing || now - existing.startedAt >= RATE_WINDOW_MS) {
+    rateWindows.set(key, { startedAt: now, count: 1 });
+    return;
+  }
+
+  if (existing.count >= limit) {
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil((existing.startedAt + RATE_WINDOW_MS - now) / 1000),
+    );
+    throw new AuthorizationError(
+      `Rate limit exceeded for role "${identity.role}". Retry after ${retryAfterSeconds}s.`,
+    );
+  }
+
+  existing.count += 1;
+  rateWindows.set(key, existing);
+}
+
+export function __resetRateLimiterForTests(): void {
+  rateWindows.clear();
+}
+
 /** Structured audit log — write to stdout for log aggregator pickup */
 function auditLog(
   event: 'access.granted' | 'access.denied',
@@ -54,36 +97,26 @@ function auditLog(
     timestamp: new Date().toISOString(),
     event,
     tool: ctx.toolName,
-    userId: ctx.identity.userId,
+    subject: toAuditSubject(ctx.identity.userId),
     role: ctx.identity.role,
     courseId: ctx.courseId ?? null,
     clientApp: ctx.identity.clientApp ?? null,
-    reason: reason ?? null,
+    reason: reason ? scrubLogText(reason) : null,
+    piiRedaction: 'hashed-subject',
   };
   process.stdout.write(JSON.stringify(entry) + '\n');
 }
 
-const INSTRUCTOR_ONLY_TOOLS = new Set([
-  'get_submission_status',
-  'get_grade_distribution',
-  'get_discussion_summary',
-  'get_at_risk_students',
-  'draft_announcement',
-]);
-
-const STUDENT_TOOLS = new Set([
-  'get_my_courses',
-  'get_upcoming_assignments',
-  'get_my_grades',
-  'get_course_content',
-  'get_assignment_feedback',
-  'get_announcements',
-  'get_discussion_summary',  // students can read summaries, not grade data
-]);
-
 export function checkAuthorization(ctx: AuthContext): void {
   const { identity, toolName, courseId } = ctx;
   const isRestricted = config.security.restrictedTools.includes(toolName);
+
+  try {
+    assertWithinRateLimit(identity);
+  } catch (error) {
+    auditLog('access.denied', ctx, error instanceof Error ? error.message : 'rate limit exceeded');
+    throw error;
+  }
 
   // FERPA gate
   if (isRestricted && !identity.ferpa_authorized) {
@@ -94,11 +127,20 @@ export function checkAuthorization(ctx: AuthContext): void {
     );
   }
 
-  // Role gate for instructor-only tools
-  if (INSTRUCTOR_ONLY_TOOLS.has(toolName) && identity.role === 'student') {
-    auditLog('access.denied', ctx, 'instructor-only tool');
+  // Role gate for all tools (deny by default when a tool is missing from policy).
+  if (!canRoleAccessTool(identity.role, toolName)) {
+    const allowed = getAllowedRolesForTool(toolName);
+    const message =
+      allowed.length > 0
+        ? `role \"${identity.role}\" cannot access tool \"${toolName}\"`
+        : `tool \"${toolName}\" is not registered in RBAC policy`;
+
+    auditLog('access.denied', ctx, message);
+
+    const allowedText =
+      allowed.length > 0 ? ` Allowed roles: ${allowed.join(', ')}.` : '';
     throw new AuthorizationError(
-      `Tool "${toolName}" is only available to instructors and admins.`,
+      `Tool "${toolName}" is not available to role "${identity.role}".${allowedText}`,
     );
   }
 
