@@ -1,6 +1,5 @@
 # blackboard-learn-mcp
 
-
 <!-- Deployment Status -->
 [![Deploy Status](https://github.com/nitsuah/bb-mcp/actions/workflows/deploy.yml/badge.svg)](https://github.com/nitsuah/bb-mcp/actions)
 
@@ -10,7 +9,7 @@ A standalone [Model Context Protocol](https://modelcontextprotocol.io) server wr
 
 ## Why standalone?
 
-The integration logic lives here, not in the client. agent-board, Claude Desktop, and Cursor all connect the same way. Build it once, use it everywhere. Blackboard's own team could point internal tooling at this server without touching any frontend code.
+The integration logic lives here, not in the client. Tools like agent-board, Claude Desktop, and Cursor all connect the same way. Build it once, use it everywhere. Blackboard's own team could point internal tooling at this server without touching any frontend code.
 
 ---
 
