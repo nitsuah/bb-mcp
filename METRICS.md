@@ -6,14 +6,14 @@ This document tracks the key performance indicators (KPIs), code quality standar
 
 | Metric | Current | Status |
 | :--- | :--- | :--- |
-| **Unit Test Coverage** | 91.86% lines | 🟢 Pass |
-| **Total Test Cases** | 79 | 🟢 Pass |
-| **Critical/High Vulnerabilities** | 0 | 🟢 Pass |
-| **Average Cyclomatic Complexity** | 2.63 (70 functions, core scope) | 🟢 Pass |
-| **Documentation Coverage (TSDoc)** | 100% module coverage (core scope) | 🟢 Pass |
-| **Cold Build Duration (Clean)** | 7.08s (Docker builder, no cache) | 🟢 Pass |
-| **Production Bundle Size (dist)** | 424K (Docker test image) | 🟢 Pass |
-| **Linting Errors/Warnings** | 0 | 🟢 Pass |
+| Code Coverage | 91.86% lines | 🟢 Pass |
+| Total Test Cases | 79 | 🟢 Pass |
+| Critical/High Vulnerabilities | 0 | 🟢 Pass |
+| Average Cyclomatic Complexity | 2.63 (70 functions, core scope) | 🟢 Pass |
+| Documentation Coverage (TSDoc) | 100% module coverage (core scope) | 🟢 Pass |
+| Cold Build Duration (Clean) | 7.08s (Docker builder, no cache) | 🟢 Pass |
+| Production Bundle Size (dist) | 424K (Docker test image) | 🟢 Pass |
+| Linting Errors/Warnings | 0 | 🟢 Pass |
 
 ### Target Thresholds
 
