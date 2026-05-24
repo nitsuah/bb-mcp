@@ -6,8 +6,8 @@ This document tracks the key performance indicators (KPIs), code quality standar
 
 | Metric | Current | Target | Status |
 | :--- | :--- | :--- | :--- |
-| **Unit Test Coverage** | 86.83% lines (Docker Vitest v8) | > 85% | 🟢 Pass |
-| **Total Test Cases** | 59 | > 50 | 🟢 Pass |
+| **Unit Test Coverage** | 91.86% lines, 68.24% branches (Docker Vitest v8) | > 85% | 🟢 Pass |
+| **Total Test Cases** | 79 | > 50 | 🟢 Pass |
 | **Critical/High Vulnerabilities** | 0 | 0 | 🟢 Pass |
 | **TypeScript Strict Mode Compliance** | 100% | 100% | 🟢 Pass |
 | **Average Cyclomatic Complexity** | 2.63 (70 functions, core scope) | < 10 | 🟢 Pass |
@@ -16,7 +16,9 @@ This document tracks the key performance indicators (KPIs), code quality standar
 | **Production Bundle Size (dist)** | 424K (Docker test image) | < 5MB | 🟢 Pass |
 | **Linting Errors/Warnings** | 0 | 0 | 🟢 Pass |
 
-Coverage scope note: Unit coverage excludes `src/index.ts`, `src/tools/**`, `src/types.ts`, and `src/constants.ts` in `vitest.config.ts` to focus thresholds on unit-testable core modules.
+Coverage scope note: Unit coverage excludes `src/index.ts`, `src/types.ts`, and `src/constants.ts` in `vitest.config.ts`.
+
+Coverage detail: `src/tools` coverage is now 98.57% lines / 72.16% branches (`student.ts` 96.62% lines / 78.75% branches, `instructor.ts` 100% lines / 66.03% branches, `shared.ts` 100% lines / 87.5% branches).
 
 Complexity/TSDoc scope note: metrics scripts in `scripts/metrics-complexity.mjs` and `scripts/metrics-doc-coverage.mjs` use the same core scope as unit coverage.
 
