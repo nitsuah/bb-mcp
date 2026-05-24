@@ -7,4 +7,8 @@ export default tseslint.config(
   eslint.configs.recommended,
 
   // TypeScript ESLint recommended rules
-  ...tseslint.configs
+  ...tseslint.configs.recommended,
+
+  // Integrate Prettier with ESLint
+  prettierRecommended,
+);

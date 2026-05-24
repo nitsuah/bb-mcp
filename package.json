@@ -23,9 +23,15 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^25.9.0",
+    "eslint": "^10.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "prettier": "^3.8.3",
     "tsx": "^4.22.2",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.4",
     "vitest": "^4.1.6"
   },
   "engines": {
