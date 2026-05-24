@@ -4,9 +4,9 @@ This document tracks the key performance indicators (KPIs), code quality standar
 
 ## Project Health & Quality Metrics
 
-| Metric | Current | Status |
+| Metric | Value | Status |
 | :--- | :--- | :--- |
-| Code Coverage | 91.86% lines | 🟢 Pass |
+| Code Coverage | 91.86% | 🟢 Pass |
 | Total Test Cases | 79 | 🟢 Pass |
 | Critical/High Vulnerabilities | 0 | 🟢 Pass |
 | Average Cyclomatic Complexity | 2.63 (70 functions, core scope) | 🟢 Pass |
