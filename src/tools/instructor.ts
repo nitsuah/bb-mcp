@@ -3,10 +3,10 @@
  * All require role=instructor|admin and most require ferpa_authorized=true.
  */
 
-import { z } from 'zod';
-import { bbClient } from '../bb-client.js';
-import { checkAuthorization, parseIdentity } from '../auth.js';
-import { withMetrics } from '../metrics.js';
+import { z } from "zod";
+import { bbClient } from "../bb-client.js";
+import { checkAuthorization, parseIdentity } from "../auth.js";
+import { withMetrics } from "../metrics.js";
 
 // ── list_roster ───────────────────────────────────────────────────────────
 
@@ -16,17 +16,21 @@ export const ListRosterInput = z.object({
 });
 
 export const listRosterHandler = withMetrics(
-  'list_roster',
+  "list_roster",
   async (args: z.infer<typeof ListRosterInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({ identity, toolName: 'list_roster', courseId: args.courseId });
+    checkAuthorization({
+      identity,
+      toolName: "list_roster",
+      courseId: args.courseId,
+    });
 
     const enrolled = await bbClient.getEnrolledUsers(args.courseId);
 
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: JSON.stringify(
             {
               courseId: args.courseId,
@@ -35,7 +39,8 @@ export const listRosterHandler = withMetrics(
                 userId: user.id,
                 userName: user.userName,
                 name: user.name
-                  ? `${user.name.given ?? ''} ${user.name.family ?? ''}`.trim() || null
+                  ? `${user.name.given ?? ""} ${user.name.family ?? ""}`.trim() ||
+                    null
                   : null,
                 emailAddress: user.emailAddress ?? null,
               })),
@@ -50,15 +55,16 @@ export const listRosterHandler = withMetrics(
 );
 
 export const listRosterSchema = {
-  name: 'list_roster',
-  description: 'Returns the enrolled user roster for a course. Requires instructor or admin role.',
+  name: "list_roster",
+  description:
+    "Returns the enrolled user roster for a course. Requires instructor or admin role.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      caller_identity: { type: 'object', required: ['userId', 'role'] },
-      courseId: { type: 'string' },
+      caller_identity: { type: "object", required: ["userId", "role"] },
+      courseId: { type: "string" },
     },
-    required: ['caller_identity', 'courseId'],
+    required: ["caller_identity", "courseId"],
   },
 };
 
@@ -72,20 +78,27 @@ export const GetGradesInput = z.object({
 });
 
 export const getGradesHandler = withMetrics(
-  'get_grades',
+  "get_grades",
   async (args: z.infer<typeof GetGradesInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({ identity, toolName: 'get_grades', courseId: args.courseId });
+    checkAuthorization({
+      identity,
+      toolName: "get_grades",
+      courseId: args.courseId,
+    });
 
     const enrolled = await bbClient.getEnrolledUsers(args.courseId);
     const enrolledMap = new Map(enrolled.map((user) => [user.id, user]));
 
     if (args.columnId && !args.userId) {
-      const grades = await bbClient.getColumnGrades(args.courseId, args.columnId);
+      const grades = await bbClient.getColumnGrades(
+        args.courseId,
+        args.columnId,
+      );
       return {
         content: [
           {
-            type: 'text',
+            type: "text",
             text: JSON.stringify(
               {
                 courseId: args.courseId,
@@ -95,7 +108,8 @@ export const getGradesHandler = withMetrics(
                   userId: grade.userId,
                   userName: enrolledMap.get(grade.userId)?.userName ?? null,
                   name: enrolledMap.get(grade.userId)?.name
-                    ? `${enrolledMap.get(grade.userId)?.name?.given ?? ''} ${enrolledMap.get(grade.userId)?.name?.family ?? ''}`.trim() || null
+                    ? `${enrolledMap.get(grade.userId)?.name?.given ?? ""} ${enrolledMap.get(grade.userId)?.name?.family ?? ""}`.trim() ||
+                      null
                     : null,
                   status: grade.status ?? null,
                   score: grade.score ?? null,
@@ -126,7 +140,8 @@ export const getGradesHandler = withMetrics(
           userId: user.id,
           userName: user.userName,
           name: user.name
-            ? `${user.name.given ?? ''} ${user.name.family ?? ''}`.trim() || null
+            ? `${user.name.given ?? ""} ${user.name.family ?? ""}`.trim() ||
+              null
             : null,
           grades: filteredGrades.map((grade) => ({
             columnId: grade.columnId,
@@ -142,7 +157,7 @@ export const getGradesHandler = withMetrics(
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: JSON.stringify(
             {
               courseId: args.courseId,
@@ -160,18 +175,18 @@ export const getGradesHandler = withMetrics(
 );
 
 export const getGradesSchema = {
-  name: 'get_grades',
+  name: "get_grades",
   description:
-    'Returns grade details for one student or an entire course. Optional filters: userId, columnId. Requires instructor or admin role.',
+    "Returns grade details for one student or an entire course. Optional filters: userId, columnId. Requires instructor or admin role.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      caller_identity: { type: 'object', required: ['userId', 'role'] },
-      courseId: { type: 'string' },
-      userId: { type: 'string' },
-      columnId: { type: 'string' },
+      caller_identity: { type: "object", required: ["userId", "role"] },
+      courseId: { type: "string" },
+      userId: { type: "string" },
+      columnId: { type: "string" },
     },
-    required: ['caller_identity', 'courseId'],
+    required: ["caller_identity", "courseId"],
   },
 };
 
@@ -184,12 +199,12 @@ export const GetSubmissionStatusInput = z.object({
 });
 
 export const getSubmissionStatusHandler = withMetrics(
-  'get_submission_status',
+  "get_submission_status",
   async (args: z.infer<typeof GetSubmissionStatusInput>) => {
     const identity = parseIdentity(args.caller_identity);
     checkAuthorization({
       identity,
-      toolName: 'get_submission_status',
+      toolName: "get_submission_status",
       courseId: args.courseId,
     });
 
@@ -204,7 +219,7 @@ export const getSubmissionStatusHandler = withMetrics(
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: JSON.stringify(
             {
               totalEnrolled: enrolled.length,
@@ -219,7 +234,7 @@ export const getSubmissionStatusHandler = withMetrics(
                 userId: u.id,
                 userName: u.userName,
                 name: u.name
-                  ? `${u.name.given ?? ''} ${u.name.family ?? ''}`.trim()
+                  ? `${u.name.given ?? ""} ${u.name.family ?? ""}`.trim()
                   : null,
               })),
             },
@@ -233,17 +248,17 @@ export const getSubmissionStatusHandler = withMetrics(
 );
 
 export const getSubmissionStatusSchema = {
-  name: 'get_submission_status',
+  name: "get_submission_status",
   description:
-    'Returns who has and has not submitted an assignment. Requires instructor role and FERPA authorization.',
+    "Returns who has and has not submitted an assignment. Requires instructor role and FERPA authorization.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      caller_identity: { type: 'object', required: ['userId', 'role'] },
-      courseId: { type: 'string' },
-      columnId: { type: 'string' },
+      caller_identity: { type: "object", required: ["userId", "role"] },
+      courseId: { type: "string" },
+      columnId: { type: "string" },
     },
-    required: ['caller_identity', 'courseId', 'columnId'],
+    required: ["caller_identity", "courseId", "columnId"],
   },
 };
 
@@ -256,12 +271,12 @@ export const GetGradeDistributionInput = z.object({
 });
 
 export const getGradeDistributionHandler = withMetrics(
-  'get_grade_distribution',
+  "get_grade_distribution",
   async (args: z.infer<typeof GetGradeDistributionInput>) => {
     const identity = parseIdentity(args.caller_identity);
     checkAuthorization({
       identity,
-      toolName: 'get_grade_distribution',
+      toolName: "get_grade_distribution",
       courseId: args.courseId,
     });
 
@@ -269,7 +284,9 @@ export const getGradeDistributionHandler = withMetrics(
     const scores = grades.map((g) => g.score ?? 0).filter((s) => s > 0);
 
     if (scores.length === 0) {
-      return { content: [{ type: 'text', text: 'No scores found for this column.' }] };
+      return {
+        content: [{ type: "text", text: "No scores found for this column." }],
+      };
     }
 
     const sorted = [...scores].sort((a, b) => a - b);
@@ -277,7 +294,9 @@ export const getGradeDistributionHandler = withMetrics(
     const mean = sum / sorted.length;
     const mid = Math.floor(sorted.length / 2);
     const median =
-      sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+      sorted.length % 2 === 0
+        ? (sorted[mid - 1] + sorted[mid]) / 2
+        : sorted[mid];
     const variance =
       sorted.reduce((acc, s) => acc + Math.pow(s - mean, 2), 0) / sorted.length;
     const stddev = Math.sqrt(variance);
@@ -296,7 +315,7 @@ export const getGradeDistributionHandler = withMetrics(
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: JSON.stringify(
             {
               count: scores.length,
@@ -317,17 +336,17 @@ export const getGradeDistributionHandler = withMetrics(
 );
 
 export const getGradeDistributionSchema = {
-  name: 'get_grade_distribution',
+  name: "get_grade_distribution",
   description:
-    'Returns grade statistics (mean, median, std dev, distribution) for an assignment column.',
+    "Returns grade statistics (mean, median, std dev, distribution) for an assignment column.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      caller_identity: { type: 'object', required: ['userId', 'role'] },
-      courseId: { type: 'string' },
-      columnId: { type: 'string' },
+      caller_identity: { type: "object", required: ["userId", "role"] },
+      courseId: { type: "string" },
+      columnId: { type: "string" },
     },
-    required: ['caller_identity', 'courseId', 'columnId'],
+    required: ["caller_identity", "courseId", "columnId"],
   },
 };
 
@@ -340,18 +359,27 @@ export const GetDiscussionSummaryInput = z.object({
 });
 
 export const getDiscussionSummaryHandler = withMetrics(
-  'get_discussion_summary',
+  "get_discussion_summary",
   async (args: z.infer<typeof GetDiscussionSummaryInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({ identity, toolName: 'get_discussion_summary', courseId: args.courseId });
+    checkAuthorization({
+      identity,
+      toolName: "get_discussion_summary",
+      courseId: args.courseId,
+    });
 
-    const posts = await bbClient.getDiscussionPosts(args.courseId, args.threadId);
-    const authorIds = [...new Set(posts.map((p) => p.authorId).filter(Boolean))];
+    const posts = await bbClient.getDiscussionPosts(
+      args.courseId,
+      args.threadId,
+    );
+    const authorIds = [
+      ...new Set(posts.map((p) => p.authorId).filter(Boolean)),
+    ];
 
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: JSON.stringify(
             {
               threadId: args.threadId,
@@ -374,16 +402,17 @@ export const getDiscussionSummaryHandler = withMetrics(
 );
 
 export const getDiscussionSummarySchema = {
-  name: 'get_discussion_summary',
-  description: 'Returns participant count and post excerpts for a discussion thread.',
+  name: "get_discussion_summary",
+  description:
+    "Returns participant count and post excerpts for a discussion thread.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      caller_identity: { type: 'object', required: ['userId', 'role'] },
-      courseId: { type: 'string' },
-      threadId: { type: 'string' },
+      caller_identity: { type: "object", required: ["userId", "role"] },
+      courseId: { type: "string" },
+      threadId: { type: "string" },
     },
-    required: ['caller_identity', 'courseId', 'threadId'],
+    required: ["caller_identity", "courseId", "threadId"],
   },
 };
 
@@ -396,12 +425,12 @@ export const GetAtRiskStudentsInput = z.object({
 });
 
 export const getAtRiskStudentsHandler = withMetrics(
-  'get_at_risk_students',
+  "get_at_risk_students",
   async (args: z.infer<typeof GetAtRiskStudentsInput>) => {
     const identity = parseIdentity(args.caller_identity);
     checkAuthorization({
       identity,
-      toolName: 'get_at_risk_students',
+      toolName: "get_at_risk_students",
       courseId: args.courseId,
     });
 
@@ -415,7 +444,8 @@ export const getAtRiskStudentsHandler = withMetrics(
       const grades = await bbClient.getGrades(args.courseId, user.id);
       const scored = grades.filter((g) => g.score != null);
       if (scored.length === 0) continue;
-      const avg = scored.reduce((s, g) => s + (g.score ?? 0), 0) / scored.length;
+      const avg =
+        scored.reduce((s, g) => s + (g.score ?? 0), 0) / scored.length;
       const missing = columns.filter(
         (c) => !grades.find((g) => g.columnId === c.id && g.score != null),
       ).length;
@@ -425,39 +455,42 @@ export const getAtRiskStudentsHandler = withMetrics(
           userId: user.id,
           userName: user.userName,
           name: user.name
-            ? `${user.name.given ?? ''} ${user.name.family ?? ''}`.trim()
+            ? `${user.name.given ?? ""} ${user.name.family ?? ""}`.trim()
             : null,
           averageScore: avg.toFixed(1),
           missingAssignments: missing,
-          risk: avg < 60 ? 'high' : avg < args.gradingThreshold ? 'medium' : 'low',
+          risk:
+            avg < 60 ? "high" : avg < args.gradingThreshold ? "medium" : "low",
         });
       }
     }
 
-    atRisk.sort((a, b) => parseFloat(a.averageScore) - parseFloat(b.averageScore));
+    atRisk.sort(
+      (a, b) => parseFloat(a.averageScore) - parseFloat(b.averageScore),
+    );
 
     return {
-      content: [{ type: 'text', text: JSON.stringify(atRisk, null, 2) }],
+      content: [{ type: "text", text: JSON.stringify(atRisk, null, 2) }],
     };
   },
 );
 
 export const getAtRiskStudentsSchema = {
-  name: 'get_at_risk_students',
+  name: "get_at_risk_students",
   description:
-    'Returns students with low grades or many missing assignments. Requires FERPA authorization.',
+    "Returns students with low grades or many missing assignments. Requires FERPA authorization.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      caller_identity: { type: 'object', required: ['userId', 'role'] },
-      courseId: { type: 'string' },
+      caller_identity: { type: "object", required: ["userId", "role"] },
+      courseId: { type: "string" },
       gradingThreshold: {
-        type: 'number',
-        description: 'Score below this % is flagged as at-risk (default 70)',
+        type: "number",
+        description: "Score below this % is flagged as at-risk (default 70)",
         default: 70,
       },
     },
-    required: ['caller_identity', 'courseId'],
+    required: ["caller_identity", "courseId"],
   },
 };
 
@@ -467,23 +500,27 @@ export const DraftAnnouncementInput = z.object({
   caller_identity: z.unknown(),
   courseId: z.string(),
   topic: z.string().min(3).max(500),
-  tone: z.enum(['friendly', 'formal', 'urgent']).default('friendly'),
+  tone: z.enum(["friendly", "formal", "urgent"]).default("friendly"),
   post: z.boolean().default(false), // if true, posts the draft directly to Blackboard
 });
 
 export const draftAnnouncementHandler = withMetrics(
-  'draft_announcement',
+  "draft_announcement",
   async (args: z.infer<typeof DraftAnnouncementInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({ identity, toolName: 'draft_announcement', courseId: args.courseId });
+    checkAuthorization({
+      identity,
+      toolName: "draft_announcement",
+      courseId: args.courseId,
+    });
 
     const toneGuide: Record<string, string> = {
       friendly:
-        'Write in a warm, encouraging tone. Use first person (I / we). Keep it concise.',
+        "Write in a warm, encouraging tone. Use first person (I / we). Keep it concise.",
       formal:
-        'Write professionally and formally. Avoid contractions. Be precise.',
+        "Write professionally and formally. Avoid contractions. Be precise.",
       urgent:
-        'Write with urgency. Lead with the action item. Use bold for key dates.',
+        "Write with urgency. Lead with the action item. Use bold for key dates.",
     };
 
     // The draft is produced by the LLM that called this tool — we return a
@@ -491,9 +528,9 @@ export const draftAnnouncementHandler = withMetrics(
     const draftPrompt = [
       `Draft an announcement for a university course with the following topic: "${args.topic}".`,
       toneGuide[args.tone],
-      'Include: subject line, body (3–5 sentences), and a clear call to action.',
-      'Do NOT include any actual PII or fabricated student names.',
-    ].join('\n');
+      "Include: subject line, body (3–5 sentences), and a clear call to action.",
+      "Do NOT include any actual PII or fabricated student names.",
+    ].join("\n");
 
     let posted: null | { id: string; created?: string } = null;
     if (args.post) {
@@ -506,13 +543,13 @@ export const draftAnnouncementHandler = withMetrics(
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: JSON.stringify(
             {
               draftPrompt,
               posted,
               instructions:
-                'Use the draftPrompt to generate the announcement text. Review before sending.',
+                "Use the draftPrompt to generate the announcement text. Review before sending.",
             },
             null,
             2,
@@ -524,26 +561,29 @@ export const draftAnnouncementHandler = withMetrics(
 );
 
 export const draftAnnouncementSchema = {
-  name: 'draft_announcement',
+  name: "draft_announcement",
   description:
-    'Generates an AI-assisted announcement draft for instructor review. Optionally posts it.',
+    "Generates an AI-assisted announcement draft for instructor review. Optionally posts it.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      caller_identity: { type: 'object', required: ['userId', 'role'] },
-      courseId: { type: 'string' },
-      topic: { type: 'string', description: 'Subject or context for the announcement' },
+      caller_identity: { type: "object", required: ["userId", "role"] },
+      courseId: { type: "string" },
+      topic: {
+        type: "string",
+        description: "Subject or context for the announcement",
+      },
       tone: {
-        type: 'string',
-        enum: ['friendly', 'formal', 'urgent'],
-        default: 'friendly',
+        type: "string",
+        enum: ["friendly", "formal", "urgent"],
+        default: "friendly",
       },
       post: {
-        type: 'boolean',
-        description: 'Post the draft directly to Blackboard (default false)',
+        type: "boolean",
+        description: "Post the draft directly to Blackboard (default false)",
         default: false,
       },
     },
-    required: ['caller_identity', 'courseId', 'topic'],
+    required: ["caller_identity", "courseId", "topic"],
   },
 };

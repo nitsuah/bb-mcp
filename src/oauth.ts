@@ -1,6 +1,9 @@
-import axios from 'axios';
-import { createHash, randomBytes } from 'crypto';
-import { config } from './config.js';
+/**
+ * OAuth authorization-code flow helpers with PKCE and managed in-memory sessions.
+ */
+import axios from "axios";
+import { createHash, randomBytes } from "crypto";
+import { config } from "./config.js";
 
 export interface OAuthPendingFlow {
   state: string;
@@ -39,14 +42,14 @@ const oauthSessions = new Map<string, OAuthSessionRecord>();
 
 function toBase64Url(value: Buffer): string {
   return value
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/g, '');
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
 }
 
 function sha256Base64Url(value: string): string {
-  return createHash('sha256').update(value).digest('base64url');
+  return createHash("sha256").update(value).digest("base64url");
 }
 
 function now(): number {
@@ -62,7 +65,10 @@ function getTokenEndpoint(): string {
 }
 
 function getRedirectUri(): string {
-  return config.oauth.redirectUri ?? `${config.server.publicBaseUrl ?? `http://localhost:${config.server.port}`}/oauth/callback`;
+  return (
+    config.oauth.redirectUri ??
+    `${config.server.publicBaseUrl ?? `http://localhost:${config.server.port}`}/oauth/callback`
+  );
 }
 
 function cleanupExpiredPendingFlows(): void {
@@ -78,7 +84,7 @@ function mapTokenResponse(data: OAuthTokenResponse): OAuthTokenSet {
   return {
     accessToken: data.access_token,
     refreshToken: data.refresh_token ?? null,
-    tokenType: data.token_type ?? 'Bearer',
+    tokenType: data.token_type ?? "Bearer",
     expiresAt: now() + data.expires_in * 1000,
     scope: data.scope ?? null,
   };
@@ -88,7 +94,11 @@ export function isOAuthConfigured(): boolean {
   return Boolean(config.oauth.redirectUri || config.server.publicBaseUrl);
 }
 
-export function startAuthorizationCodeFlow(): { authorizationUrl: string; state: string; redirectUri: string } {
+export function startAuthorizationCodeFlow(): {
+  authorizationUrl: string;
+  state: string;
+  redirectUri: string;
+} {
   cleanupExpiredPendingFlows();
 
   const state = toBase64Url(randomBytes(24));
@@ -104,15 +114,15 @@ export function startAuthorizationCodeFlow(): { authorizationUrl: string; state:
   });
 
   const url = new URL(getAuthorizationEndpoint());
-  url.searchParams.set('client_id', config.bb.clientId);
-  url.searchParams.set('response_type', 'code');
-  url.searchParams.set('redirect_uri', redirectUri);
-  url.searchParams.set('state', state);
-  url.searchParams.set('code_challenge', codeChallenge);
-  url.searchParams.set('code_challenge_method', 'S256');
+  url.searchParams.set("client_id", config.bb.clientId);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("state", state);
+  url.searchParams.set("code_challenge", codeChallenge);
+  url.searchParams.set("code_challenge_method", "S256");
 
   if (config.oauth.scope) {
-    url.searchParams.set('scope', config.oauth.scope);
+    url.searchParams.set("scope", config.oauth.scope);
   }
 
   return {
@@ -130,27 +140,29 @@ export async function completeAuthorizationCodeFlow(params: {
 
   const pendingFlow = pendingFlows.get(params.state);
   if (!pendingFlow) {
-    throw new Error('Invalid or expired OAuth state. Start the authorization flow again.');
+    throw new Error(
+      "Invalid or expired OAuth state. Start the authorization flow again.",
+    );
   }
 
   pendingFlows.delete(params.state);
 
   const form = new URLSearchParams();
-  form.set('grant_type', 'authorization_code');
-  form.set('code', params.code);
-  form.set('redirect_uri', pendingFlow.redirectUri);
-  form.set('client_id', config.bb.clientId);
-  form.set('code_verifier', pendingFlow.codeVerifier);
+  form.set("grant_type", "authorization_code");
+  form.set("code", params.code);
+  form.set("redirect_uri", pendingFlow.redirectUri);
+  form.set("client_id", config.bb.clientId);
+  form.set("code_verifier", pendingFlow.codeVerifier);
 
   if (config.bb.clientSecret) {
-    form.set('client_secret', config.bb.clientSecret);
+    form.set("client_secret", config.bb.clientSecret);
   }
 
   const response = await axios.post<OAuthTokenResponse>(
     getTokenEndpoint(),
     form.toString(),
     {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       timeout: 10_000,
     },
   );
@@ -168,30 +180,36 @@ export async function completeAuthorizationCodeFlow(params: {
   return record;
 }
 
-export async function refreshOAuthSession(sessionId: string): Promise<OAuthSessionRecord> {
+export async function refreshOAuthSession(
+  sessionId: string,
+): Promise<OAuthSessionRecord> {
   const session = oauthSessions.get(sessionId);
   if (!session) {
-    throw new Error('OAuth session not found. Complete the authorization flow again.');
+    throw new Error(
+      "OAuth session not found. Complete the authorization flow again.",
+    );
   }
 
   if (!session.token.refreshToken) {
-    throw new Error('OAuth session does not include a refresh token. Re-authorize required.');
+    throw new Error(
+      "OAuth session does not include a refresh token. Re-authorize required.",
+    );
   }
 
   const form = new URLSearchParams();
-  form.set('grant_type', 'refresh_token');
-  form.set('refresh_token', session.token.refreshToken);
-  form.set('client_id', config.bb.clientId);
+  form.set("grant_type", "refresh_token");
+  form.set("refresh_token", session.token.refreshToken);
+  form.set("client_id", config.bb.clientId);
 
   if (config.bb.clientSecret) {
-    form.set('client_secret', config.bb.clientSecret);
+    form.set("client_secret", config.bb.clientSecret);
   }
 
   const response = await axios.post<OAuthTokenResponse>(
     getTokenEndpoint(),
     form.toString(),
     {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       timeout: 10_000,
     },
   );
@@ -200,7 +218,8 @@ export async function refreshOAuthSession(sessionId: string): Promise<OAuthSessi
     ...session,
     token: mapTokenResponse({
       ...response.data,
-      refresh_token: response.data.refresh_token ?? session.token.refreshToken ?? undefined,
+      refresh_token:
+        response.data.refresh_token ?? session.token.refreshToken ?? undefined,
     }),
   };
 

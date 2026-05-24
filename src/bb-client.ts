@@ -8,8 +8,8 @@
  *   https://developer.blackboard.com/portal/displayApi
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import { config } from './config.js';
+import axios, { AxiosInstance, AxiosError } from "axios";
+import { config } from "./config.js";
 import type {
   BbCourse,
   BbAssignment,
@@ -20,7 +20,7 @@ import type {
   BbDiscussionPost,
   BbAttempt,
   TokenCache,
-} from './types.js';
+} from "./types.js";
 
 class BbApiError extends Error {
   constructor(
@@ -29,7 +29,7 @@ class BbApiError extends Error {
     public data?: unknown,
   ) {
     super(message);
-    this.name = 'BbApiError';
+    this.name = "BbApiError";
   }
 }
 
@@ -41,7 +41,7 @@ export class BlackboardClient {
     this.http = axios.create({
       baseURL: `${config.bb.baseUrl}/learn/api/public/v1`,
       timeout: 15_000,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
 
     // Inject auth token on every request
@@ -60,7 +60,7 @@ export class BlackboardClient {
         const msg =
           (data as Record<string, string> | undefined)?.message ??
           err.message ??
-          'Blackboard API error';
+          "Blackboard API error";
         throw new BbApiError(msg, status, data);
       },
     );
@@ -75,13 +75,13 @@ export class BlackboardClient {
     }
 
     const params = new URLSearchParams();
-    params.set('grant_type', 'client_credentials');
+    params.set("grant_type", "client_credentials");
 
     const res = await axios.post<{ access_token: string; expires_in: number }>(
       `${config.bb.baseUrl}/learn/api/public/v1/oauth2/token`,
       params.toString(),
       {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         auth: {
           username: config.bb.clientId,
           password: config.bb.clientSecret,
@@ -100,16 +100,19 @@ export class BlackboardClient {
   // ── Courses ──────────────────────────────────────────────────────────────
 
   async getCourses(userId?: string): Promise<BbCourse[]> {
-    const url = userId ? `/users/${userId}/courses` : '/courses';
+    const url = userId ? `/users/${userId}/courses` : "/courses";
     const res = await this.http.get<{ results: BbCourse[] }>(url, {
-      params: { limit: 100, fields: 'id,courseId,name,description,term,availability,enrollment' },
+      params: {
+        limit: 100,
+        fields: "id,courseId,name,description,term,availability,enrollment",
+      },
     });
     return res.data.results ?? [];
   }
 
   async probeConnectivity(): Promise<number> {
-    const res = await this.http.get<{ results: BbCourse[] }>('/courses', {
-      params: { limit: 1, fields: 'id' },
+    const res = await this.http.get<{ results: BbCourse[] }>("/courses", {
+      params: { limit: 1, fields: "id" },
     });
     return (res.data.results ?? []).length;
   }
@@ -138,7 +141,10 @@ export class BlackboardClient {
     return res.data.results ?? [];
   }
 
-  async getColumnGrades(courseId: string, columnId: string): Promise<BbGrade[]> {
+  async getColumnGrades(
+    courseId: string,
+    columnId: string,
+  ): Promise<BbGrade[]> {
     const res = await this.http.get<{ results: BbGrade[] }>(
       `/courses/${courseId}/gradebook/columns/${columnId}/users`,
       { params: { limit: 500 } },
@@ -188,14 +194,17 @@ export class BlackboardClient {
   ): Promise<BbAnnouncement> {
     const res = await this.http.post<BbAnnouncement>(
       `/courses/${courseId}/announcements`,
-      { title, body, availability: { duration: { type: 'Permanent' } } },
+      { title, body, availability: { duration: { type: "Permanent" } } },
     );
     return res.data;
   }
 
   // ── Course Content ───────────────────────────────────────────────────────
 
-  async getCourseContent(courseId: string, parentId?: string): Promise<BbContent[]> {
+  async getCourseContent(
+    courseId: string,
+    parentId?: string,
+  ): Promise<BbContent[]> {
     const base = `/courses/${courseId}/contents`;
     const url = parentId ? `${base}/${parentId}/children` : base;
     const res = await this.http.get<{ results: BbContent[] }>(url, {
@@ -207,11 +216,14 @@ export class BlackboardClient {
   // ── Users / Enrollments ──────────────────────────────────────────────────
 
   async getEnrolledUsers(courseId: string): Promise<BbUser[]> {
-    const res = await this.http.get<{ results: Array<{ userId: string; user?: BbUser }> }>(
-      `/courses/${courseId}/users`,
-      { params: { limit: 1000, fields: 'userId,user' } },
+    const res = await this.http.get<{
+      results: Array<{ userId: string; user?: BbUser }>;
+    }>(`/courses/${courseId}/users`, {
+      params: { limit: 1000, fields: "userId,user" },
+    });
+    return (res.data.results ?? []).map(
+      (e) => e.user ?? ({ id: e.userId, userName: e.userId } as BbUser),
     );
-    return (res.data.results ?? []).map((e) => e.user ?? ({ id: e.userId, userName: e.userId } as BbUser));
   }
 
   async getUser(userId: string): Promise<BbUser> {
@@ -221,7 +233,10 @@ export class BlackboardClient {
 
   // ── Discussion Boards ────────────────────────────────────────────────────
 
-  async getDiscussionPosts(courseId: string, threadId: string): Promise<BbDiscussionPost[]> {
+  async getDiscussionPosts(
+    courseId: string,
+    threadId: string,
+  ): Promise<BbDiscussionPost[]> {
     const res = await this.http.get<{ results: BbDiscussionPost[] }>(
       `/courses/${courseId}/discussions/${threadId}/posts`,
       { params: { limit: 200 } },

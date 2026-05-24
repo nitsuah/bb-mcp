@@ -1,3 +1,6 @@
+/**
+ * Provider manifest composition for MCP discovery, tool metadata, and capabilities.
+ */
 import {
   getMyCoursesSchema,
   listCoursesSchema,
@@ -8,7 +11,7 @@ import {
   getAssignmentFeedbackSchema,
   getAnnouncementsSchema,
   createAssignmentSubmissionSchema,
-} from './tools/student.js';
+} from "./tools/student.js";
 import {
   listRosterSchema,
   getGradesSchema,
@@ -17,12 +20,12 @@ import {
   getDiscussionSummarySchema,
   getAtRiskStudentsSchema,
   draftAnnouncementSchema,
-} from './tools/instructor.js';
-import { searchCourseMaterialsSchema } from './tools/shared.js';
-import { SERVER_NAME, SERVER_VERSION } from './constants.js';
-import { getAllowedRolesForTool } from './rbac.js';
-import { getOutputSchemaForTool } from './schemas.js';
-import { config } from './config.js';
+} from "./tools/instructor.js";
+import { searchCourseMaterialsSchema } from "./tools/shared.js";
+import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
+import { getAllowedRolesForTool } from "./rbac.js";
+import { getOutputSchemaForTool } from "./schemas.js";
+import { config } from "./config.js";
 
 /**
  * Wraps a specific output schema in the MCP text-content envelope.
@@ -31,24 +34,26 @@ import { config } from './config.js';
  *   2. Parse the JSON in the text field using the specific outputSchema
  *   3. Type-check the result against the schema
  */
-const DEFAULT_TEXT_OUTPUT_SCHEMA = (dataSchema: Record<string, unknown> | null) => ({
-  type: 'object',
+const DEFAULT_TEXT_OUTPUT_SCHEMA = (
+  dataSchema: Record<string, unknown> | null,
+) => ({
+  type: "object",
   properties: {
     content: {
-      type: 'array',
+      type: "array",
       items: {
-        type: 'object',
+        type: "object",
         properties: {
-          type: { type: 'string', enum: ['text'] },
-          text: { type: 'string' },
+          type: { type: "string", enum: ["text"] },
+          text: { type: "string" },
           dataSchema: dataSchema ?? undefined,
         },
-        required: ['type', 'text'],
+        required: ["type", "text"],
       },
       minItems: 1,
     },
   },
-  required: ['content'],
+  required: ["content"],
 });
 
 const TOOL_MANIFEST = [
@@ -76,26 +81,27 @@ const TOOL_MANIFEST = [
 }));
 
 export function buildProviderManifest(baseUrl: string) {
-  const oauthRedirectUri = config.oauth.redirectUri ?? `${baseUrl}/oauth/callback`;
+  const oauthRedirectUri =
+    config.oauth.redirectUri ?? `${baseUrl}/oauth/callback`;
 
   return {
     provider: {
       id: SERVER_NAME,
-      name: 'Blackboard Learn MCP',
+      name: "Blackboard Learn MCP",
       version: SERVER_VERSION,
-      protocol: 'mcp',
+      protocol: "mcp",
     },
     capabilities: {
       transports: {
         stdio: true,
         streamableHttp: {
           enabled: true,
-          mcpPath: '/mcp',
+          mcpPath: "/mcp",
           supportsSessionReuse: true,
         },
       },
       resources: {
-        supported: ['course://{courseId}'],
+        supported: ["course://{courseId}"],
       },
       auth: {
         callerIdentity: true,

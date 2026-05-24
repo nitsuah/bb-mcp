@@ -20,17 +20,17 @@
  *      suitable for ingestion by any log aggregator.
  */
 
-import { config } from './config.js';
-import { scrubLogText, toAuditSubject } from './privacy.js';
-import { canRoleAccessTool, getAllowedRolesForTool } from './rbac.js';
+import { config } from "./config.js";
+import { scrubLogText, toAuditSubject } from "./privacy.js";
+import { canRoleAccessTool, getAllowedRolesForTool } from "./rbac.js";
 
-export type Role = 'student' | 'instructor' | 'admin';
+export type Role = "student" | "instructor" | "admin";
 
 export interface CallerIdentity {
-  userId: string;       // opaque identifier — Blackboard user ID or service account
+  userId: string; // opaque identifier — Blackboard user ID or service account
   role: Role;
   ferpa_authorized?: boolean; // must be true to call restricted tools
-  clientApp?: string;   // "agent-board", "claude-desktop", "cursor", etc.
+  clientApp?: string; // "agent-board", "claude-desktop", "cursor", etc.
 }
 
 export interface AuthContext {
@@ -42,7 +42,7 @@ export interface AuthContext {
 export class AuthorizationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'AuthorizationError';
+    this.name = "AuthorizationError";
   }
 }
 
@@ -89,7 +89,7 @@ export function __resetRateLimiterForTests(): void {
 
 /** Structured audit log — write to stdout for log aggregator pickup */
 function auditLog(
-  event: 'access.granted' | 'access.denied',
+  event: "access.granted" | "access.denied",
   ctx: AuthContext,
   reason?: string,
 ): void {
@@ -102,28 +102,32 @@ function auditLog(
     courseId: ctx.courseId ?? null,
     clientApp: ctx.identity.clientApp ?? null,
     reason: reason ? scrubLogText(reason) : null,
-    piiRedaction: 'hashed-subject',
+    piiRedaction: "hashed-subject",
   };
-  process.stdout.write(JSON.stringify(entry) + '\n');
+  process.stdout.write(JSON.stringify(entry) + "\n");
 }
 
 export function checkAuthorization(ctx: AuthContext): void {
-  const { identity, toolName, courseId } = ctx;
+  const { identity, toolName } = ctx;
   const isRestricted = config.security.restrictedTools.includes(toolName);
 
   try {
     assertWithinRateLimit(identity);
   } catch (error) {
-    auditLog('access.denied', ctx, error instanceof Error ? error.message : 'rate limit exceeded');
+    auditLog(
+      "access.denied",
+      ctx,
+      error instanceof Error ? error.message : "rate limit exceeded",
+    );
     throw error;
   }
 
   // FERPA gate
   if (isRestricted && !identity.ferpa_authorized) {
-    auditLog('access.denied', ctx, 'FERPA authorization required');
+    auditLog("access.denied", ctx, "FERPA authorization required");
     throw new AuthorizationError(
       `Tool "${toolName}" accesses protected student data. ` +
-        'The calling application must assert ferpa_authorized=true after verifying user identity.',
+        "The calling application must assert ferpa_authorized=true after verifying user identity.",
     );
   }
 
@@ -132,19 +136,19 @@ export function checkAuthorization(ctx: AuthContext): void {
     const allowed = getAllowedRolesForTool(toolName);
     const message =
       allowed.length > 0
-        ? `role \"${identity.role}\" cannot access tool \"${toolName}\"`
-        : `tool \"${toolName}\" is not registered in RBAC policy`;
+        ? `role "${identity.role}" cannot access tool "${toolName}"`
+        : `tool "${toolName}" is not registered in RBAC policy`;
 
-    auditLog('access.denied', ctx, message);
+    auditLog("access.denied", ctx, message);
 
     const allowedText =
-      allowed.length > 0 ? ` Allowed roles: ${allowed.join(', ')}.` : '';
+      allowed.length > 0 ? ` Allowed roles: ${allowed.join(", ")}.` : "";
     throw new AuthorizationError(
       `Tool "${toolName}" is not available to role "${identity.role}".${allowedText}`,
     );
   }
 
-  auditLog('access.granted', ctx);
+  auditLog("access.granted", ctx);
 }
 
 /**
@@ -152,22 +156,24 @@ export function checkAuthorization(ctx: AuthContext): void {
  * Returns a validated CallerIdentity or throws a descriptive error.
  */
 export function parseIdentity(raw: unknown): CallerIdentity {
-  if (!raw || typeof raw !== 'object') {
+  if (!raw || typeof raw !== "object") {
     throw new AuthorizationError(
-      'caller_identity is required. Provide { userId, role } at minimum.',
+      "caller_identity is required. Provide { userId, role } at minimum.",
     );
   }
 
   const obj = raw as Record<string, unknown>;
 
-  if (!obj.userId || typeof obj.userId !== 'string') {
-    throw new AuthorizationError('caller_identity.userId must be a non-empty string.');
+  if (!obj.userId || typeof obj.userId !== "string") {
+    throw new AuthorizationError(
+      "caller_identity.userId must be a non-empty string.",
+    );
   }
 
-  const validRoles: Role[] = ['student', 'instructor', 'admin'];
+  const validRoles: Role[] = ["student", "instructor", "admin"];
   if (!validRoles.includes(obj.role as Role)) {
     throw new AuthorizationError(
-      `caller_identity.role must be one of: ${validRoles.join(', ')}.`,
+      `caller_identity.role must be one of: ${validRoles.join(", ")}.`,
     );
   }
 
@@ -175,6 +181,6 @@ export function parseIdentity(raw: unknown): CallerIdentity {
     userId: obj.userId,
     role: obj.role as Role,
     ferpa_authorized: obj.ferpa_authorized === true,
-    clientApp: typeof obj.clientApp === 'string' ? obj.clientApp : undefined,
+    clientApp: typeof obj.clientApp === "string" ? obj.clientApp : undefined,
   };
 }

@@ -4,11 +4,14 @@ FROM node:22-slim AS test
 WORKDIR /app
 
 COPY package.json ./
+COPY package-lock.json ./
 COPY tsconfig.json ./
 COPY vitest.config.ts ./
+COPY eslint.config.mjs ./
+COPY scripts ./scripts
 COPY src ./src
 COPY tests ./tests
-RUN npm install
+RUN npm ci
 RUN npm run build
 
 CMD ["npm", "test"]
@@ -18,7 +21,8 @@ FROM node:22-slim AS builder
 WORKDIR /app
 
 COPY package.json ./
-RUN npm install
+COPY package-lock.json ./
+RUN npm ci
 
 COPY tsconfig.json ./
 COPY src ./src
@@ -32,7 +36,8 @@ WORKDIR /app
 
 # Only copy production deps + compiled output
 COPY package.json ./
-RUN npm install --omit=dev
+COPY package-lock.json ./
+RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 

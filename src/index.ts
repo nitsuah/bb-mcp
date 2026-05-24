@@ -10,15 +10,15 @@
  *   GET /metrics  — Prometheus text format
  */
 
-import 'dotenv/config';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { randomUUID } from 'crypto';
-import http from 'http';
-import { getMetricsText, getMetricsSummary, pushMetrics } from './metrics.js';
-import { buildProviderManifest } from './manifest.js';
-import { SERVER_NAME, SERVER_VERSION } from './constants.js';
+import "dotenv/config";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { randomUUID } from "crypto";
+import http from "http";
+import { getMetricsText, getMetricsSummary, pushMetrics } from "./metrics.js";
+import { buildProviderManifest } from "./manifest.js";
+import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
 import {
   buildDoctorReport,
   formatDoctorReport,
@@ -28,12 +28,12 @@ import {
   getManifestBaseUrl,
   parseCliCommand,
   runBlackboardProbe,
-} from './cli.js';
+} from "./cli.js";
 import {
   completeAuthorizationCodeFlow,
   getOAuthSession,
   startAuthorizationCodeFlow,
-} from './oauth.js';
+} from "./oauth.js";
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -65,7 +65,7 @@ import {
   CreateAssignmentSubmissionInput,
   createAssignmentSubmissionHandler,
   createAssignmentSubmissionSchema,
-} from './tools/student.js';
+} from "./tools/student.js";
 
 import {
   ListRosterInput,
@@ -89,44 +89,58 @@ import {
   DraftAnnouncementInput,
   draftAnnouncementHandler,
   draftAnnouncementSchema,
-} from './tools/instructor.js';
+} from "./tools/instructor.js";
 
 import {
   SearchCourseMaterialsInput,
   searchCourseMaterialsHandler,
   searchCourseMaterialsSchema,
-} from './tools/shared.js';
+} from "./tools/shared.js";
 
 // ── MCP Server setup ──────────────────────────────────────────────────────
 
 function buildServer(): McpServer {
   // SDK typing changed and is stricter than the JSON-schema shape used below.
   // Keep runtime behavior intact by using a compatibility cast at the server boundary.
-  const server: any = new McpServer({
+  const server = new McpServer({
     name: SERVER_NAME,
     version: SERVER_VERSION,
-  });
+  }) as McpServer & {
+    tool: (
+      name: string,
+      description: string,
+      inputSchema: unknown,
+      handler: (args: unknown) => unknown,
+    ) => void;
+    resource: (
+      name: string,
+      uriTemplate: string,
+      handler: (uri: { pathname: string; href: string }) => Promise<unknown>,
+    ) => void;
+  };
 
   // Student tools
   server.tool(
     getMyCoursesSchema.name,
     getMyCoursesSchema.description,
     GetMyCoursesInput.shape,
-    (args: any) => getMyCoursesHandler(args as Parameters<typeof getMyCoursesHandler>[0]),
+    (args: unknown) =>
+      getMyCoursesHandler(args as Parameters<typeof getMyCoursesHandler>[0]),
   );
 
   server.tool(
     listCoursesSchema.name,
     listCoursesSchema.description,
     ListCoursesInput.shape,
-    (args: any) => listCoursesHandler(args as Parameters<typeof listCoursesHandler>[0]),
+    (args: unknown) =>
+      listCoursesHandler(args as Parameters<typeof listCoursesHandler>[0]),
   );
 
   server.tool(
     getUpcomingAssignmentsSchema.name,
     getUpcomingAssignmentsSchema.description,
     GetUpcomingAssignmentsInput.shape,
-    (args: any) =>
+    (args: unknown) =>
       getUpcomingAssignmentsHandler(
         args as Parameters<typeof getUpcomingAssignmentsHandler>[0],
       ),
@@ -136,30 +150,35 @@ function buildServer(): McpServer {
     getMyGradesSchema.name,
     getMyGradesSchema.description,
     GetMyGradesInput.shape,
-    (args: any) => getMyGradesHandler(args as Parameters<typeof getMyGradesHandler>[0]),
+    (args: unknown) =>
+      getMyGradesHandler(args as Parameters<typeof getMyGradesHandler>[0]),
   );
 
   server.tool(
     getCourseContentSchema.name,
     getCourseContentSchema.description,
     GetCourseContentInput.shape,
-    (args: any) =>
-      getCourseContentHandler(args as Parameters<typeof getCourseContentHandler>[0]),
+    (args: unknown) =>
+      getCourseContentHandler(
+        args as Parameters<typeof getCourseContentHandler>[0],
+      ),
   );
 
   server.tool(
     getCourseContentsSchema.name,
     getCourseContentsSchema.description,
     GetCourseContentsInput.shape,
-    (args: any) =>
-      getCourseContentsHandler(args as Parameters<typeof getCourseContentsHandler>[0]),
+    (args: unknown) =>
+      getCourseContentsHandler(
+        args as Parameters<typeof getCourseContentsHandler>[0],
+      ),
   );
 
   server.tool(
     getAssignmentFeedbackSchema.name,
     getAssignmentFeedbackSchema.description,
     GetAssignmentFeedbackInput.shape,
-    (args: any) =>
+    (args: unknown) =>
       getAssignmentFeedbackHandler(
         args as Parameters<typeof getAssignmentFeedbackHandler>[0],
       ),
@@ -169,14 +188,17 @@ function buildServer(): McpServer {
     getAnnouncementsSchema.name,
     getAnnouncementsSchema.description,
     GetAnnouncementsInput.shape,
-    (args: any) => getAnnouncementsHandler(args as Parameters<typeof getAnnouncementsHandler>[0]),
+    (args: unknown) =>
+      getAnnouncementsHandler(
+        args as Parameters<typeof getAnnouncementsHandler>[0],
+      ),
   );
 
   server.tool(
     createAssignmentSubmissionSchema.name,
     createAssignmentSubmissionSchema.description,
     CreateAssignmentSubmissionInput.shape,
-    (args: any) =>
+    (args: unknown) =>
       createAssignmentSubmissionHandler(
         args as Parameters<typeof createAssignmentSubmissionHandler>[0],
       ),
@@ -187,29 +209,33 @@ function buildServer(): McpServer {
     listRosterSchema.name,
     listRosterSchema.description,
     ListRosterInput.shape,
-    (args: any) => listRosterHandler(args as Parameters<typeof listRosterHandler>[0]),
+    (args: unknown) =>
+      listRosterHandler(args as Parameters<typeof listRosterHandler>[0]),
   );
 
   server.tool(
     getGradesSchema.name,
     getGradesSchema.description,
     GetGradesInput.shape,
-    (args: any) => getGradesHandler(args as Parameters<typeof getGradesHandler>[0]),
+    (args: unknown) =>
+      getGradesHandler(args as Parameters<typeof getGradesHandler>[0]),
   );
 
   server.tool(
     getSubmissionStatusSchema.name,
     getSubmissionStatusSchema.description,
     GetSubmissionStatusInput.shape,
-    (args: any) =>
-      getSubmissionStatusHandler(args as Parameters<typeof getSubmissionStatusHandler>[0]),
+    (args: unknown) =>
+      getSubmissionStatusHandler(
+        args as Parameters<typeof getSubmissionStatusHandler>[0],
+      ),
   );
 
   server.tool(
     getGradeDistributionSchema.name,
     getGradeDistributionSchema.description,
     GetGradeDistributionInput.shape,
-    (args: any) =>
+    (args: unknown) =>
       getGradeDistributionHandler(
         args as Parameters<typeof getGradeDistributionHandler>[0],
       ),
@@ -219,7 +245,7 @@ function buildServer(): McpServer {
     getDiscussionSummarySchema.name,
     getDiscussionSummarySchema.description,
     GetDiscussionSummaryInput.shape,
-    (args: any) =>
+    (args: unknown) =>
       getDiscussionSummaryHandler(
         args as Parameters<typeof getDiscussionSummaryHandler>[0],
       ),
@@ -229,16 +255,20 @@ function buildServer(): McpServer {
     getAtRiskStudentsSchema.name,
     getAtRiskStudentsSchema.description,
     GetAtRiskStudentsInput.shape,
-    (args: any) =>
-      getAtRiskStudentsHandler(args as Parameters<typeof getAtRiskStudentsHandler>[0]),
+    (args: unknown) =>
+      getAtRiskStudentsHandler(
+        args as Parameters<typeof getAtRiskStudentsHandler>[0],
+      ),
   );
 
   server.tool(
     draftAnnouncementSchema.name,
     draftAnnouncementSchema.description,
     DraftAnnouncementInput.shape,
-    (args: any) =>
-      draftAnnouncementHandler(args as Parameters<typeof draftAnnouncementHandler>[0]),
+    (args: unknown) =>
+      draftAnnouncementHandler(
+        args as Parameters<typeof draftAnnouncementHandler>[0],
+      ),
   );
 
   // Shared tools
@@ -246,23 +276,23 @@ function buildServer(): McpServer {
     searchCourseMaterialsSchema.name,
     searchCourseMaterialsSchema.description,
     SearchCourseMaterialsInput.shape,
-    (args: any) =>
+    (args: unknown) =>
       searchCourseMaterialsHandler(
         args as Parameters<typeof searchCourseMaterialsHandler>[0],
       ),
   );
 
   // MCP Resource: course://[courseId]
-  server.resource('course', 'course://{courseId}', async (uri: any) => {
-    const courseId = uri.pathname.replace(/^\/+/, '');
-    const { bbClient } = await import('./bb-client.js');
+  server.resource("course", "course://{courseId}", async (uri) => {
+    const courseId = uri.pathname.replace(/^\/+/, "");
+    const { bbClient } = await import("./bb-client.js");
     const course = await bbClient.getCourse(courseId);
     return {
       contents: [
         {
           uri: uri.href,
           text: JSON.stringify(course, null, 2),
-          mimeType: 'application/json',
+          mimeType: "application/json",
         },
       ],
     };
@@ -273,18 +303,9 @@ function buildServer(): McpServer {
 
 // ── Helper: parse raw HTTP body ───────────────────────────────────────────
 
-function readBody(req: http.IncomingMessage): Promise<string> {
-  return new Promise((resolve, reject) => {
-    let data = '';
-    req.on('data', (chunk) => (data += chunk));
-    req.on('end', () => resolve(data));
-    req.on('error', reject);
-  });
-}
-
 function chunkText(text: string, maxChunkSize = 600): string[] {
   if (!text) {
-    return [''];
+    return [""];
   }
 
   const chunks: string[] = [];
@@ -308,27 +329,29 @@ function isTruthy(value: string | null): boolean {
     return false;
   }
 
-  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+  return ["1", "true", "yes", "on"].includes(value.toLowerCase());
 }
 
 // ── HTTP mode (default) ───────────────────────────────────────────────────
 
 async function startHttpServer(): Promise<void> {
-  const { config } = await import('./config.js');
-  const server = buildServer();
+  const { config } = await import("./config.js");
 
   // Per-session transports (stateful SSE / streamable HTTP)
   const transports = new Map<string, StreamableHTTPServerTransport>();
 
   const httpServer = http.createServer(async (req, res) => {
-    const url = new URL(req.url ?? '/', `http://localhost:${config.server.port}`);
+    const url = new URL(
+      req.url ?? "/",
+      `http://localhost:${config.server.port}`,
+    );
 
     // ── Health ──
-    if (req.method === 'GET' && url.pathname === '/health') {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
+    if (req.method === "GET" && url.pathname === "/health") {
+      res.writeHead(200, { "Content-Type": "application/json" });
       res.end(
         JSON.stringify({
-          status: 'ok',
+          status: "ok",
           name: SERVER_NAME,
           version: SERVER_VERSION,
           uptime: process.uptime(),
@@ -339,29 +362,29 @@ async function startHttpServer(): Promise<void> {
     }
 
     // ── Prometheus metrics ──
-    if (req.method === 'GET' && url.pathname === '/metrics') {
-      res.writeHead(200, { 'Content-Type': 'text/plain; version=0.0.4' });
+    if (req.method === "GET" && url.pathname === "/metrics") {
+      res.writeHead(200, { "Content-Type": "text/plain; version=0.0.4" });
       res.end(getMetricsText());
       return;
     }
 
     // ── Provider manifest ──
-    if (req.method === 'GET' && url.pathname === '/manifest') {
+    if (req.method === "GET" && url.pathname === "/manifest") {
       const baseUrl =
         config.server.publicBaseUrl ?? `http://localhost:${config.server.port}`;
       const manifest = buildProviderManifest(baseUrl);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(manifest));
       return;
     }
 
     // ── OAuth authorization code flow ──
-    if (req.method === 'GET' && url.pathname === '/oauth/authorize') {
+    if (req.method === "GET" && url.pathname === "/oauth/authorize") {
       const flow = startAuthorizationCodeFlow();
-      const format = url.searchParams.get('format');
+      const format = url.searchParams.get("format");
 
-      if (format === 'json') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+      if (format === "json") {
+        res.writeHead(200, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
             authorizationUrl: flow.authorizationUrl,
@@ -377,20 +400,30 @@ async function startHttpServer(): Promise<void> {
       return;
     }
 
-    if (req.method === 'GET' && url.pathname === '/oauth/callback') {
-      const error = url.searchParams.get('error');
-      const code = url.searchParams.get('code');
-      const state = url.searchParams.get('state');
+    if (req.method === "GET" && url.pathname === "/oauth/callback") {
+      const error = url.searchParams.get("error");
+      const code = url.searchParams.get("code");
+      const state = url.searchParams.get("state");
 
       if (error) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error, message: 'OAuth authorization was denied by the provider.' }));
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error,
+            message: "OAuth authorization was denied by the provider.",
+          }),
+        );
         return;
       }
 
       if (!code || !state) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'invalid_request', message: 'Missing OAuth code or state.' }));
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: "invalid_request",
+            message: "Missing OAuth code or state.",
+          }),
+        );
         return;
       }
 
@@ -398,7 +431,7 @@ async function startHttpServer(): Promise<void> {
         const session = await completeAuthorizationCodeFlow({ code, state });
         const stored = getOAuthSession(session.sessionId);
 
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.writeHead(200, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
             success: true,
@@ -406,85 +439,97 @@ async function startHttpServer(): Promise<void> {
             tokenType: stored?.token.tokenType ?? session.token.tokenType,
             expiresAt: stored?.token.expiresAt ?? session.token.expiresAt,
             scope: stored?.token.scope ?? session.token.scope,
-            refreshable: Boolean(stored?.token.refreshToken ?? session.token.refreshToken),
+            refreshable: Boolean(
+              stored?.token.refreshToken ?? session.token.refreshToken,
+            ),
           }),
         );
       } catch (oauthError) {
-        const message = oauthError instanceof Error ? oauthError.message : String(oauthError);
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'oauth_exchange_failed', message }));
+        const message =
+          oauthError instanceof Error ? oauthError.message : String(oauthError);
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "oauth_exchange_failed", message }));
       }
 
       return;
     }
 
     // ── Dedicated SSE endpoint: search_course_materials ──
-    if (req.method === 'GET' && url.pathname === '/sse/search-course-materials') {
-      const query = url.searchParams.get('query')?.trim();
+    if (
+      req.method === "GET" &&
+      url.pathname === "/sse/search-course-materials"
+    ) {
+      const query = url.searchParams.get("query")?.trim();
       if (!query) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.writeHead(400, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
-            error: 'Missing required query parameter: query',
+            error: "Missing required query parameter: query",
             example:
-              '/sse/search-course-materials?query=syllabus&userId=student-1&role=student',
+              "/sse/search-course-materials?query=syllabus&userId=student-1&role=student",
           }),
         );
         return;
       }
 
-      const roleRaw = (url.searchParams.get('role') ?? 'student').toLowerCase();
-      const role = roleRaw === 'instructor' || roleRaw === 'admin' ? roleRaw : 'student';
+      const roleRaw = (url.searchParams.get("role") ?? "student").toLowerCase();
+      const role =
+        roleRaw === "instructor" || roleRaw === "admin" ? roleRaw : "student";
 
       res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache, no-transform',
-        Connection: 'keep-alive',
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
       });
 
-      writeSseEvent(res, 'start', {
-        tool: 'search_course_materials',
+      writeSseEvent(res, "start", {
+        tool: "search_course_materials",
         query,
         role,
       });
 
       try {
-        writeSseEvent(res, 'status', { step: 'authorizing' });
+        writeSseEvent(res, "status", { step: "authorizing" });
 
         const result = await searchCourseMaterialsHandler({
           caller_identity: {
-            userId: url.searchParams.get('userId') ?? 'sse-user',
+            userId: url.searchParams.get("userId") ?? "sse-user",
             role,
-            ferpa_authorized: isTruthy(url.searchParams.get('ferpa_authorized')),
-            clientApp: url.searchParams.get('clientApp') ?? 'bb-mcp-sse',
+            ferpa_authorized: isTruthy(
+              url.searchParams.get("ferpa_authorized"),
+            ),
+            clientApp: url.searchParams.get("clientApp") ?? "bb-mcp-sse",
           },
           query,
-          courseId: url.searchParams.get('courseId') ?? undefined,
+          courseId: url.searchParams.get("courseId") ?? undefined,
         });
 
         const textResult =
-          result.content[0]?.type === 'text'
+          result.content[0]?.type === "text"
             ? result.content[0].text
             : JSON.stringify(result);
 
         const chunks = chunkText(textResult);
-        writeSseEvent(res, 'status', { step: 'streaming', chunks: chunks.length });
+        writeSseEvent(res, "status", {
+          step: "streaming",
+          chunks: chunks.length,
+        });
 
         chunks.forEach((chunk, index) => {
-          writeSseEvent(res, 'chunk', {
+          writeSseEvent(res, "chunk", {
             index,
             total: chunks.length,
             text: chunk,
           });
         });
 
-        writeSseEvent(res, 'complete', {
+        writeSseEvent(res, "complete", {
           success: true,
           chunks: chunks.length,
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        writeSseEvent(res, 'error', {
+        writeSseEvent(res, "error", {
           success: false,
           message,
         });
@@ -495,13 +540,13 @@ async function startHttpServer(): Promise<void> {
     }
 
     // ── MCP endpoint ──
-    if (url.pathname === '/mcp') {
+    if (url.pathname === "/mcp") {
       // GET → SSE stream for existing session
-      if (req.method === 'GET') {
-        const sessionId = url.searchParams.get('sessionId');
+      if (req.method === "GET") {
+        const sessionId = url.searchParams.get("sessionId");
         if (!sessionId || !transports.has(sessionId)) {
           res.writeHead(404);
-          res.end('Session not found');
+          res.end("Session not found");
           return;
         }
         const transport = transports.get(sessionId)!;
@@ -510,19 +555,21 @@ async function startHttpServer(): Promise<void> {
       }
 
       // DELETE → cleanup session
-      if (req.method === 'DELETE') {
-        const sessionId = url.searchParams.get('sessionId');
+      if (req.method === "DELETE") {
+        const sessionId = url.searchParams.get("sessionId");
         if (sessionId && transports.has(sessionId)) {
           transports.delete(sessionId);
         }
         res.writeHead(200);
-        res.end('OK');
+        res.end("OK");
         return;
       }
 
       // POST → new session or message on existing session
-      if (req.method === 'POST') {
-        const sessionId = url.searchParams.get('sessionId') ?? req.headers['mcp-session-id'] as string | undefined;
+      if (req.method === "POST") {
+        const sessionId =
+          url.searchParams.get("sessionId") ??
+          (req.headers["mcp-session-id"] as string | undefined);
 
         if (sessionId && transports.has(sessionId)) {
           // Existing session
@@ -551,20 +598,28 @@ async function startHttpServer(): Promise<void> {
       }
 
       res.writeHead(405);
-      res.end('Method Not Allowed');
+      res.end("Method Not Allowed");
       return;
     }
 
     res.writeHead(404);
-    res.end('Not Found');
+    res.end("Not Found");
   });
 
   httpServer.listen(config.server.port, () => {
-    console.log(`blackboard-learn-mcp HTTP server listening on port ${config.server.port}`);
+    console.log(
+      `blackboard-learn-mcp HTTP server listening on port ${config.server.port}`,
+    );
     console.log(`  MCP endpoint : http://localhost:${config.server.port}/mcp`);
-    console.log(`  Health       : http://localhost:${config.server.port}/health`);
-    console.log(`  Metrics      : http://localhost:${config.server.port}/metrics`);
-    console.log(`  Manifest     : http://localhost:${config.server.port}/manifest`);
+    console.log(
+      `  Health       : http://localhost:${config.server.port}/health`,
+    );
+    console.log(
+      `  Metrics      : http://localhost:${config.server.port}/metrics`,
+    );
+    console.log(
+      `  Manifest     : http://localhost:${config.server.port}/manifest`,
+    );
   });
 
   // Push metrics every 60s if configured
@@ -576,7 +631,7 @@ async function startHttpServer(): Promise<void> {
 // ── stdio mode (Claude Desktop, Cursor) ──────────────────────────────────
 
 async function startStdioServer(): Promise<void> {
-  await import('./config.js');
+  await import("./config.js");
   const server = buildServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
@@ -587,27 +642,29 @@ async function startStdioServer(): Promise<void> {
 const command = parseCliCommand(process.argv.slice(2));
 
 switch (command.mode) {
-  case 'help':
+  case "help":
     console.log(getCliHelpText());
     break;
-  case 'version':
+  case "version":
     console.log(`${SERVER_NAME} v${SERVER_VERSION}`);
     break;
-  case 'manifest': {
+  case "manifest": {
     const manifest = buildProviderManifest(getManifestBaseUrl(command.baseUrl));
     console.log(JSON.stringify(manifest, null, command.json ? 2 : 0));
     break;
   }
-  case 'tools': {
+  case "tools": {
     if (command.json) {
-      const manifest = buildProviderManifest(getManifestBaseUrl(command.baseUrl));
+      const manifest = buildProviderManifest(
+        getManifestBaseUrl(command.baseUrl),
+      );
       console.log(JSON.stringify(manifest.tools, null, 2));
     } else {
       console.log(formatToolCatalog(command.baseUrl));
     }
     break;
   }
-  case 'doctor': {
+  case "doctor": {
     const report = buildDoctorReport();
     if (command.json) {
       console.log(JSON.stringify(report, null, 2));
@@ -616,7 +673,7 @@ switch (command.mode) {
     }
     break;
   }
-  case 'probe': {
+  case "probe": {
     const report = await runBlackboardProbe();
     if (command.json) {
       console.log(JSON.stringify(report, null, 2));
@@ -629,10 +686,10 @@ switch (command.mode) {
     }
     break;
   }
-  case 'server': {
+  case "server": {
     const runner = command.useStdio ? startStdioServer : startHttpServer;
     runner().catch((err) => {
-      console.error('Fatal:', err);
+      console.error("Fatal:", err);
       process.exit(1);
     });
     break;

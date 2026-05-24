@@ -6,57 +6,71 @@ This document tracks the key performance indicators (KPIs), code quality standar
 
 | Metric | Current | Target | Status |
 | :--- | :--- | :--- | :--- |
-| **Unit Test Coverage** | 0% | > 85% | 🔴 Pending |
-| **Total Test Cases** | 0 | > 50 | 🔴 Pending |
-| **CI/CD Pipeline Success Rate** | TBD | 100% | 🟡 Initializing |
+| **Unit Test Coverage** | 91.86% lines, 68.24% branches (Docker Vitest v8) | > 85% | 🟢 Pass |
+| **Total Test Cases** | 79 | > 50 | 🟢 Pass |
 | **Critical/High Vulnerabilities** | 0 | 0 | 🟢 Pass |
 | **TypeScript Strict Mode Compliance** | 100% | 100% | 🟢 Pass |
-| **Average Cyclomatic Complexity** | TBD | < 10 | 🟡 Monitoring |
-| **Documentation Coverage (TSDoc)** | TBD | > 90% | 🔴 Pending |
-| **Cold Build Duration (Clean)** | TBD | < 30s | 🟡 Monitoring |
-| **Production Bundle Size (dist)** | TBD | < 5MB | 🟡 Monitoring |
+| **Average Cyclomatic Complexity** | 2.63 (70 functions, core scope) | < 10 | 🟢 Pass |
+| **Documentation Coverage (TSDoc)** | 100% module coverage (core scope) | > 90% | 🟢 Pass |
+| **Cold Build Duration (Clean)** | 7.08s (Docker builder, no cache) | < 30s | 🟢 Pass |
+| **Production Bundle Size (dist)** | 424K (Docker test image) | < 5MB | 🟢 Pass |
 | **Linting Errors/Warnings** | 0 | 0 | 🟢 Pass |
+
+Coverage scope note: Unit coverage excludes `src/index.ts`, `src/types.ts`, and `src/constants.ts` in `vitest.config.ts`.
+
+Coverage detail: `src/tools` coverage is now 98.57% lines / 72.16% branches (`student.ts` 96.62% lines / 78.75% branches, `instructor.ts` 100% lines / 66.03% branches, `shared.ts` 100% lines / 87.5% branches).
+
+Complexity/TSDoc scope note: metrics scripts in `scripts/metrics-complexity.mjs` and `scripts/metrics-doc-coverage.mjs` use the same core scope as unit coverage.
 
 ## How to Update
 
 To refresh these metrics locally, use the following commands:
 
 ### Testing & Coverage
-Requires a testing framework like Jest or Vitest.
 ```bash
-# Generate coverage report
-npm test -- --coverage
+# Build a deterministic test image
+docker build --target test -t bb-mcp:test .
+
+# Run tests with coverage
+docker run --rm bb-mcp:test npm run test:coverage
 ```
 
 ### Security Audits
 Scans dependencies for known vulnerabilities.
 ```bash
 # Check for vulnerabilities
-npm audit
+docker run --rm bb-mcp:test npm audit --audit-level=high
 ```
 
 ### Code Quality & Complexity
 Uses ESLint and specialized tools to analyze code structure.
 ```bash
 # Run linter
-npm run lint
+docker run --rm bb-mcp:test npm run lint
+
+# Compute average cyclomatic complexity
+docker run --rm bb-mcp:test npm run metrics:complexity
+
+# Compute TSDoc module coverage
+docker run --rm bb-mcp:test npm run metrics:docs
 
 # Calculate Lines of Code (requires 'cloc' installed)
-cloc src/
+docker run --rm -v "${PWD}:/workspace" -w /workspace node:22-slim sh -lc "apt-get update >/dev/null && apt-get install -y cloc >/dev/null && cloc src/"
 ```
 
 ### Build Performance
 Measures the time taken to compile TypeScript to JavaScript.
 ```bash
-# Measure build time
-time npm run build
+# Measure clean build time in PowerShell
+$duration = Measure-Command { docker build --no-cache --target builder -t bb-mcp:builder . | Out-Null }
+$duration.TotalSeconds
 ```
 
 ### Bundle Analysis
 Check the size of the compiled output in the `dist` or `build` folder.
 ```bash
 # Check size of distribution files
-du -sh ./dist
+docker run --rm bb-mcp:test sh -lc "du -sh dist"
 ```
 
 ## Review Cycle
