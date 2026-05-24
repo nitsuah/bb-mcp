@@ -55,4 +55,4 @@ The `bb-mcp` server exposes Blackboard Learn capabilities as MCP tools over HTTP
 *   **Clear Messages:** Provide concise, descriptive commit messages.
 
 ### What to Avoid
-*   **Hardcoding Credentials/Sensitive Information:** Never hardcode API keys,
+*   **Hardcoding Credentials/Sensitive Information:** Never hardcode API keys, passwords, tokens, or other sensitive information. Store them in environment variables, not directly in the codebase.
