@@ -4,16 +4,27 @@ This document tracks the key performance indicators (KPIs), code quality standar
 
 ## Project Health & Quality Metrics
 
-| Metric | Current | Target | Status |
-| :--- | :--- | :--- | :--- |
-| **Unit Test Coverage** | 91.86% lines | > 85% | 🟢 Pass |
-| **Total Test Cases** | 79 | > 50 | 🟢 Pass |
-| **Critical/High Vulnerabilities** | 0 | 0 | 🟢 Pass |
-| **Average Cyclomatic Complexity** | 2.63 (70 functions, core scope) | < 10 | 🟢 Pass |
-| **Documentation Coverage (TSDoc)** | 100% module coverage (core scope) | > 90% | 🟢 Pass |
-| **Cold Build Duration (Clean)** | 7.08s (Docker builder, no cache) | < 30s | 🟢 Pass |
-| **Production Bundle Size (dist)** | 424K (Docker test image) | < 5MB | 🟢 Pass |
-| **Linting Errors/Warnings** | 0 | 0 | 🟢 Pass |
+| Metric | Current | Status |
+| :--- | :--- | :--- |
+| **Unit Test Coverage** | 91.86% lines | 🟢 Pass |
+| **Total Test Cases** | 79 | 🟢 Pass |
+| **Critical/High Vulnerabilities** | 0 | 🟢 Pass |
+| **Average Cyclomatic Complexity** | 2.63 (70 functions, core scope) | 🟢 Pass |
+| **Documentation Coverage (TSDoc)** | 100% module coverage (core scope) | 🟢 Pass |
+| **Cold Build Duration (Clean)** | 7.08s (Docker builder, no cache) | 🟢 Pass |
+| **Production Bundle Size (dist)** | 424K (Docker test image) | 🟢 Pass |
+| **Linting Errors/Warnings** | 0 | 🟢 Pass |
+
+### Target Thresholds
+
+- Unit Test Coverage: `> 85%`
+- Total Test Cases: `> 50`
+- Critical/High Vulnerabilities: `0`
+- Average Cyclomatic Complexity: `< 10`
+- Documentation Coverage (TSDoc): `> 90%`
+- Cold Build Duration (Clean): `< 30s`
+- Production Bundle Size (dist): `< 5MB`
+- Linting Errors/Warnings: `0`
 
 Coverage scope note: Unit coverage excludes `src/index.ts`, `src/types.ts`, and `src/constants.ts` in `vitest.config.ts`.
 
