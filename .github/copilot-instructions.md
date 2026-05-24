@@ -9,44 +9,44 @@ This file provides custom instructions to GitHub Copilot when working in this re
 **Tech Stack:**
 *   **Primary Language:** TypeScript
 *   **Runtime:** Node.js
-*   **Web Framework:** Express.js
+*   **Server/Transport:** Node.js `http` server with Model Context Protocol SDK transports (HTTP Streamable and stdio)
 *   **Schema Validation:** Zod
-*   **Testing Framework:** Jest
-*   **Code Formatting/Linting:** Prettier, ESLint
+*   **Testing Framework:** Vitest
+*   **Code Formatting/Linting:** ESLint via `npm run lint`; Prettier and ESLint hooks via `.pre-commit-config.yaml`
 
 **Key Files/Directories:**
 *   `src/`: Contains all application source code.
-    *   `src/api/`: HTTP API endpoint definitions and handlers.
-    *   `src/middleware/`: RBAC logic and other Express middleware.
-    *   `src/services/`: Business logic, Blackboard API client integration.
-    *   `src/types/`: Custom TypeScript type definitions.
-    *   `src/utils/`: Shared utility functions.
+    *   `src/index.ts`: Main server entry point for HTTP and stdio modes.
+    *   `src/cli.ts`: CLI parsing, help text, and diagnostic/report helpers.
+    *   `src/bb-client.ts`: Blackboard Learn API integration.
+    *   `src/oauth.ts`, `src/auth.ts`, `src/privacy.ts`, `src/rbac.ts`: Authentication, privacy, and authorization logic.
+    *   `src/tools/`: Tool definitions grouped into `student.ts`, `instructor.ts`, and `shared.ts`.
 *   `tests/`: Contains unit and integration tests.
-*   `config/`: Application configuration files.
+*   `.pre-commit-config.yaml`: Repository formatting, linting, and type-check hooks.
 *   `package.json`: Project dependencies and scripts.
 *   `tsconfig.json`: TypeScript compiler configuration.
 
 **Architectural Overview:**
-The `bb-mcp` server acts as a secure intermediary between LLM clients and the Blackboard Learn REST API. It receives requests via HTTP or stdio, applies Role-Based Access Control (RBAC) defined in its middleware, translates/forwards requests to the Blackboard API, and returns the structured responses to the LLM client. Its core function is to provide a controlled and secure interface for AI agents to interact with educational platform data.
+The `bb-mcp` server exposes Blackboard Learn capabilities as MCP tools over HTTP or stdio. The main entry point in `src/index.ts` wires the MCP server, HTTP endpoints, OAuth handlers, metrics, and tool registration. Supporting modules in `src/` handle Blackboard API access, manifests, schemas, and auth/privacy/RBAC checks, while role-specific tool implementations live under `src/tools/`.
 
 ## Guardrails
 
 ### Coding Style & Conventions
 *   **TypeScript First:** Always prioritize strong typing. Ensure all new code has explicit types for function parameters, return values, and complex objects. Avoid `any` unless absolutely necessary and justified.
 *   **Readability:** Write clear, self-documenting code. Use meaningful variable and function names.
-*   **ESLint & Prettier:** Adhere strictly to the project's `.eslintrc.js` and `.prettierrc.js` configurations. Code should be automatically formatted and linted before committing.
+*   **ESLint & Prettier:** Use the repository's `npm run lint` and `npm run build` scripts, and keep files compatible with the formatting/lint hooks defined in `.pre-commit-config.yaml`.
 *   **Functional Programming:** Favor pure functions and immutability where appropriate, especially in utility and service layers.
 *   **Error Handling:** Implement robust error handling. Return specific error types or well-structured error objects. Do not expose internal server errors directly to clients.
 
 ### File Paths & Structure
-*   **Logical Grouping:** Place related code together. New API endpoints should go into `src/api/`. New RBAC rules or checks belong in `src/middleware/`.
+*   **Logical Grouping:** Place related code with the existing flat `src/` modules. New Blackboard capability implementations usually belong in `src/tools/`, while shared auth/config/schema logic belongs in focused top-level `src/*.ts` modules.
 *   **Modularity:** Keep files and modules focused on a single responsibility.
-*   **Configuration:** All environment-specific or sensitive configurations must be loaded from `config/` or environment variables, never hardcoded.
+*   **Configuration:** Load environment-specific or sensitive configuration from environment variables and the existing config helpers in `src/config.ts`; never hardcode secrets.
 
 ### Testing
 *   **Test-Driven Development (TDD):** For new features or bug fixes, write tests *before* or *concurrently* with the implementation.
-*   **Coverage:** Aim for high unit test coverage for business logic (`src/services/`, `src/utils/`, `src/middleware/`). Integration tests should cover API endpoints (`src/api/`).
-*   **Jest:** Use Jest for all testing. Leverage its mocking capabilities to isolate units of code.
+*   **Coverage:** Aim for high unit coverage in `tests/` for CLI, config, schema, auth/privacy, OAuth, manifest, and other behavioral modules you change.
+*   **Vitest:** Use Vitest for testing and leverage its mocking capabilities to isolate units of code.
 
 ### Commit Conventions
 *   **Conventional Commits:** Follow the Conventional Commits specification. Use prefixes like `feat:`, `fix:`, `chore:`, `docs:`, `style:`, `refactor:`, `test:`, `build:`, `ci:`.

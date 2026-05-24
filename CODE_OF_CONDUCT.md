@@ -32,7 +32,7 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainers by opening an issue on the [nitsuah/bb-mcp GitHub repository](https://github.com/nitsuah/bb-mcp/issues) or by contacting @nitsuah. All complaints will be reviewed and investigated promptly and fairly.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported privately to the project maintainer using the contact details listed on [@nitsuah's GitHub profile](https://github.com/nitsuah). All complaints will be reviewed and investigated promptly and fairly.
 
 ## Attribution
 

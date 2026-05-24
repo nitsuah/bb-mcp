@@ -10,16 +10,10 @@ Thank you for your interest in contributing! We welcome contributions from every
 - [Development Setup](#development-setup)
 - [Pull Request Process](#pull-request-process)
 - [Coding Standards](#coding-standards)
-- [Reporting Bugs](#reporting-bugs)
-- [Suggesting Features](#suggesting-features)
-- [Releases](#releases)
-- [Recognition](#recognition)
-- [License](#license)
-- [Questions?](#questions)
 
 ## 🤝 Code of Conduct
 
-This project adheres to a Code of Conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to TODO: maintainer@email.com.
+This project adheres to a Code of Conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior privately to the maintainer using the contact details listed on [@nitsuah's GitHub profile](https://github.com/nitsuah).
 
 ## 🚀 Getting Started
 
