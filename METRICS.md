@@ -6,10 +6,9 @@ This document tracks the key performance indicators (KPIs), code quality standar
 
 | Metric | Current | Target | Status |
 | :--- | :--- | :--- | :--- |
-| **Unit Test Coverage** | 91.86% lines, 68.24% branches (Docker Vitest v8) | > 85% | 🟢 Pass |
+| **Unit Test Coverage** | 91.86% lines | > 85% | 🟢 Pass |
 | **Total Test Cases** | 79 | > 50 | 🟢 Pass |
 | **Critical/High Vulnerabilities** | 0 | 0 | 🟢 Pass |
-| **TypeScript Strict Mode Compliance** | 100% | 100% | 🟢 Pass |
 | **Average Cyclomatic Complexity** | 2.63 (70 functions, core scope) | < 10 | 🟢 Pass |
 | **Documentation Coverage (TSDoc)** | 100% module coverage (core scope) | > 90% | 🟢 Pass |
 | **Cold Build Duration (Clean)** | 7.08s (Docker builder, no cache) | < 30s | 🟢 Pass |
