@@ -1,3 +1,6 @@
+/**
+ * Centralized runtime configuration loaded from environment variables.
+ */
 import "dotenv/config";
 
 function required(key: string): string {

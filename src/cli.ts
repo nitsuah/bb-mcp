@@ -1,3 +1,6 @@
+/**
+ * CLI command parsing and report formatting for diagnostics and inspection modes.
+ */
 import { buildProviderManifest } from "./manifest.js";
 import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
 

@@ -18,6 +18,8 @@ docker-test:
 	docker run --rm bb-mcp:test npm run lint
 	docker run --rm bb-mcp:test npm run test:coverage
 	docker run --rm bb-mcp:test npm audit --audit-level=high
+	docker run --rm bb-mcp:test npm run metrics:complexity
+	docker run --rm bb-mcp:test npm run metrics:docs
 
 docker-lint:
 	docker build --target test -t bb-mcp:test .

@@ -8,6 +8,7 @@ COPY package-lock.json ./
 COPY tsconfig.json ./
 COPY vitest.config.ts ./
 COPY eslint.config.mjs ./
+COPY scripts ./scripts
 COPY src ./src
 COPY tests ./tests
 RUN npm ci

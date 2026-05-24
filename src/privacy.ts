@@ -1,3 +1,6 @@
+/**
+ * Privacy helpers for audit log redaction and stable subject anonymization.
+ */
 import { createHash } from "crypto";
 
 const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;

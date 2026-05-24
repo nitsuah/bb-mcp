@@ -1,3 +1,6 @@
+/**
+ * Provider manifest composition for MCP discovery, tool metadata, and capabilities.
+ */
 import {
   getMyCoursesSchema,
   listCoursesSchema,

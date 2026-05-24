@@ -1,3 +1,6 @@
+/**
+ * Role-based access policy map and role lookup helpers for tool authorization.
+ */
 import type { Role } from "./auth.js";
 
 export const TOOL_ROLE_RULES: Readonly<Record<string, readonly Role[]>> = {

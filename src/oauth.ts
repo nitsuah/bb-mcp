@@ -1,3 +1,6 @@
+/**
+ * OAuth authorization-code flow helpers with PKCE and managed in-memory sessions.
+ */
 import axios from "axios";
 import { createHash, randomBytes } from "crypto";
 import { config } from "./config.js";

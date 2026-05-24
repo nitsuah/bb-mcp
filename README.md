@@ -54,7 +54,7 @@ make build       # Build TypeScript
 ### Docker-based test/build
 
 ```sh
-make docker-test   # Build Docker test image, run lint + coverage + audit
+make docker-test   # Build Docker test image, run lint + coverage + audit + complexity + docs
 make docker-lint   # Build Docker test image and run lint only
 make docker-build  # Build production Docker image
 ```

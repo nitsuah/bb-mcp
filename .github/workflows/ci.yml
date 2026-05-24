@@ -26,6 +26,12 @@ jobs:
       - name: Security audit (high+)
         run: docker run --rm bb-mcp:test npm audit --audit-level=high
 
+      - name: Cyclomatic complexity metric
+        run: docker run --rm bb-mcp:test npm run metrics:complexity
+
+      - name: TSDoc coverage metric
+        run: docker run --rm bb-mcp:test npm run metrics:docs
+
       - name: Build runtime image
         run: docker build -t bb-mcp:ci .
 
