@@ -1,6 +1,6 @@
 # Makefile for bb-mcp: Docker, test, lint, build
 
-.PHONY: all test lint build docker-test docker-build docker-up docker-down docker-logs docker-doctor docker-probe docker-manifest docker-tools
+.PHONY: all test lint build docker-lint docker-test docker-build docker-up docker-down docker-logs docker-doctor docker-probe docker-manifest docker-tools
 
 all: test
 
@@ -14,8 +14,14 @@ build:
 	npm run build
 
 docker-test:
-	docker build --no-cache -t bb-mcp:ci .
-	docker run --rm -it bb-mcp:ci npm test
+	docker build --target test -t bb-mcp:test .
+	docker run --rm bb-mcp:test npm run lint
+	docker run --rm bb-mcp:test npm run test:coverage
+	docker run --rm bb-mcp:test npm audit --audit-level=high
+
+docker-lint:
+	docker build --target test -t bb-mcp:test .
+	docker run --rm bb-mcp:test npm run lint
 
 docker-build:
 	docker build -t bb-mcp:latest .

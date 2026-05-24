@@ -3,11 +3,11 @@
  * Each tool handler is wrapped with metrics and calls checkAuthorization.
  */
 
-import { z } from 'zod';
-import { bbClient } from '../bb-client.js';
-import { checkAuthorization, parseIdentity } from '../auth.js';
-import { withMetrics } from '../metrics.js';
-import type { BbAssignment } from '../types.js';
+import { z } from "zod";
+import { bbClient } from "../bb-client.js";
+import { checkAuthorization, parseIdentity } from "../auth.js";
+import { withMetrics } from "../metrics.js";
+import type { BbAssignment } from "../types.js";
 
 // ── get_my_courses ────────────────────────────────────────────────────────
 
@@ -16,17 +16,17 @@ export const GetMyCoursesInput = z.object({
 });
 
 export const getMyCoursesHandler = withMetrics(
-  'get_my_courses',
+  "get_my_courses",
   async (args: z.infer<typeof GetMyCoursesInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({ identity, toolName: 'get_my_courses' });
+    checkAuthorization({ identity, toolName: "get_my_courses" });
 
     const courses = await bbClient.getCourses(identity.userId);
 
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: JSON.stringify(
             courses.map((c) => ({
               id: c.id,
@@ -35,7 +35,7 @@ export const getMyCoursesHandler = withMetrics(
               description: c.description ?? null,
               instructor: c.instructor ?? null,
               term: c.term ?? null,
-              status: c.availability?.available ?? 'Unknown',
+              status: c.availability?.available ?? "Unknown",
             })),
             null,
             2,
@@ -47,37 +47,38 @@ export const getMyCoursesHandler = withMetrics(
 );
 
 export const getMyCoursesSchema = {
-  name: 'get_my_courses',
-  description: 'Returns all courses the caller is enrolled in.',
+  name: "get_my_courses",
+  description: "Returns all courses the caller is enrolled in.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
       caller_identity: {
-        type: 'object',
-        description: 'Identity of the caller. Must include userId and role.',
+        type: "object",
+        description: "Identity of the caller. Must include userId and role.",
         properties: {
-          userId: { type: 'string' },
-          role: { type: 'string', enum: ['student', 'instructor', 'admin'] },
-          ferpa_authorized: { type: 'boolean' },
-          clientApp: { type: 'string' },
+          userId: { type: "string" },
+          role: { type: "string", enum: ["student", "instructor", "admin"] },
+          ferpa_authorized: { type: "boolean" },
+          clientApp: { type: "string" },
         },
-        required: ['userId', 'role'],
+        required: ["userId", "role"],
       },
     },
-    required: ['caller_identity'],
+    required: ["caller_identity"],
   },
 };
 
 export const ListCoursesInput = GetMyCoursesInput;
 
 export const listCoursesHandler = withMetrics(
-  'list_courses',
+  "list_courses",
   async (args: z.infer<typeof ListCoursesInput>) => getMyCoursesHandler(args),
 );
 
 export const listCoursesSchema = {
-  name: 'list_courses',
-  description: 'Compatibility alias for get_my_courses. Returns all courses the caller is enrolled in.',
+  name: "list_courses",
+  description:
+    "Compatibility alias for get_my_courses. Returns all courses the caller is enrolled in.",
   inputSchema: getMyCoursesSchema.inputSchema,
 };
 
@@ -90,10 +91,10 @@ export const GetUpcomingAssignmentsInput = z.object({
 });
 
 export const getUpcomingAssignmentsHandler = withMetrics(
-  'get_upcoming_assignments',
+  "get_upcoming_assignments",
   async (args: z.infer<typeof GetUpcomingAssignmentsInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({ identity, toolName: 'get_upcoming_assignments' });
+    checkAuthorization({ identity, toolName: "get_upcoming_assignments" });
 
     const courses = args.courseId
       ? [await bbClient.getCourse(args.courseId)]
@@ -102,24 +103,32 @@ export const getUpcomingAssignmentsHandler = withMetrics(
     const cutoff = Date.now() + args.daysAhead * 24 * 60 * 60 * 1000;
     const now = Date.now();
 
-    const upcoming: Array<BbAssignment & { courseName?: string; courseId?: string }> = [];
+    const upcoming: Array<
+      BbAssignment & { courseName?: string; courseId?: string }
+    > = [];
     for (const course of courses) {
       const assignments = await bbClient.getAssignments(course.id);
       for (const a of assignments) {
         if (!a.due) continue;
         const dueMs = new Date(a.due).getTime();
         if (dueMs >= now && dueMs <= cutoff) {
-          upcoming.push({ ...a, courseName: course.name, courseId: course.courseId });
+          upcoming.push({
+            ...a,
+            courseName: course.name,
+            courseId: course.courseId,
+          });
         }
       }
     }
 
-    upcoming.sort((a, b) => new Date(a.due!).getTime() - new Date(b.due!).getTime());
+    upcoming.sort(
+      (a, b) => new Date(a.due!).getTime() - new Date(b.due!).getTime(),
+    );
 
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: JSON.stringify(
             upcoming.map((a) => ({
               id: a.id,
@@ -142,21 +151,24 @@ export const getUpcomingAssignmentsHandler = withMetrics(
 );
 
 export const getUpcomingAssignmentsSchema = {
-  name: 'get_upcoming_assignments',
+  name: "get_upcoming_assignments",
   description:
-    'Returns assignments due within N days, sorted by due date. Optionally scoped to one course.',
+    "Returns assignments due within N days, sorted by due date. Optionally scoped to one course.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      caller_identity: { type: 'object', required: ['userId', 'role'] },
-      courseId: { type: 'string', description: 'Blackboard course ID (optional)' },
+      caller_identity: { type: "object", required: ["userId", "role"] },
+      courseId: {
+        type: "string",
+        description: "Blackboard course ID (optional)",
+      },
       daysAhead: {
-        type: 'number',
-        description: 'How many days ahead to look (1–90, default 14)',
+        type: "number",
+        description: "How many days ahead to look (1–90, default 14)",
         default: 14,
       },
     },
-    required: ['caller_identity'],
+    required: ["caller_identity"],
   },
 };
 
@@ -168,10 +180,14 @@ export const GetMyGradesInput = z.object({
 });
 
 export const getMyGradesHandler = withMetrics(
-  'get_my_grades',
+  "get_my_grades",
   async (args: z.infer<typeof GetMyGradesInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({ identity, toolName: 'get_my_grades', courseId: args.courseId });
+    checkAuthorization({
+      identity,
+      toolName: "get_my_grades",
+      courseId: args.courseId,
+    });
 
     const courses = args.courseId
       ? [await bbClient.getCourse(args.courseId)]
@@ -198,20 +214,25 @@ export const getMyGradesHandler = withMetrics(
       });
     }
 
-    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+    return {
+      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+    };
   },
 );
 
 export const getMyGradesSchema = {
-  name: 'get_my_grades',
+  name: "get_my_grades",
   description: "Returns the caller's grades. Optionally scoped to one course.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      caller_identity: { type: 'object', required: ['userId', 'role'] },
-      courseId: { type: 'string', description: 'Blackboard course ID (optional)' },
+      caller_identity: { type: "object", required: ["userId", "role"] },
+      courseId: {
+        type: "string",
+        description: "Blackboard course ID (optional)",
+      },
     },
-    required: ['caller_identity'],
+    required: ["caller_identity"],
   },
 };
 
@@ -224,10 +245,14 @@ export const GetCourseContentInput = z.object({
 });
 
 export const getCourseContentHandler = withMetrics(
-  'get_course_content',
+  "get_course_content",
   async (args: z.infer<typeof GetCourseContentInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({ identity, toolName: 'get_course_content', courseId: args.courseId });
+    checkAuthorization({
+      identity,
+      toolName: "get_course_content",
+      courseId: args.courseId,
+    });
 
     const content = await bbClient.getCourseContent(args.courseId);
 
@@ -236,20 +261,21 @@ export const getCourseContentHandler = withMetrics(
       const q = args.searchQuery.toLowerCase();
       items = content.filter(
         (c) =>
-          c.title.toLowerCase().includes(q) || c.body?.toLowerCase().includes(q),
+          c.title.toLowerCase().includes(q) ||
+          c.body?.toLowerCase().includes(q),
       );
     }
 
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: JSON.stringify(
             items.map((c) => ({
               id: c.id,
               title: c.title,
-              type: c.contentHandler?.id ?? 'unknown',
-              available: c.availability?.available ?? 'Unknown',
+              type: c.contentHandler?.id ?? "unknown",
+              available: c.availability?.available ?? "Unknown",
               body: c.body ?? null,
             })),
             null,
@@ -262,29 +288,32 @@ export const getCourseContentHandler = withMetrics(
 );
 
 export const getCourseContentSchema = {
-  name: 'get_course_content',
-  description: 'Returns course modules and materials. Supports optional keyword search.',
+  name: "get_course_content",
+  description:
+    "Returns course modules and materials. Supports optional keyword search.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      caller_identity: { type: 'object', required: ['userId', 'role'] },
-      courseId: { type: 'string', description: 'Blackboard course ID' },
-      searchQuery: { type: 'string', description: 'Keyword search (optional)' },
+      caller_identity: { type: "object", required: ["userId", "role"] },
+      courseId: { type: "string", description: "Blackboard course ID" },
+      searchQuery: { type: "string", description: "Keyword search (optional)" },
     },
-    required: ['caller_identity', 'courseId'],
+    required: ["caller_identity", "courseId"],
   },
 };
 
 export const GetCourseContentsInput = GetCourseContentInput;
 
 export const getCourseContentsHandler = withMetrics(
-  'get_course_contents',
-  async (args: z.infer<typeof GetCourseContentsInput>) => getCourseContentHandler(args),
+  "get_course_contents",
+  async (args: z.infer<typeof GetCourseContentsInput>) =>
+    getCourseContentHandler(args),
 );
 
 export const getCourseContentsSchema = {
-  name: 'get_course_contents',
-  description: 'Compatibility alias for get_course_content. Returns course modules and materials.',
+  name: "get_course_contents",
+  description:
+    "Compatibility alias for get_course_content. Returns course modules and materials.",
   inputSchema: getCourseContentSchema.inputSchema,
 };
 
@@ -297,12 +326,12 @@ export const GetAssignmentFeedbackInput = z.object({
 });
 
 export const getAssignmentFeedbackHandler = withMetrics(
-  'get_assignment_feedback',
+  "get_assignment_feedback",
   async (args: z.infer<typeof GetAssignmentFeedbackInput>) => {
     const identity = parseIdentity(args.caller_identity);
     checkAuthorization({
       identity,
-      toolName: 'get_assignment_feedback',
+      toolName: "get_assignment_feedback",
       courseId: args.courseId,
     });
 
@@ -310,13 +339,17 @@ export const getAssignmentFeedbackHandler = withMetrics(
     const grade = grades.find((g) => g.columnId === args.columnId);
 
     if (!grade) {
-      return { content: [{ type: 'text', text: 'No grade found for this assignment.' }] };
+      return {
+        content: [
+          { type: "text", text: "No grade found for this assignment." },
+        ],
+      };
     }
 
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: JSON.stringify(
             {
               score: grade.score ?? null,
@@ -336,16 +369,20 @@ export const getAssignmentFeedbackHandler = withMetrics(
 );
 
 export const getAssignmentFeedbackSchema = {
-  name: 'get_assignment_feedback',
-  description: 'Returns instructor comments, rubric scores, and feedback for an assignment.',
+  name: "get_assignment_feedback",
+  description:
+    "Returns instructor comments, rubric scores, and feedback for an assignment.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      caller_identity: { type: 'object', required: ['userId', 'role'] },
-      courseId: { type: 'string' },
-      columnId: { type: 'string', description: 'Grade column ID for the assignment' },
+      caller_identity: { type: "object", required: ["userId", "role"] },
+      courseId: { type: "string" },
+      columnId: {
+        type: "string",
+        description: "Grade column ID for the assignment",
+      },
     },
-    required: ['caller_identity', 'courseId', 'columnId'],
+    required: ["caller_identity", "courseId", "columnId"],
   },
 };
 
@@ -358,17 +395,21 @@ export const GetAnnouncementsInput = z.object({
 });
 
 export const getAnnouncementsHandler = withMetrics(
-  'get_announcements',
+  "get_announcements",
   async (args: z.infer<typeof GetAnnouncementsInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({ identity, toolName: 'get_announcements', courseId: args.courseId });
+    checkAuthorization({
+      identity,
+      toolName: "get_announcements",
+      courseId: args.courseId,
+    });
 
     const announcements = await bbClient.getAnnouncements(args.courseId);
 
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: JSON.stringify(
             announcements.map((a) => ({
               id: a.id,
@@ -388,16 +429,16 @@ export const getAnnouncementsHandler = withMetrics(
 );
 
 export const getAnnouncementsSchema = {
-  name: 'get_announcements',
-  description: 'Returns announcements for a course.',
+  name: "get_announcements",
+  description: "Returns announcements for a course.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      caller_identity: { type: 'object', required: ['userId', 'role'] },
-      courseId: { type: 'string' },
-      unreadOnly: { type: 'boolean', default: false },
+      caller_identity: { type: "object", required: ["userId", "role"] },
+      courseId: { type: "string" },
+      unreadOnly: { type: "boolean", default: false },
     },
-    required: ['caller_identity', 'courseId'],
+    required: ["caller_identity", "courseId"],
   },
 };
 
@@ -406,17 +447,17 @@ export const getAnnouncementsSchema = {
 export const CreateAssignmentSubmissionInput = z.object({
   caller_identity: z.unknown(),
   courseId: z.string(),
-  columnId: z.string().describe('Grade column ID for the assignment'),
-  studentComments: z.string().optional().describe('Optional student comments'),
+  columnId: z.string().describe("Grade column ID for the assignment"),
+  studentComments: z.string().optional().describe("Optional student comments"),
 });
 
 export const createAssignmentSubmissionHandler = withMetrics(
-  'create_assignment_submission',
+  "create_assignment_submission",
   async (args: z.infer<typeof CreateAssignmentSubmissionInput>) => {
     const identity = parseIdentity(args.caller_identity);
     checkAuthorization({
       identity,
-      toolName: 'create_assignment_submission',
+      toolName: "create_assignment_submission",
       courseId: args.courseId,
     });
 
@@ -430,7 +471,7 @@ export const createAssignmentSubmissionHandler = withMetrics(
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: JSON.stringify(
             {
               id: attempt.id,
@@ -452,20 +493,23 @@ export const createAssignmentSubmissionHandler = withMetrics(
 );
 
 export const createAssignmentSubmissionSchema = {
-  name: 'create_assignment_submission',
+  name: "create_assignment_submission",
   description:
-    'Creates a new assignment attempt submission for the caller. Returns the created attempt with ID and timestamp.',
+    "Creates a new assignment attempt submission for the caller. Returns the created attempt with ID and timestamp.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      caller_identity: { type: 'object', required: ['userId', 'role'] },
-      courseId: { type: 'string', description: 'Blackboard course ID' },
-      columnId: { type: 'string', description: 'Grade column ID for the assignment' },
+      caller_identity: { type: "object", required: ["userId", "role"] },
+      courseId: { type: "string", description: "Blackboard course ID" },
+      columnId: {
+        type: "string",
+        description: "Grade column ID for the assignment",
+      },
       studentComments: {
-        type: 'string',
-        description: 'Optional student comments to attach to the submission',
+        type: "string",
+        description: "Optional student comments to attach to the submission",
       },
     },
-    required: ['caller_identity', 'courseId', 'columnId'],
+    required: ["caller_identity", "courseId", "columnId"],
   },
 };
