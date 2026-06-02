@@ -7,7 +7,7 @@
 services:
   bb-mcp:
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile
     container_name: bb-mcp
     init: true
@@ -15,7 +15,7 @@ services:
     ports:
       - "3100:3100"
     env_file:
-      - .env
+      - ../.env
     environment:
       - PORT=3100
       - LOG_LEVEL=${LOG_LEVEL:-info}

@@ -29,22 +29,22 @@ docker-build:
 	docker build -t bb-mcp:latest .
 
 docker-up:
-	docker compose up -d --build
+	docker compose -f config/docker-compose.yml up -d --build
 
 docker-down:
-	docker compose down
+	docker compose -f config/docker-compose.yml down
 
 docker-logs:
-	docker compose logs -f bb-mcp
+	docker compose -f config/docker-compose.yml logs -f bb-mcp
 
 docker-doctor:
-	docker compose run --rm bb-mcp node dist/index.js --doctor
+	docker compose -f config/docker-compose.yml run --rm bb-mcp node dist/index.js --doctor
 
 docker-probe:
-	docker compose run --rm bb-mcp node dist/index.js --probe
+	docker compose -f config/docker-compose.yml run --rm bb-mcp node dist/index.js --probe
 
 docker-manifest:
-	docker compose run --rm bb-mcp node dist/index.js --manifest
+	docker compose -f config/docker-compose.yml run --rm bb-mcp node dist/index.js --manifest
 
 docker-tools:
-	docker compose run --rm bb-mcp node dist/index.js --tools
+	docker compose -f config/docker-compose.yml run --rm bb-mcp node dist/index.js --tools
