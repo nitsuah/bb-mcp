@@ -330,6 +330,7 @@ No live Blackboard instance needed. Register a free developer account at [develo
 ## License
 
 MIT
+
 ## Community Standards
 
 Shared community policies are centralized in https://github.com/nitsuah/.github:
