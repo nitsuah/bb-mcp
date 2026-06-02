@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package.json ./
 COPY package-lock.json ./
 COPY tsconfig.json ./
-COPY vitest.config.ts ./
+COPY config/vitest.config.ts ./config/vitest.config.ts
 COPY eslint.config.mjs ./
 COPY scripts ./scripts
 COPY src ./src

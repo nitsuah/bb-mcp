@@ -5,6 +5,14 @@
 # Metrics:       http://localhost:3100/metrics
 
 services:
+  test:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: test
+    profiles:
+      - test
+
   bb-mcp:
     build:
       context: ..

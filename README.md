@@ -44,34 +44,52 @@ The integration logic lives here, not in the client. Tools like agent-board, Cla
 
 ## Quick start
 
-
-## Makefile & Docker-based DevOps
-
-### Local test, lint, build
-
-```sh
-make test        # Run all tests
-make lint        # Lint code
-make build       # Build TypeScript
+```bash
+cp .env.example .env   # Fill in BB_CLIENT_ID, BB_CLIENT_SECRET, BB_BASE_URL
+docker compose -f config/docker-compose.yml up -d
 ```
 
-### Docker-based test/build
+## Development
 
-```sh
-make docker-test   # Build Docker test image, run lint + coverage + audit + complexity + docs
-make docker-lint   # Build Docker test image and run lint only
-make docker-build  # Build production Docker image
+All checks run via Docker — no local Node.js required.
+
+```bash
+# Run all tests (79 tests, TypeScript)
+docker compose -f config/docker-compose.yml --profile test run --rm test
+
+# Full quality gate: lint + coverage + audit + complexity
+make docker-test
+
+# Individual targets
+make docker-lint    # lint only
+make docker-build   # production image
 ```
 
-### CI/CD
-- See .github/workflows/ci.yml for full pipeline: lint, test, build, Docker, artifact.
+**Pre-commit hooks** (type-check on commit, tests on push):
+```bash
+pip install pre-commit && pre-commit install && pre-commit install --hook-type pre-push
+```
+
+See `.github/workflows/ci.yml` for the full CI pipeline.
+
+## Makefile reference
+
+```sh
+make docker-up        # Build and start the standalone bb-mcp container
+make docker-logs      # Follow container logs
+make docker-doctor    # Safe env readiness report from inside the container
+make docker-probe     # Validate Blackboard credentials + minimal API call
+make docker-manifest  # Print the provider manifest from the built image
+make docker-tools     # Print the published tool catalog from the built image
+make docker-down      # Stop the standalone stack
+```
 
 ### Docker (recommended)
 
 ```bash
 cp .env.example .env
 # Fill in BB_CLIENT_ID, BB_CLIENT_SECRET, BB_BASE_URL
-docker compose up -d
+docker compose -f config/docker-compose.yml up -d
 ```
 
 Repo-local standalone commands:
