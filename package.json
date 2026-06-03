@@ -21,9 +21,9 @@
     "docker:quality": "npm run docker:test-image && npm run docker:lint && npm run docker:coverage && npm run docker:audit && npm run docker:complexity && npm run docker:docs",
     "metrics:complexity": "node scripts/metrics-complexity.mjs",
     "metrics:docs": "node scripts/metrics-doc-coverage.mjs",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest",
+    "test": "vitest run --config config/vitest.config.ts",
+    "test:coverage": "vitest run --config config/vitest.config.ts --coverage",
+    "test:watch": "vitest --config config/vitest.config.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"
   },
@@ -37,14 +37,14 @@
     "@eslint/js": "^10.0.1",
     "@types/node": "^25.9.1",
     "@vitest/coverage-v8": "^4.1.8",
-    "eslint": "^10.4.0",
+    "eslint": "^10.4.1",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-prettier": "^5.5.6",
     "prettier": "^3.8.3",
-    "tsx": "^4.22.3",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.4",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.8"
   },
   "engines": {
     "node": ">=20.19.0 || >=22.12.0"

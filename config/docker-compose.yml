@@ -5,9 +5,17 @@
 # Metrics:       http://localhost:3100/metrics
 
 services:
+  test:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: test
+    profiles:
+      - test
+
   bb-mcp:
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile
     container_name: bb-mcp
     init: true
@@ -15,7 +23,7 @@ services:
     ports:
       - "3100:3100"
     env_file:
-      - .env
+      - ../.env
     environment:
       - PORT=3100
       - LOG_LEVEL=${LOG_LEVEL:-info}
