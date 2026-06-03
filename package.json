@@ -21,9 +21,9 @@
     "docker:quality": "npm run docker:test-image && npm run docker:lint && npm run docker:coverage && npm run docker:audit && npm run docker:complexity && npm run docker:docs",
     "metrics:complexity": "node scripts/metrics-complexity.mjs",
     "metrics:docs": "node scripts/metrics-doc-coverage.mjs",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest",
+    "test": "vitest run --config config/vitest.config.ts",
+    "test:coverage": "vitest run --config config/vitest.config.ts --coverage",
+    "test:watch": "vitest --config config/vitest.config.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"
   },
