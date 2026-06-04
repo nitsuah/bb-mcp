@@ -24,7 +24,7 @@
     "test": "vitest run --config config/vitest.config.ts",
     "test:coverage": "vitest run --config config/vitest.config.ts --coverage",
     "test:watch": "vitest --config config/vitest.config.ts",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src --ext .ts --config config/eslint.config.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
