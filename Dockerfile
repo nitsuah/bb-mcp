@@ -7,7 +7,7 @@ COPY package.json ./
 COPY package-lock.json ./
 COPY tsconfig.json ./
 COPY config/vitest.config.ts ./config/vitest.config.ts
-COPY eslint.config.mjs ./
+COPY config/eslint.config.mjs ./config/eslint.config.mjs
 COPY scripts ./scripts
 COPY src ./src
 COPY tests ./tests
