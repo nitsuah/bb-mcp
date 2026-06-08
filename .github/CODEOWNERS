@@ -1,0 +1,45 @@
+# CODEOWNERS
+
+> This file defines who owns and should review changes to specific files or directories.
+> Learn more: [CODEOWNERS](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)
+
+# Default owner - all changes require review from @nitsuah
+* @nitsuah
+
+# Documentation files
+*.md @nitsuah
+/docs/ @nitsuah
+
+# Configuration files (JSON, YAML, TOML)
+*.json @nitsuah
+*.yaml @nitsuah
+*.yml @nitsuah
+*.toml @nitsuah
+
+# CI/CD workflows
+/.github/workflows/ @nitsuah
+
+# TypeScript source code
+/src/ @nitsuah
+/lib/ @nitsuah
+/app/ @nitsuah
+/components/ @nitsuah
+
+# Database files
+/database/ @nitsuah
+*.sql @nitsuah
+
+# Test files
+/tests/ @nitsuah
+/test/ @nitsuah
+*.test.* @nitsuah
+*.spec.* @nitsuah
+
+# Infrastructure and deployment files
+/infrastructure/ @nitsuah
+/terraform/ @nitsuah
+Dockerfile @nitsuah
+docker-compose*.yml @nitsuah
+
+# Security-related files
+/SECURITY.md @nitsuah
