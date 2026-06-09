@@ -21,6 +21,27 @@
 - **Secure Proxy Layer** - Masks sensitive Blackboard infrastructure details from the LLM client through a controlled middleware.
 - **Credential Isolation** - Environment-based configuration to prevent API keys from being exposed in the client-side context.
 
+## Shipped Tools
+
+- **list_courses** - Returns enrolled courses for the authenticated student (alias-backed handler, RBAC gated)
+- **get_course_contents** - Hierarchical course content tree navigation via REST API
+- **get_announcements** - Course and system announcements with full auth/metrics wrapping
+- **list_roster** - Instructor read tool returning course roster with RBAC enforcement
+- **get_grades** - Instructor read tool returning grade data with schema-backed outputs
+- **create_assignment_submission** - Student write tool submitting attempts via `bbClient.createAttempt()` with input validation and RBAC gating to student/admin roles
+
+## Security & Compliance
+
+- **PII Scrubbing Middleware** - `src/privacy.ts` scrubs sensitive text patterns before log emission; audit logs emit hashed subject values instead of raw user IDs
+- **Per-Role Rate Limiting** - In-memory per-role per-minute call limits via `src/auth.ts`; configurable via `RATE_LIMIT_*_PER_MINUTE` env vars; 429 responses include retry-after guidance
+- **PKCE OAuth2 Flow** - `src/oauth.ts` implements PKCE-backed authorization URL generation, state validation, code exchange, and refresh-aware in-memory session storage
+
+## CLI & Operations
+
+- **CLI Inspection Tool** - `--help`, `--version`, `--manifest`, `--tools`, `--doctor` subcommands validate the server environment without requiring Blackboard credentials
+- **Blackboard Probe Command** - `--probe` validates credential readiness and exercises a minimal Blackboard API call for standalone operator checks
+- **Standalone Docker Compose** - Hardened runtime with read-only filesystem, dropped capabilities, and `no-new-privileges`; `Makefile` targets for `docker-up`, `docker-down`, `docker-logs`, `docker-doctor`, `docker-probe`, `docker-manifest`, `docker-tools`
+
 ## Developer Experience
 - **TypeScript Type Safety** - Fully typed codebase ensuring reliable data structures when interacting with complex Blackboard objects.
 - **Auto-generated Tool Definitions** - Dynamically generates MCP tool descriptions based on available Blackboard API endpoints.
