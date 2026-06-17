@@ -39,6 +39,8 @@ Last Updated: 2026-06-08
 - [ ] Evaluate event-driven pipeline scaling: handle high-volume submission bursts and grade-sync events.
 - [ ] Evaluate vector store integration for semantic course content search and AI recommendation signals.
 - [ ] Publish a stable MCP client SDK / integration contract so agent-board and other consumers can bind without coupling to internals.
+- [ ] **Webhook-to-SSE bridge** — accept incoming Blackboard LTI/REST webhook events and broadcast them as SSE events on the MCP transport so agents can react to grade posts, submissions, and roster changes in real time without polling.
+- [ ] **Tool call batching** — allow a single agent request to specify multiple tool calls against the same courseId (e.g., contents + announcements + grades in one round-trip) and receive a combined response; reduces latency for multi-context agent queries.
 
 ## Notes
 
