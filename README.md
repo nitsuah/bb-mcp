@@ -29,8 +29,9 @@ The integration logic lives here, not in the client. Tools like agent-board, Cla
 ┌─────────────────────────────────────────────────┐
 │   blackboard-learn-mcp  (this repo)              │
 │                                                  │
-│   Auth layer       → OAuth2, role gate, FERPA    │
-│   Tools (11)       → student + instructor tools  │
+│   Auth layer       → OAuth2, role gate, FERPA,   │
+│                      rate limiting, PII scrub     │
+│   Tools (17)       → student + instructor tools  │
 │   Metrics          → Prometheus /metrics         │
 │   Audit log        → structured JSON → stdout    │
 └──────────────────────┬──────────────────────────┘
@@ -180,8 +181,12 @@ Copy `.env.example` to `.env` and set:
 | `BB_OAUTH_TOKEN_PATH` | — | Override Blackboard token endpoint path |
 | `PORT` | — | HTTP port (default `3100`) |
 | `LOG_LEVEL` | — | `info` or `debug` (default `info`) |
+| `PUBLIC_BASE_URL` | — | Publicly reachable base URL of this server (e.g. `https://mcp.example.com`); used in manifest generation and as the OAuth redirect base; defaults to `http://localhost:<PORT>` |
 | `METRICS_PUSH_URL` | — | Prometheus push gateway URL (optional) |
-| `RESTRICTED_TOOLS` | — | Comma-separated tool names requiring FERPA auth |
+| `RESTRICTED_TOOLS` | — | Comma-separated tool names requiring FERPA auth (default: `get_at_risk_students,get_grade_distribution,get_submission_status,get_grades`) |
+| `RATE_LIMIT_STUDENT_PER_MINUTE` | — | Max tool calls per minute for student role (default `60`) |
+| `RATE_LIMIT_INSTRUCTOR_PER_MINUTE` | — | Max tool calls per minute for instructor role (default `120`) |
+| `RATE_LIMIT_ADMIN_PER_MINUTE` | — | Max tool calls per minute for admin role (default `180`) |
 
 **Getting Blackboard credentials:**  
 Register a REST API application at [developer.blackboard.com](https://developer.blackboard.com/portal/applications). Use the free developer sandbox for testing — no live Blackboard instance required.
@@ -219,9 +224,11 @@ For FERPA-restricted tools, add `"ferpa_authorized": true` — the calling appli
 | Tool | Description |
 |---|---|
 | `get_my_courses` | Courses the caller is enrolled in |
+| `list_courses` | Alias for `get_my_courses` — compatibility name |
 | `get_upcoming_assignments` | Assignments due within N days, sorted by due date |
 | `get_my_grades` | Grade breakdown across all courses or one course |
 | `get_course_content` | Course modules and materials, with optional keyword search |
+| `get_course_contents` | Alias for `get_course_content` — compatibility name |
 | `get_assignment_feedback` | Instructor comments, rubric scores, and annotations |
 | `get_announcements` | Course announcements |
 | `create_assignment_submission` | Submit an assignment attempt with optional student comments |
@@ -254,24 +261,26 @@ For FERPA-restricted tools, add `"ferpa_authorized": true` — the calling appli
 
 ## Identity & access control
 
-The auth layer enforces three things before any Blackboard API call is made:
+The auth layer enforces four things before any Blackboard API call is made:
 
 1. **`caller_identity` is required** on every tool call — the client asserts who is asking
-2. **Role gate** — instructor-only tools reject `role: "student"` callers
-3. **FERPA gate** — tools that access protected student data require `ferpa_authorized: true`
+2. **Rate gate** — per-role, per-minute call limits prevent bulk data extraction; 429 responses include a retry-after interval
+3. **Role gate** — instructor-only tools reject `role: "student"` callers
+4. **FERPA gate** — tools that access protected student data require `ferpa_authorized: true`
 
-Every access attempt (granted or denied) is written to stdout as structured JSON:
+Every access attempt (granted or denied) is written to stdout as structured JSON. User identifiers are SHA-256 hashed before emission; raw user IDs are never written to logs.
 
 ```json
 {
   "timestamp": "2026-03-24T10:00:00.000Z",
   "event": "access.granted",
   "tool": "get_my_grades",
-  "userId": "bbuser123",
+  "subject": "anon:a3f9c1e02b47",
   "role": "student",
   "courseId": null,
   "clientApp": "agent-board",
-  "reason": null
+  "reason": null,
+  "piiRedaction": "hashed-subject"
 }
 ```
 
@@ -321,17 +330,27 @@ agent-board proxies MCP calls through `POST /api/mcp/blackboard-learn/proxy`, ke
 bb-mcp/
 ├── src/
 │   ├── index.ts          Entry point — HTTP + stdio transports
-│   ├── config.ts         Env validation
+│   ├── config.ts         Env validation and rate-limit config
 │   ├── bb-client.ts      Blackboard REST API client (OAuth2 auto-refresh)
-│   ├── auth.ts           Role gate, FERPA guard, audit logging
+│   ├── auth.ts           Rate limit, role gate, FERPA guard, audit logging
+│   ├── rbac.ts           Tool-to-role policy map
+│   ├── oauth.ts          PKCE authorization code flow + session store
+│   ├── manifest.ts       Provider manifest builder (GET /manifest)
 │   ├── metrics.ts        Prometheus metrics + withMetrics() wrapper
+│   ├── privacy.ts        PII scrubbing and audit subject hashing
+│   ├── schemas.ts        Shared Zod schemas
+│   ├── cli.ts            CLI subcommands (--doctor, --probe, --tools, etc.)
+│   ├── constants.ts      SERVER_NAME, SERVER_VERSION
 │   ├── types.ts          Domain types (BbCourse, BbGrade, etc.)
 │   └── tools/
-│       ├── student.ts    Student-facing tools
-│       ├── instructor.ts Instructor-facing tools
+│       ├── student.ts    Student-facing tools (9 tools incl. aliases)
+│       ├── instructor.ts Instructor-facing tools (7 tools)
 │       └── shared.ts     search_course_materials
+├── config/
+│   ├── docker-compose.yml  Standalone stack (port 3100)
+│   ├── vitest.config.ts    Test runner config
+│   └── eslint.config.mjs   Lint config
 ├── Dockerfile            Multi-stage build (node:22-slim)
-├── docker-compose.yml    Standalone stack (port 3100)
 ├── .env.example
 ├── package.json
 └── tsconfig.json

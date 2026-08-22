@@ -1,70 +1,65 @@
 # TASKS
 
-Last Updated: 2026-06-08
+Last Updated: 2026-08-21
+
+## Done
+
+- [x] Develop the Blackboard API client wrapper (`src/bb-client.ts`).
+  - OAuth2 client credentials + auto-refresh implemented; full typed wrapper covers courses, grades, assignments, announcements, users, attempts, discussion posts, and announcement creation.
+
+- [x] Refactor stdio transport for MCP compliance.
+  - `StdioServerTransport` wired via `@modelcontextprotocol/sdk`; HTTP Streamable transport also implemented. MCP Inspector pass is tracked as a separate P2 task.
+
+- [x] Ship `create_assignment_submission`.
+  - Student write tool fully implemented in `src/tools/student.ts` with input validation, RBAC gate (student/admin), and attempt creation via `bbClient.createAttempt()`.
+
+- [x] **[Q2-CEO] PII handling policy** — define and enforce PII scrubbing for student names, grades, and IDs in all tool outputs and server logs.
+  - `src/auth.ts` audit logs emit hashed `subject` values (`anon:<sha256[:12]>`) instead of raw `userId`; `src/privacy.ts` scrubs email and long-ID patterns before any log emission.
+  - `tests/auth-privacy.test.ts` verifies no raw caller identifier appears in granted/denied audit log lines.
+
+- [x] **[Q2-CEO] Rate limiting per role** — add per-role rate limits to prevent bulk data extraction by any authenticated client.
+  - `src/auth.ts` enforces in-memory per-role per-minute limits before tool execution; denial messages include retry-after interval.
+  - `RATE_LIMIT_STUDENT_PER_MINUTE` / `RATE_LIMIT_INSTRUCTOR_PER_MINUTE` / `RATE_LIMIT_ADMIN_PER_MINUTE` in `src/config.ts` and `.env.example`.
+  - `tests/rate-limit.test.ts` verifies enforcement behavior.
+
+- [x] Audit logging.
+  - Structured JSON audit events (granted/denied) written to stdout via `src/auth.ts`; suitable for Datadog, CloudWatch, Loki, etc.
+
+- [x] **[Q2-CEO] MCP provider contract** — publish discoverable manifest endpoint.
+  - `src/manifest.ts` builds provider manifest from exported tool schemas; `GET /manifest` endpoint registered in HTTP server.
+  - `tests/manifest.test.ts` verifies contract shape and tool coverage.
 
 ## In Progress
 
-- [/] Refactor stdio transport for MCP compliance.
-  - Priority: P1
-  - Context: the protocol layer still needs cleanup before the server can pass MCP Inspector reliably.
-  - Acceptance Criteria: stdio transport follows MCP expectations and integrates cleanly with the SDK.
-
-- [/] Develop the Blackboard API client wrapper.
-  - Priority: P1
-  - Context: OAuth2 and Blackboard REST access still need a stable typed wrapper before more tools can ship.
-  - Acceptance Criteria: the client wrapper handles auth and core Blackboard requests for downstream tool work.
+- [/] Pass MCP Inspector with stdio transport.
+  - Priority: P2
+  - Context: stdio transport implementation exists but MCP Inspector compliance has not been formally validated.
+  - Acceptance Criteria: `node dist/index.js --stdio` passes MCP Inspector without errors.
 
 ## Todo
 
 ### P1 - High
-
-- [ ] Ship `create_assignment_submission`.
-  - Priority: P2
-  - Context: write-back submission support depends on the auth and content foundation.
-  - Acceptance Criteria: a student submission path exists, including attachment handling.
 
 - [ ] Improve Blackboard error mapping.
   - Priority: P2
   - Context: raw Blackboard REST errors are not yet translated into usable user messages.
   - Acceptance Criteria: common REST failures map to clear server responses.
 
-- [ ] Add telemetry and request logging.
+- [ ] Add per-request lifecycle tracing.
   - Priority: P2
-  - Context: the server needs clearer request and response tracing before shipping more workflows.
-  - Acceptance Criteria: request lifecycle tracing is documented and visible.
-
-- [/] **[Q2-CEO] PII handling policy** — define and enforce PII scrubbing for student names, grades, and IDs in all tool outputs and server logs.
-  - Priority: P2
-  - Context: institutional compliance requires zero PII leakage into telemetry, audit logs, or error messages.
-  - Acceptance Criteria: tool outputs have a documented PII boundary; a scrub middleware runs before any log/metric emission; tests verify PII does not appear in logs.
-  - Progress: `src/auth.ts` audit logs now emit hashed `subject` values instead of raw `userId`, and `src/privacy.ts` scrubs sensitive text patterns before log emission.
-  - Progress: `tests/auth-privacy.test.ts` verifies no raw caller identifier appears in granted/denied audit log lines.
-
-- [/] **[Q2-CEO] Rate limiting per role** — add per-role rate limits to prevent bulk data extraction by any authenticated client.
-  - Priority: P2
-  - Context: institutional data protection requires abuse controls even for authenticated users.
-  - Acceptance Criteria: student and instructor roles have enforced per-minute call limits; 429 responses include a retry-after header.
-  - Progress: `src/auth.ts` now enforces in-memory per-role per-minute limits before tool execution and includes retry-after guidance in denial messages.
-  - Progress: `src/config.ts` and `.env.example` now expose `RATE_LIMIT_*_PER_MINUTE` configuration; `tests/rate-limit.test.ts` verifies enforcement behavior.
+  - Context: Prometheus tool-call metrics exist but per-request lifecycle tracing (request ID, latency breakdown, upstream call count) is missing.
+  - Acceptance Criteria: each tool call emits a structured trace entry; latency breakdown is visible.
 
 ### P2 - Medium
-
-- [ ] Pass MCP Inspector with stdio transport.
-  - Priority: P1
 
 - [ ] Add JSON schemas for all shipped tool inputs.
 
 ### P3 - Exploratory
 
-- [ ] Add `search_users`.
+- [ ] Add `search_users` (admin directory lookup).
   - Priority: P3
   - Context: admin directory lookup is useful, but not part of the initial foundation path.
   - Acceptance Criteria: administrators can query user records safely.
-
-- [ ] Add audit logging.
-  - Priority: P3
-  - Context: compliance-grade audit trails depend on the earlier auth and RBAC work.
-  - Acceptance Criteria: structured audit events are captured for privileged operations.
 
 - [ ] **Admin tools**: user management (read), enrollment management, institutional audit log access.
 - [ ] **Parent tools** (read-only, guardian-scoped): student enrollment view, grade summary, upcoming assignment alerts.
