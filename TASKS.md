@@ -40,6 +40,10 @@ Last Updated: 2026-08-21
 
 ### P1 - High
 
+### P2 - Medium
+
+- [ ] Add JSON schemas for all shipped tool inputs.
+
 - [ ] Improve Blackboard error mapping.
   - Priority: P2
   - Context: raw Blackboard REST errors are not yet translated into usable user messages.
@@ -49,10 +53,6 @@ Last Updated: 2026-08-21
   - Priority: P2
   - Context: Prometheus tool-call metrics exist but per-request lifecycle tracing (request ID, latency breakdown, upstream call count) is missing.
   - Acceptance Criteria: each tool call emits a structured trace entry; latency breakdown is visible.
-
-### P2 - Medium
-
-- [ ] Add JSON schemas for all shipped tool inputs.
 
 ### P3 - Exploratory
 

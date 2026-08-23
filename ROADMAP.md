@@ -9,6 +9,7 @@ Last Updated: 2026-08-22
 ## 2026 Q2 - Read and Write Workflows ✅ (mostly complete)
 
 ### Multi-Persona Tool Coverage
+
 - [x] **Student tools**: all core read and write tools shipped — `get_my_courses`, `get_upcoming_assignments`, `get_my_grades`, `get_course_content`, `get_assignment_feedback`, `get_announcements`, `create_assignment_submission`.
 - [x] **Teacher/Instructor tools**: read tools shipped — `list_roster`, `get_grades`, `get_submission_status`, `get_grade_distribution`, `get_discussion_summary`, `get_at_risk_students`, `draft_announcement`. Grade write-back deferred to Q3.
 - [ ] **Admin tools**: user management (read), enrollment management, institutional audit log access.
@@ -16,19 +17,25 @@ Last Updated: 2026-08-22
 - [ ] **Analytics/Product Owner tools**: event telemetry tap, engagement metrics aggregation, AI recommendation signal export.
 
 ### AI Orchestration Surface
+
 - [x] **MCP provider contract**: `GET /manifest` endpoint ships a stable provider manifest and tool catalog; `src/manifest.ts` builds it dynamically from exported schemas.
 
 #### Event-Driven Pipeline
+
 - [ ] **Blackboard activity ingestion**: define an event schema for grade posts, submission events, login activity, and course changes.
 - [ ] **Event pipeline stub**: accept Blackboard LTI/webhook events and emit structured signals for downstream consumers (analytics, alerts, agent triggers).
 
 ### User Safety & Institutional Compliance
+
 - [x] **RBAC enforcement**: student, instructor, and admin roles enforced via `src/rbac.ts` + `src/auth.ts`; deny-by-default for unregistered tools.
 - [x] **Data access audit logging**: structured JSON audit events (access.granted / access.denied) written to stdout; suitable for Datadog, CloudWatch, Loki, etc.
 - [x] **PII handling policy**: `src/privacy.ts` scrubs sensitive text before log emission; audit log subjects are SHA-256 hashed; raw user IDs are never written to logs.
 - [x] **Rate limiting and abuse protection**: per-role per-minute call limits in `src/auth.ts`; configurable via `RATE_LIMIT_*_PER_MINUTE`; 429 responses include retry-after interval.
 
 ### Foundation Completion
+
+> Note: Implementation is complete; MCP Inspector validation ([/]) remains in-progress.
+
 - [/] Pass MCP Inspector with stdio transport.
 - [ ] Add JSON schemas for all shipped tool inputs.
 
