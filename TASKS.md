@@ -13,9 +13,14 @@ Last Updated: 2026-08-21
 - [x] Ship `create_assignment_submission`.
   - Student write tool fully implemented in `src/tools/student.ts` with input validation, RBAC gate (student/admin), and attempt creation via `bbClient.createAttempt()`.
 
-- [x] **[Q2-CEO] PII handling policy** — define and enforce PII scrubbing for student names, grades, and IDs in all tool outputs and server logs.
+- [x] **[Q2-CEO] PII handling policy (audit logs)** — enforce PII scrubbing in audit log emission; raw student IDs and caller identifiers are never written to logs.
   - `src/auth.ts` audit logs emit hashed `subject` values (`anon:<sha256[:12]>`) instead of raw `userId`; `src/privacy.ts` scrubs email and long-ID patterns before any log emission.
   - `tests/auth-privacy.test.ts` verifies no raw caller identifier appears in granted/denied audit log lines.
+  - Note: tool-output PII scrubbing (student names, grades, IDs returned by `src/tools/student.ts` and `src/tools/instructor.ts`) is a separate pending work item — see P2 tasks below.
+
+- [ ] **[P2] Tool-output PII scrubbing** — add a shared output scrubber applied to all tool handler return values in `src/tools/student.ts` and `src/tools/instructor.ts`; cover student IDs, names, email addresses, grades, and feedback with tests for both modules.
+  - Context: current PII policy covers only audit logs; raw student data is still returned in tool output payloads.
+  - Acceptance Criteria: a shared scrubber function is applied before tool results are returned to the MCP client; tests verify no raw PII appears in student/instructor tool responses.
 
 - [x] **[Q2-CEO] Rate limiting per role** — add per-role rate limits to prevent bulk data extraction by any authenticated client.
   - `src/auth.ts` enforces in-memory per-role per-minute limits before tool execution; denial messages include retry-after interval.

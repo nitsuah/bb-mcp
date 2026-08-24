@@ -30,7 +30,7 @@ Last Updated: 2026-08-22
 - [x] **RBAC enforcement**: student, instructor, and admin roles enforced via `src/rbac.ts` + `src/auth.ts`; deny-by-default for unregistered tools.
 - [x] **Data access audit logging**: structured JSON audit events (access.granted / access.denied) written to stdout; suitable for Datadog, CloudWatch, Loki, etc.
 - [x] **PII handling policy**: `src/privacy.ts` scrubs sensitive text before log emission; audit log subjects are SHA-256 hashed; raw user IDs are never written to logs.
-- [x] **Rate limiting and abuse protection**: per-role per-minute call limits in `src/auth.ts`; configurable via `RATE_LIMIT_*_PER_MINUTE`; 429 responses include retry-after interval.
+- [x] **Rate limiting and abuse protection**: per-role per-minute call limits in `src/auth.ts`; configurable via `RATE_LIMIT_*_PER_MINUTE`; exceeded limit returns an `AuthorizationError` with retry guidance (see `src/auth.ts` for the actual error shape).
 
 ### Foundation Completion
 
