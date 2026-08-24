@@ -23,12 +23,35 @@
 
 ## Shipped Tools
 
-- **list_courses** - Returns enrolled courses for the authenticated student (alias-backed handler, RBAC gated)
-- **get_course_contents** - Hierarchical course content tree navigation via REST API
-- **get_announcements** - Course and system announcements with full auth/metrics wrapping
-- **list_roster** - Instructor read tool returning course roster with RBAC enforcement
-- **get_grades** - Instructor read tool returning grade data with schema-backed outputs
-- **create_assignment_submission** - Student write tool submitting attempts via `bbClient.createAttempt()` with input validation and RBAC gating to student/admin roles
+### Student tools (9)
+
+- **get_my_courses** — Returns all courses the caller is enrolled in (RBAC gated; student/instructor/admin)
+- **list_courses** — Compatibility alias for `get_my_courses`
+- **get_upcoming_assignments** — Assignments due within N days, sorted by due date; optional course filter
+- **get_my_grades** — Grade breakdown across all courses or one course; computes running average
+- **get_course_content** — Course modules and materials with optional keyword search
+- **get_course_contents** — Compatibility alias for `get_course_content`
+- **get_assignment_feedback** — Instructor comments, rubric scores, and attempt annotations
+- **get_announcements** — Course announcements with optional unread-only filter
+- **create_assignment_submission** — Creates an assignment attempt via `bbClient.createAttempt()`; RBAC gated to student/admin
+
+### Instructor tools (7)
+
+- **list_roster** — Enrolled user list for a course including usernames and display names; instructor/admin only
+- **get_grades** — Course-wide or user-scoped grade details; optional column filter; FERPA restricted
+- **get_submission_status** — Who has and has not submitted an assignment, with timestamps; FERPA restricted
+- **get_grade_distribution** — Mean, median, std dev, min/max, and A/B/C/D/F buckets for a grade column; FERPA restricted
+- **get_discussion_summary** — Participant count and post excerpts for a discussion thread; instructor/admin
+- **get_at_risk_students** — Students below a grade threshold or with excess missing assignments; FERPA restricted
+- **draft_announcement** — AI-assisted announcement draft with tone control; optionally posts to Blackboard
+
+### Shared tools (1)
+
+- **search_course_materials** — Full-text search across course content titles and bodies; all roles; dedicated SSE stream at `GET /sse/search-course-materials`
+
+### MCP Resources (1)
+
+- **course://{courseId}** — Full Blackboard course object as JSON
 
 ## Security & Compliance
 
