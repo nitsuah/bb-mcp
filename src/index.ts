@@ -97,6 +97,84 @@ import {
   searchCourseMaterialsSchema,
 } from "./tools/shared.js";
 
+import {
+  ListUsersInput,
+  listUsersHandler,
+  listUsersSchema,
+  GetUserInput,
+  getUserHandler,
+  getUserSchema,
+  ListEnrollmentsInput,
+  listEnrollmentsHandler,
+  listEnrollmentsSchema,
+  CreateEnrollmentInput,
+  createEnrollmentHandler,
+  createEnrollmentSchema,
+  UpdateEnrollmentInput,
+  updateEnrollmentHandler,
+  updateEnrollmentSchema,
+  DeleteEnrollmentInput,
+  deleteEnrollmentHandler,
+  deleteEnrollmentSchema,
+  ListAuditLogsInput,
+  listAuditLogsHandler,
+  listAuditLogsSchema,
+} from "./tools/admin.js";
+
+import {
+  GetMyChildrenInput,
+  getMyChildrenHandler,
+  getMyChildrenSchema,
+  GetChildrenCoursesInput,
+  getChildrenCoursesHandler,
+  getChildrenCoursesSchema,
+  GetChildrenGradesInput,
+  getChildrenGradesHandler,
+  getChildrenGradesSchema,
+  GetChildrenUpcomingAssignmentsInput,
+  getChildrenUpcomingAssignmentsHandler,
+  getChildrenUpcomingAssignmentsSchema,
+  GetChildrenAnnouncementsInput,
+  getChildrenAnnouncementsHandler,
+  getChildrenAnnouncementsSchema,
+} from "./tools/parent.js";
+
+import {
+  CreateGradeColumnInput,
+  createGradeColumnHandler,
+  createGradeColumnSchema,
+  UpdateGradeInput,
+  updateGradeHandler,
+  updateGradeSchema,
+  DeleteGradeInput,
+  deleteGradeHandler,
+  deleteGradeSchema,
+  ExemptGradeInput,
+  exemptGradeHandler,
+  exemptGradeSchema,
+  GetGradeColumnInput,
+  getGradeColumnHandler,
+  getGradeColumnSchema,
+} from "./tools/grade-writeback.js";
+
+import {
+  ListWebhookSubscriptionsInput,
+  listWebhookSubscriptionsHandler,
+  listWebhookSubscriptionsSchema,
+  GetWebhookSubscriptionInput,
+  getWebhookSubscriptionHandler,
+  getWebhookSubscriptionSchema,
+  CreateWebhookSubscriptionInput,
+  createWebhookSubscriptionHandler,
+  createWebhookSubscriptionSchema,
+  UpdateWebhookSubscriptionInput,
+  updateWebhookSubscriptionHandler,
+  updateWebhookSubscriptionSchema,
+  DeleteWebhookSubscriptionInput,
+  deleteWebhookSubscriptionHandler,
+  deleteWebhookSubscriptionSchema,
+} from "./tools/webhook-tools.js";
+
 // ── MCP Server setup ──────────────────────────────────────────────────────
 
 function buildServer(): McpServer {
@@ -279,6 +357,216 @@ function buildServer(): McpServer {
     (args: unknown) =>
       searchCourseMaterialsHandler(
         args as Parameters<typeof searchCourseMaterialsHandler>[0],
+      ),
+  );
+
+  // Admin tools
+  server.tool(
+    listUsersSchema.name,
+    listUsersSchema.description,
+    ListUsersInput.shape,
+    (args: unknown) =>
+      listUsersHandler(args as Parameters<typeof listUsersHandler>[0]),
+  );
+
+  server.tool(
+    getUserSchema.name,
+    getUserSchema.description,
+    GetUserInput.shape,
+    (args: unknown) =>
+      getUserHandler(args as Parameters<typeof getUserHandler>[0]),
+  );
+
+  server.tool(
+    listEnrollmentsSchema.name,
+    listEnrollmentsSchema.description,
+    ListEnrollmentsInput.shape,
+    (args: unknown) =>
+      listEnrollmentsHandler(
+        args as Parameters<typeof listEnrollmentsHandler>[0],
+      ),
+  );
+
+  server.tool(
+    createEnrollmentSchema.name,
+    createEnrollmentSchema.description,
+    CreateEnrollmentInput.shape,
+    (args: unknown) =>
+      createEnrollmentHandler(
+        args as Parameters<typeof createEnrollmentHandler>[0],
+      ),
+  );
+
+  server.tool(
+    updateEnrollmentSchema.name,
+    updateEnrollmentSchema.description,
+    UpdateEnrollmentInput.shape,
+    (args: unknown) =>
+      updateEnrollmentHandler(
+        args as Parameters<typeof updateEnrollmentHandler>[0],
+      ),
+  );
+
+  server.tool(
+    deleteEnrollmentSchema.name,
+    deleteEnrollmentSchema.description,
+    DeleteEnrollmentInput.shape,
+    (args: unknown) =>
+      deleteEnrollmentHandler(
+        args as Parameters<typeof deleteEnrollmentHandler>[0],
+      ),
+  );
+
+  server.tool(
+    listAuditLogsSchema.name,
+    listAuditLogsSchema.description,
+    ListAuditLogsInput.shape,
+    (args: unknown) =>
+      listAuditLogsHandler(
+        args as Parameters<typeof listAuditLogsHandler>[0],
+      ),
+  );
+
+  // Parent tools
+  server.tool(
+    getMyChildrenSchema.name,
+    getMyChildrenSchema.description,
+    GetMyChildrenInput.shape,
+    (args: unknown) =>
+      getMyChildrenHandler(args as Parameters<typeof getMyChildrenHandler>[0]),
+  );
+
+  server.tool(
+    getChildrenCoursesSchema.name,
+    getChildrenCoursesSchema.description,
+    GetChildrenCoursesInput.shape,
+    (args: unknown) =>
+      getChildrenCoursesHandler(
+        args as Parameters<typeof getChildrenCoursesHandler>[0],
+      ),
+  );
+
+  server.tool(
+    getChildrenGradesSchema.name,
+    getChildrenGradesSchema.description,
+    GetChildrenGradesInput.shape,
+    (args: unknown) =>
+      getChildrenGradesHandler(
+        args as Parameters<typeof getChildrenGradesHandler>[0],
+      ),
+  );
+
+  server.tool(
+    getChildrenUpcomingAssignmentsSchema.name,
+    getChildrenUpcomingAssignmentsSchema.description,
+    GetChildrenUpcomingAssignmentsInput.shape,
+    (args: unknown) =>
+      getChildrenUpcomingAssignmentsHandler(
+        args as Parameters<typeof getChildrenUpcomingAssignmentsHandler>[0],
+      ),
+  );
+
+  server.tool(
+    getChildrenAnnouncementsSchema.name,
+    getChildrenAnnouncementsSchema.description,
+    GetChildrenAnnouncementsInput.shape,
+    (args: unknown) =>
+      getChildrenAnnouncementsHandler(
+        args as Parameters<typeof getChildrenAnnouncementsHandler>[0],
+      ),
+  );
+
+  // Grade write-back tools
+  server.tool(
+    createGradeColumnSchema.name,
+    createGradeColumnSchema.description,
+    CreateGradeColumnInput.shape,
+    (args: unknown) =>
+      createGradeColumnHandler(
+        args as Parameters<typeof createGradeColumnHandler>[0],
+      ),
+  );
+
+  server.tool(
+    updateGradeSchema.name,
+    updateGradeSchema.description,
+    UpdateGradeInput.shape,
+    (args: unknown) =>
+      updateGradeHandler(args as Parameters<typeof updateGradeHandler>[0]),
+  );
+
+  server.tool(
+    deleteGradeSchema.name,
+    deleteGradeSchema.description,
+    DeleteGradeInput.shape,
+    (args: unknown) =>
+      deleteGradeHandler(args as Parameters<typeof deleteGradeHandler>[0]),
+  );
+
+  server.tool(
+    exemptGradeSchema.name,
+    exemptGradeSchema.description,
+    ExemptGradeInput.shape,
+    (args: unknown) =>
+      exemptGradeHandler(args as Parameters<typeof exemptGradeHandler>[0]),
+  );
+
+  server.tool(
+    getGradeColumnSchema.name,
+    getGradeColumnSchema.description,
+    GetGradeColumnInput.shape,
+    (args: unknown) =>
+      getGradeColumnHandler(args as Parameters<typeof getGradeColumnHandler>[0]),
+  );
+
+  // Webhook tools
+  server.tool(
+    listWebhookSubscriptionsSchema.name,
+    listWebhookSubscriptionsSchema.description,
+    ListWebhookSubscriptionsInput.shape,
+    (args: unknown) =>
+      listWebhookSubscriptionsHandler(
+        args as Parameters<typeof listWebhookSubscriptionsHandler>[0],
+      ),
+  );
+
+  server.tool(
+    getWebhookSubscriptionSchema.name,
+    getWebhookSubscriptionSchema.description,
+    GetWebhookSubscriptionInput.shape,
+    (args: unknown) =>
+      getWebhookSubscriptionHandler(
+        args as Parameters<typeof getWebhookSubscriptionHandler>[0],
+      ),
+  );
+
+  server.tool(
+    createWebhookSubscriptionSchema.name,
+    createWebhookSubscriptionSchema.description,
+    CreateWebhookSubscriptionInput.shape,
+    (args: unknown) =>
+      createWebhookSubscriptionHandler(
+        args as Parameters<typeof createWebhookSubscriptionHandler>[0],
+      ),
+  );
+
+  server.tool(
+    updateWebhookSubscriptionSchema.name,
+    updateWebhookSubscriptionSchema.description,
+    UpdateWebhookSubscriptionInput.shape,
+    (args: unknown) =>
+      updateWebhookSubscriptionHandler(
+        args as Parameters<typeof updateWebhookSubscriptionHandler>[0],
+      ),
+  );
+
+  server.tool(
+    deleteWebhookSubscriptionSchema.name,
+    deleteWebhookSubscriptionSchema.description,
+    DeleteWebhookSubscriptionInput.shape,
+    (args: unknown) =>
+      deleteWebhookSubscriptionHandler(
+        args as Parameters<typeof deleteWebhookSubscriptionHandler>[0],
       ),
   );
 

@@ -24,7 +24,7 @@ import { config } from "./config.js";
 import { scrubLogText, toAuditSubject } from "./privacy.js";
 import { canRoleAccessTool, getAllowedRolesForTool } from "./rbac.js";
 
-export type Role = "student" | "instructor" | "admin";
+export type Role = "student" | "instructor" | "admin" | "parent";
 
 export interface CallerIdentity {
   userId: string; // opaque identifier — Blackboard user ID or service account

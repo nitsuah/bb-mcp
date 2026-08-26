@@ -21,6 +21,32 @@ export const TOOL_ROLE_RULES: Readonly<Record<string, readonly Role[]>> = {
   get_at_risk_students: ["instructor", "admin"],
   draft_announcement: ["instructor", "admin"],
   search_course_materials: ["student", "instructor", "admin"],
+  // Admin tools
+  list_users: ["admin"],
+  get_user: ["admin"],
+  list_enrollments: ["admin"],
+  create_enrollment: ["admin"],
+  update_enrollment: ["admin"],
+  delete_enrollment: ["admin"],
+  list_audit_logs: ["admin"],
+  // Parent tools
+  get_my_children: ["parent"],
+  get_children_courses: ["parent"],
+  get_children_grades: ["parent"],
+  get_children_upcoming_assignments: ["parent"],
+  get_children_announcements: ["parent"],
+  // Grade write-back tools
+  create_grade_column: ["instructor", "admin"],
+  update_grade: ["instructor", "admin"],
+  delete_grade: ["instructor", "admin"],
+  exempt_grade: ["instructor", "admin"],
+  get_grade_column: ["instructor", "admin"],
+  // Webhook tools
+  list_webhook_subscriptions: ["admin"],
+  get_webhook_subscription: ["admin"],
+  create_webhook_subscription: ["admin"],
+  update_webhook_subscription: ["admin"],
+  delete_webhook_subscription: ["admin"],
 };
 
 export function getAllowedRolesForTool(toolName: string): readonly Role[] {
