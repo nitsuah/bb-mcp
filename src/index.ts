@@ -177,6 +177,356 @@ import {
 
 // ── MCP Server setup ──────────────────────────────────────────────────────
 
+type ToolRegistration = {
+  name: string;
+  description: string;
+  inputSchema: unknown;
+  handler: (args: unknown) => unknown;
+};
+
+const TOOL_REGISTRATIONS: ToolRegistration[] = [
+  // Student tools
+  {
+    name: getMyCoursesSchema.name,
+    description: getMyCoursesSchema.description,
+    inputSchema: GetMyCoursesInput.shape,
+    handler: (args: unknown) =>
+      getMyCoursesHandler(args as Parameters<typeof getMyCoursesHandler>[0]),
+  },
+  {
+    name: listCoursesSchema.name,
+    description: listCoursesSchema.description,
+    inputSchema: ListCoursesInput.shape,
+    handler: (args: unknown) =>
+      listCoursesHandler(args as Parameters<typeof listCoursesHandler>[0]),
+  },
+  {
+    name: getUpcomingAssignmentsSchema.name,
+    description: getUpcomingAssignmentsSchema.description,
+    inputSchema: GetUpcomingAssignmentsInput.shape,
+    handler: (args: unknown) =>
+      getUpcomingAssignmentsHandler(
+        args as Parameters<typeof getUpcomingAssignmentsHandler>[0],
+      ),
+  },
+  {
+    name: getMyGradesSchema.name,
+    description: getMyGradesSchema.description,
+    inputSchema: GetMyGradesInput.shape,
+    handler: (args: unknown) =>
+      getMyGradesHandler(args as Parameters<typeof getMyGradesHandler>[0]),
+  },
+  {
+    name: getCourseContentSchema.name,
+    description: getCourseContentSchema.description,
+    inputSchema: GetCourseContentInput.shape,
+    handler: (args: unknown) =>
+      getCourseContentHandler(
+        args as Parameters<typeof getCourseContentHandler>[0],
+      ),
+  },
+  {
+    name: getCourseContentsSchema.name,
+    description: getCourseContentsSchema.description,
+    inputSchema: GetCourseContentsInput.shape,
+    handler: (args: unknown) =>
+      getCourseContentsHandler(
+        args as Parameters<typeof getCourseContentsHandler>[0],
+      ),
+  },
+  {
+    name: getAssignmentFeedbackSchema.name,
+    description: getAssignmentFeedbackSchema.description,
+    inputSchema: GetAssignmentFeedbackInput.shape,
+    handler: (args: unknown) =>
+      getAssignmentFeedbackHandler(
+        args as Parameters<typeof getAssignmentFeedbackHandler>[0],
+      ),
+  },
+  {
+    name: getAnnouncementsSchema.name,
+    description: getAnnouncementsSchema.description,
+    inputSchema: GetAnnouncementsInput.shape,
+    handler: (args: unknown) =>
+      getAnnouncementsHandler(
+        args as Parameters<typeof getAnnouncementsHandler>[0],
+      ),
+  },
+  {
+    name: createAssignmentSubmissionSchema.name,
+    description: createAssignmentSubmissionSchema.description,
+    inputSchema: CreateAssignmentSubmissionInput.shape,
+    handler: (args: unknown) =>
+      createAssignmentSubmissionHandler(
+        args as Parameters<typeof createAssignmentSubmissionHandler>[0],
+      ),
+  },
+
+  // Instructor tools
+  {
+    name: listRosterSchema.name,
+    description: listRosterSchema.description,
+    inputSchema: ListRosterInput.shape,
+    handler: (args: unknown) =>
+      listRosterHandler(args as Parameters<typeof listRosterHandler>[0]),
+  },
+  {
+    name: getGradesSchema.name,
+    description: getGradesSchema.description,
+    inputSchema: GetGradesInput.shape,
+    handler: (args: unknown) =>
+      getGradesHandler(args as Parameters<typeof getGradesHandler>[0]),
+  },
+  {
+    name: getSubmissionStatusSchema.name,
+    description: getSubmissionStatusSchema.description,
+    inputSchema: GetSubmissionStatusInput.shape,
+    handler: (args: unknown) =>
+      getSubmissionStatusHandler(
+        args as Parameters<typeof getSubmissionStatusHandler>[0],
+      ),
+  },
+  {
+    name: getGradeDistributionSchema.name,
+    description: getGradeDistributionSchema.description,
+    inputSchema: GetGradeDistributionInput.shape,
+    handler: (args: unknown) =>
+      getGradeDistributionHandler(
+        args as Parameters<typeof getGradeDistributionHandler>[0],
+      ),
+  },
+  {
+    name: getDiscussionSummarySchema.name,
+    description: getDiscussionSummarySchema.description,
+    inputSchema: GetDiscussionSummaryInput.shape,
+    handler: (args: unknown) =>
+      getDiscussionSummaryHandler(
+        args as Parameters<typeof getDiscussionSummaryHandler>[0],
+      ),
+  },
+  {
+    name: getAtRiskStudentsSchema.name,
+    description: getAtRiskStudentsSchema.description,
+    inputSchema: GetAtRiskStudentsInput.shape,
+    handler: (args: unknown) =>
+      getAtRiskStudentsHandler(
+        args as Parameters<typeof getAtRiskStudentsHandler>[0],
+      ),
+  },
+  {
+    name: draftAnnouncementSchema.name,
+    description: draftAnnouncementSchema.description,
+    inputSchema: DraftAnnouncementInput.shape,
+    handler: (args: unknown) =>
+      draftAnnouncementHandler(
+        args as Parameters<typeof draftAnnouncementHandler>[0],
+      ),
+  },
+
+  // Shared tools
+  {
+    name: searchCourseMaterialsSchema.name,
+    description: searchCourseMaterialsSchema.description,
+    inputSchema: SearchCourseMaterialsInput.shape,
+    handler: (args: unknown) =>
+      searchCourseMaterialsHandler(
+        args as Parameters<typeof searchCourseMaterialsHandler>[0],
+      ),
+  },
+
+  // Admin tools
+  {
+    name: listUsersSchema.name,
+    description: listUsersSchema.description,
+    inputSchema: ListUsersInput.shape,
+    handler: (args: unknown) =>
+      listUsersHandler(args as Parameters<typeof listUsersHandler>[0]),
+  },
+  {
+    name: getUserSchema.name,
+    description: getUserSchema.description,
+    inputSchema: GetUserInput.shape,
+    handler: (args: unknown) =>
+      getUserHandler(args as Parameters<typeof getUserHandler>[0]),
+  },
+  {
+    name: listEnrollmentsSchema.name,
+    description: listEnrollmentsSchema.description,
+    inputSchema: ListEnrollmentsInput.shape,
+    handler: (args: unknown) =>
+      listEnrollmentsHandler(
+        args as Parameters<typeof listEnrollmentsHandler>[0],
+      ),
+  },
+  {
+    name: createEnrollmentSchema.name,
+    description: createEnrollmentSchema.description,
+    inputSchema: CreateEnrollmentInput.shape,
+    handler: (args: unknown) =>
+      createEnrollmentHandler(
+        args as Parameters<typeof createEnrollmentHandler>[0],
+      ),
+  },
+  {
+    name: updateEnrollmentSchema.name,
+    description: updateEnrollmentSchema.description,
+    inputSchema: UpdateEnrollmentInput.shape,
+    handler: (args: unknown) =>
+      updateEnrollmentHandler(
+        args as Parameters<typeof updateEnrollmentHandler>[0],
+      ),
+  },
+  {
+    name: deleteEnrollmentSchema.name,
+    description: deleteEnrollmentSchema.description,
+    inputSchema: DeleteEnrollmentInput.shape,
+    handler: (args: unknown) =>
+      deleteEnrollmentHandler(
+        args as Parameters<typeof deleteEnrollmentHandler>[0],
+      ),
+  },
+  {
+    name: listAuditLogsSchema.name,
+    description: listAuditLogsSchema.description,
+    inputSchema: ListAuditLogsInput.shape,
+    handler: (args: unknown) =>
+      listAuditLogsHandler(
+        args as Parameters<typeof listAuditLogsHandler>[0],
+      ),
+  },
+
+  // Parent tools
+  {
+    name: getMyChildrenSchema.name,
+    description: getMyChildrenSchema.description,
+    inputSchema: GetMyChildrenInput.shape,
+    handler: (args: unknown) =>
+      getMyChildrenHandler(args as Parameters<typeof getMyChildrenHandler>[0]),
+  },
+  {
+    name: getChildrenCoursesSchema.name,
+    description: getChildrenCoursesSchema.description,
+    inputSchema: GetChildrenCoursesInput.shape,
+    handler: (args: unknown) =>
+      getChildrenCoursesHandler(
+        args as Parameters<typeof getChildrenCoursesHandler>[0],
+      ),
+  },
+  {
+    name: getChildrenGradesSchema.name,
+    description: getChildrenGradesSchema.description,
+    inputSchema: GetChildrenGradesInput.shape,
+    handler: (args: unknown) =>
+      getChildrenGradesHandler(
+        args as Parameters<typeof getChildrenGradesHandler>[0],
+      ),
+  },
+  {
+    name: getChildrenUpcomingAssignmentsSchema.name,
+    description: getChildrenUpcomingAssignmentsSchema.description,
+    inputSchema: GetChildrenUpcomingAssignmentsInput.shape,
+    handler: (args: unknown) =>
+      getChildrenUpcomingAssignmentsHandler(
+        args as Parameters<typeof getChildrenUpcomingAssignmentsHandler>[0],
+      ),
+  },
+  {
+    name: getChildrenAnnouncementsSchema.name,
+    description: getChildrenAnnouncementsSchema.description,
+    inputSchema: GetChildrenAnnouncementsInput.shape,
+    handler: (args: unknown) =>
+      getChildrenAnnouncementsHandler(
+        args as Parameters<typeof getChildrenAnnouncementsHandler>[0],
+      ),
+  },
+
+  // Grade write-back tools
+  {
+    name: createGradeColumnSchema.name,
+    description: createGradeColumnSchema.description,
+    inputSchema: CreateGradeColumnInput.shape,
+    handler: (args: unknown) =>
+      createGradeColumnHandler(
+        args as Parameters<typeof createGradeColumnHandler>[0],
+      ),
+  },
+  {
+    name: updateGradeSchema.name,
+    description: updateGradeSchema.description,
+    inputSchema: UpdateGradeInput.shape,
+    handler: (args: unknown) =>
+      updateGradeHandler(args as Parameters<typeof updateGradeHandler>[0]),
+  },
+  {
+    name: deleteGradeSchema.name,
+    description: deleteGradeSchema.description,
+    inputSchema: DeleteGradeInput.shape,
+    handler: (args: unknown) =>
+      deleteGradeHandler(args as Parameters<typeof deleteGradeHandler>[0]),
+  },
+  {
+    name: exemptGradeSchema.name,
+    description: exemptGradeSchema.description,
+    inputSchema: ExemptGradeInput.shape,
+    handler: (args: unknown) =>
+      exemptGradeHandler(args as Parameters<typeof exemptGradeHandler>[0]),
+  },
+  {
+    name: getGradeColumnSchema.name,
+    description: getGradeColumnSchema.description,
+    inputSchema: GetGradeColumnInput.shape,
+    handler: (args: unknown) =>
+      getGradeColumnHandler(args as Parameters<typeof getGradeColumnHandler>[0]),
+  },
+
+  // Webhook tools
+  {
+    name: listWebhookSubscriptionsSchema.name,
+    description: listWebhookSubscriptionsSchema.description,
+    inputSchema: ListWebhookSubscriptionsInput.shape,
+    handler: (args: unknown) =>
+      listWebhookSubscriptionsHandler(
+        args as Parameters<typeof listWebhookSubscriptionsHandler>[0],
+      ),
+  },
+  {
+    name: getWebhookSubscriptionSchema.name,
+    description: getWebhookSubscriptionSchema.description,
+    inputSchema: GetWebhookSubscriptionInput.shape,
+    handler: (args: unknown) =>
+      getWebhookSubscriptionHandler(
+        args as Parameters<typeof getWebhookSubscriptionHandler>[0],
+      ),
+  },
+  {
+    name: createWebhookSubscriptionSchema.name,
+    description: createWebhookSubscriptionSchema.description,
+    inputSchema: CreateWebhookSubscriptionInput.shape,
+    handler: (args: unknown) =>
+      createWebhookSubscriptionHandler(
+        args as Parameters<typeof createWebhookSubscriptionHandler>[0],
+      ),
+  },
+  {
+    name: updateWebhookSubscriptionSchema.name,
+    description: updateWebhookSubscriptionSchema.description,
+    inputSchema: UpdateWebhookSubscriptionInput.shape,
+    handler: (args: unknown) =>
+      updateWebhookSubscriptionHandler(
+        args as Parameters<typeof updateWebhookSubscriptionHandler>[0],
+      ),
+  },
+  {
+    name: deleteWebhookSubscriptionSchema.name,
+    description: deleteWebhookSubscriptionSchema.description,
+    inputSchema: DeleteWebhookSubscriptionInput.shape,
+    handler: (args: unknown) =>
+      deleteWebhookSubscriptionHandler(
+        args as Parameters<typeof deleteWebhookSubscriptionHandler>[0],
+      ),
+  },
+];
+
 function buildServer(): McpServer {
   // SDK typing changed and is stricter than the JSON-schema shape used below.
   // Keep runtime behavior intact by using a compatibility cast at the server boundary.
@@ -197,378 +547,9 @@ function buildServer(): McpServer {
     ) => void;
   };
 
-  // Student tools
-  server.tool(
-    getMyCoursesSchema.name,
-    getMyCoursesSchema.description,
-    GetMyCoursesInput.shape,
-    (args: unknown) =>
-      getMyCoursesHandler(args as Parameters<typeof getMyCoursesHandler>[0]),
-  );
-
-  server.tool(
-    listCoursesSchema.name,
-    listCoursesSchema.description,
-    ListCoursesInput.shape,
-    (args: unknown) =>
-      listCoursesHandler(args as Parameters<typeof listCoursesHandler>[0]),
-  );
-
-  server.tool(
-    getUpcomingAssignmentsSchema.name,
-    getUpcomingAssignmentsSchema.description,
-    GetUpcomingAssignmentsInput.shape,
-    (args: unknown) =>
-      getUpcomingAssignmentsHandler(
-        args as Parameters<typeof getUpcomingAssignmentsHandler>[0],
-      ),
-  );
-
-  server.tool(
-    getMyGradesSchema.name,
-    getMyGradesSchema.description,
-    GetMyGradesInput.shape,
-    (args: unknown) =>
-      getMyGradesHandler(args as Parameters<typeof getMyGradesHandler>[0]),
-  );
-
-  server.tool(
-    getCourseContentSchema.name,
-    getCourseContentSchema.description,
-    GetCourseContentInput.shape,
-    (args: unknown) =>
-      getCourseContentHandler(
-        args as Parameters<typeof getCourseContentHandler>[0],
-      ),
-  );
-
-  server.tool(
-    getCourseContentsSchema.name,
-    getCourseContentsSchema.description,
-    GetCourseContentsInput.shape,
-    (args: unknown) =>
-      getCourseContentsHandler(
-        args as Parameters<typeof getCourseContentsHandler>[0],
-      ),
-  );
-
-  server.tool(
-    getAssignmentFeedbackSchema.name,
-    getAssignmentFeedbackSchema.description,
-    GetAssignmentFeedbackInput.shape,
-    (args: unknown) =>
-      getAssignmentFeedbackHandler(
-        args as Parameters<typeof getAssignmentFeedbackHandler>[0],
-      ),
-  );
-
-  server.tool(
-    getAnnouncementsSchema.name,
-    getAnnouncementsSchema.description,
-    GetAnnouncementsInput.shape,
-    (args: unknown) =>
-      getAnnouncementsHandler(
-        args as Parameters<typeof getAnnouncementsHandler>[0],
-      ),
-  );
-
-  server.tool(
-    createAssignmentSubmissionSchema.name,
-    createAssignmentSubmissionSchema.description,
-    CreateAssignmentSubmissionInput.shape,
-    (args: unknown) =>
-      createAssignmentSubmissionHandler(
-        args as Parameters<typeof createAssignmentSubmissionHandler>[0],
-      ),
-  );
-
-  // Instructor tools
-  server.tool(
-    listRosterSchema.name,
-    listRosterSchema.description,
-    ListRosterInput.shape,
-    (args: unknown) =>
-      listRosterHandler(args as Parameters<typeof listRosterHandler>[0]),
-  );
-
-  server.tool(
-    getGradesSchema.name,
-    getGradesSchema.description,
-    GetGradesInput.shape,
-    (args: unknown) =>
-      getGradesHandler(args as Parameters<typeof getGradesHandler>[0]),
-  );
-
-  server.tool(
-    getSubmissionStatusSchema.name,
-    getSubmissionStatusSchema.description,
-    GetSubmissionStatusInput.shape,
-    (args: unknown) =>
-      getSubmissionStatusHandler(
-        args as Parameters<typeof getSubmissionStatusHandler>[0],
-      ),
-  );
-
-  server.tool(
-    getGradeDistributionSchema.name,
-    getGradeDistributionSchema.description,
-    GetGradeDistributionInput.shape,
-    (args: unknown) =>
-      getGradeDistributionHandler(
-        args as Parameters<typeof getGradeDistributionHandler>[0],
-      ),
-  );
-
-  server.tool(
-    getDiscussionSummarySchema.name,
-    getDiscussionSummarySchema.description,
-    GetDiscussionSummaryInput.shape,
-    (args: unknown) =>
-      getDiscussionSummaryHandler(
-        args as Parameters<typeof getDiscussionSummaryHandler>[0],
-      ),
-  );
-
-  server.tool(
-    getAtRiskStudentsSchema.name,
-    getAtRiskStudentsSchema.description,
-    GetAtRiskStudentsInput.shape,
-    (args: unknown) =>
-      getAtRiskStudentsHandler(
-        args as Parameters<typeof getAtRiskStudentsHandler>[0],
-      ),
-  );
-
-  server.tool(
-    draftAnnouncementSchema.name,
-    draftAnnouncementSchema.description,
-    DraftAnnouncementInput.shape,
-    (args: unknown) =>
-      draftAnnouncementHandler(
-        args as Parameters<typeof draftAnnouncementHandler>[0],
-      ),
-  );
-
-  // Shared tools
-  server.tool(
-    searchCourseMaterialsSchema.name,
-    searchCourseMaterialsSchema.description,
-    SearchCourseMaterialsInput.shape,
-    (args: unknown) =>
-      searchCourseMaterialsHandler(
-        args as Parameters<typeof searchCourseMaterialsHandler>[0],
-      ),
-  );
-
-  // Admin tools
-  server.tool(
-    listUsersSchema.name,
-    listUsersSchema.description,
-    ListUsersInput.shape,
-    (args: unknown) =>
-      listUsersHandler(args as Parameters<typeof listUsersHandler>[0]),
-  );
-
-  server.tool(
-    getUserSchema.name,
-    getUserSchema.description,
-    GetUserInput.shape,
-    (args: unknown) =>
-      getUserHandler(args as Parameters<typeof getUserHandler>[0]),
-  );
-
-  server.tool(
-    listEnrollmentsSchema.name,
-    listEnrollmentsSchema.description,
-    ListEnrollmentsInput.shape,
-    (args: unknown) =>
-      listEnrollmentsHandler(
-        args as Parameters<typeof listEnrollmentsHandler>[0],
-      ),
-  );
-
-  server.tool(
-    createEnrollmentSchema.name,
-    createEnrollmentSchema.description,
-    CreateEnrollmentInput.shape,
-    (args: unknown) =>
-      createEnrollmentHandler(
-        args as Parameters<typeof createEnrollmentHandler>[0],
-      ),
-  );
-
-  server.tool(
-    updateEnrollmentSchema.name,
-    updateEnrollmentSchema.description,
-    UpdateEnrollmentInput.shape,
-    (args: unknown) =>
-      updateEnrollmentHandler(
-        args as Parameters<typeof updateEnrollmentHandler>[0],
-      ),
-  );
-
-  server.tool(
-    deleteEnrollmentSchema.name,
-    deleteEnrollmentSchema.description,
-    DeleteEnrollmentInput.shape,
-    (args: unknown) =>
-      deleteEnrollmentHandler(
-        args as Parameters<typeof deleteEnrollmentHandler>[0],
-      ),
-  );
-
-  server.tool(
-    listAuditLogsSchema.name,
-    listAuditLogsSchema.description,
-    ListAuditLogsInput.shape,
-    (args: unknown) =>
-      listAuditLogsHandler(
-        args as Parameters<typeof listAuditLogsHandler>[0],
-      ),
-  );
-
-  // Parent tools
-  server.tool(
-    getMyChildrenSchema.name,
-    getMyChildrenSchema.description,
-    GetMyChildrenInput.shape,
-    (args: unknown) =>
-      getMyChildrenHandler(args as Parameters<typeof getMyChildrenHandler>[0]),
-  );
-
-  server.tool(
-    getChildrenCoursesSchema.name,
-    getChildrenCoursesSchema.description,
-    GetChildrenCoursesInput.shape,
-    (args: unknown) =>
-      getChildrenCoursesHandler(
-        args as Parameters<typeof getChildrenCoursesHandler>[0],
-      ),
-  );
-
-  server.tool(
-    getChildrenGradesSchema.name,
-    getChildrenGradesSchema.description,
-    GetChildrenGradesInput.shape,
-    (args: unknown) =>
-      getChildrenGradesHandler(
-        args as Parameters<typeof getChildrenGradesHandler>[0],
-      ),
-  );
-
-  server.tool(
-    getChildrenUpcomingAssignmentsSchema.name,
-    getChildrenUpcomingAssignmentsSchema.description,
-    GetChildrenUpcomingAssignmentsInput.shape,
-    (args: unknown) =>
-      getChildrenUpcomingAssignmentsHandler(
-        args as Parameters<typeof getChildrenUpcomingAssignmentsHandler>[0],
-      ),
-  );
-
-  server.tool(
-    getChildrenAnnouncementsSchema.name,
-    getChildrenAnnouncementsSchema.description,
-    GetChildrenAnnouncementsInput.shape,
-    (args: unknown) =>
-      getChildrenAnnouncementsHandler(
-        args as Parameters<typeof getChildrenAnnouncementsHandler>[0],
-      ),
-  );
-
-  // Grade write-back tools
-  server.tool(
-    createGradeColumnSchema.name,
-    createGradeColumnSchema.description,
-    CreateGradeColumnInput.shape,
-    (args: unknown) =>
-      createGradeColumnHandler(
-        args as Parameters<typeof createGradeColumnHandler>[0],
-      ),
-  );
-
-  server.tool(
-    updateGradeSchema.name,
-    updateGradeSchema.description,
-    UpdateGradeInput.shape,
-    (args: unknown) =>
-      updateGradeHandler(args as Parameters<typeof updateGradeHandler>[0]),
-  );
-
-  server.tool(
-    deleteGradeSchema.name,
-    deleteGradeSchema.description,
-    DeleteGradeInput.shape,
-    (args: unknown) =>
-      deleteGradeHandler(args as Parameters<typeof deleteGradeHandler>[0]),
-  );
-
-  server.tool(
-    exemptGradeSchema.name,
-    exemptGradeSchema.description,
-    ExemptGradeInput.shape,
-    (args: unknown) =>
-      exemptGradeHandler(args as Parameters<typeof exemptGradeHandler>[0]),
-  );
-
-  server.tool(
-    getGradeColumnSchema.name,
-    getGradeColumnSchema.description,
-    GetGradeColumnInput.shape,
-    (args: unknown) =>
-      getGradeColumnHandler(args as Parameters<typeof getGradeColumnHandler>[0]),
-  );
-
-  // Webhook tools
-  server.tool(
-    listWebhookSubscriptionsSchema.name,
-    listWebhookSubscriptionsSchema.description,
-    ListWebhookSubscriptionsInput.shape,
-    (args: unknown) =>
-      listWebhookSubscriptionsHandler(
-        args as Parameters<typeof listWebhookSubscriptionsHandler>[0],
-      ),
-  );
-
-  server.tool(
-    getWebhookSubscriptionSchema.name,
-    getWebhookSubscriptionSchema.description,
-    GetWebhookSubscriptionInput.shape,
-    (args: unknown) =>
-      getWebhookSubscriptionHandler(
-        args as Parameters<typeof getWebhookSubscriptionHandler>[0],
-      ),
-  );
-
-  server.tool(
-    createWebhookSubscriptionSchema.name,
-    createWebhookSubscriptionSchema.description,
-    CreateWebhookSubscriptionInput.shape,
-    (args: unknown) =>
-      createWebhookSubscriptionHandler(
-        args as Parameters<typeof createWebhookSubscriptionHandler>[0],
-      ),
-  );
-
-  server.tool(
-    updateWebhookSubscriptionSchema.name,
-    updateWebhookSubscriptionSchema.description,
-    UpdateWebhookSubscriptionInput.shape,
-    (args: unknown) =>
-      updateWebhookSubscriptionHandler(
-        args as Parameters<typeof updateWebhookSubscriptionHandler>[0],
-      ),
-  );
-
-  server.tool(
-    deleteWebhookSubscriptionSchema.name,
-    deleteWebhookSubscriptionSchema.description,
-    DeleteWebhookSubscriptionInput.shape,
-    (args: unknown) =>
-      deleteWebhookSubscriptionHandler(
-        args as Parameters<typeof deleteWebhookSubscriptionHandler>[0],
-      ),
-  );
+  for (const tool of TOOL_REGISTRATIONS) {
+    server.tool(tool.name, tool.description, tool.inputSchema, tool.handler);
+  }
 
   // MCP Resource: course://[courseId]
   server.resource("course", "course://{courseId}", async (uri) => {
