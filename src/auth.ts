@@ -170,7 +170,7 @@ export function parseIdentity(raw: unknown): CallerIdentity {
     );
   }
 
-  const validRoles: Role[] = ["student", "instructor", "admin"];
+  const validRoles: Role[] = ["student", "instructor", "admin", "parent"];
   if (!validRoles.includes(obj.role as Role)) {
     throw new AuthorizationError(
       `caller_identity.role must be one of: ${validRoles.join(", ")}.`,

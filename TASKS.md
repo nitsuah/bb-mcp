@@ -69,13 +69,6 @@ Last Updated: 2026-08-21
 - [ ] **Analytics/Product Owner tools**: event telemetry tap, engagement metrics aggregation, AI recommendation signal export.
 - [ ] **Blackboard activity ingestion**: define an event schema for grade posts, submission events, login activity, and course changes.
 
-## Done
-
-- [x] Admin tools: user management (read), enrollment management, institutional audit log access.
-- [x] Parent tools (read-only, guardian-scoped): student enrollment view, grade summary, upcoming assignment alerts.
-- [x] Instructor grade write-back flows: create grade column, update grade, delete grade, exempt grade, get grade column.
-- [x] Webhook subscription management: list, get, create, update, delete webhook subscriptions.
-- [x] Event pipeline stub: accept Blackboard LTI/webhook events and emit structured signals for downstream consumers (analytics, alerts, agent triggers).
 
 ### P4 - Q3 Enterprise Follow-On
 

@@ -82,7 +82,10 @@ export const getMyChildrenHandler = withMetrics(
       const parentEnrollment = enrollments.find(e => e.userId === identity.userId);
 
       if (parentEnrollment && parentEnrollment.role === "Observer") {
-        // Get all users in this course (students)
+        // Get all users in this course (students) - only those with explicit guardian relationship
+        // Blackboard typically doesn't expose parent-child relationships directly via this endpoint
+        // Filter to students who are enrolled in courses where the parent is an observer
+        // This is a best-effort approach; production would use a dedicated guardian API
         const courseUsers = await bbClient.getEnrolledUsers(course.id);
         for (const user of courseUsers) {
           if (user.userId !== identity.userId && user.role === "Student") {
@@ -92,7 +95,7 @@ export const getMyChildrenHandler = withMetrics(
                 userId: user.userId,
                 userName: user.userName,
                 name: user.name,
-                relationship: "child",
+                relationship: "observed_student",
               });
             }
           }
@@ -300,7 +303,7 @@ export const getChildrenGradesHandler = withMetrics(
             text: g.text,
             feedback: g.feedback,
           })),
-          average: average ? Number(average.toFixed(1)) : null,
+          average: average !== null && average !== undefined ? Number(average.toFixed(1)) : null,
         });
       }
     }
