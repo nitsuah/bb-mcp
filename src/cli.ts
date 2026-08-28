@@ -3,6 +3,7 @@
  */
 import { buildProviderManifest } from "./manifest.js";
 import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
+import { getAllowedRolesForTool } from "./rbac.js";
 
 export type CliCommand =
   | { mode: "server"; useStdio: boolean }
@@ -211,7 +212,7 @@ export function formatToolCatalog(baseUrl?: string): string {
   const manifest = buildProviderManifest(getManifestBaseUrl(baseUrl));
   return manifest.tools
     .map(
-      (tool) => `${tool.name} [${tool.roles.join(", ")}] - ${tool.description}`,
+      (tool) => `${tool.name} [${getAllowedRolesForTool(tool.name).join(", ")}] - ${tool.description}`,
     )
     .join("\n");
 }

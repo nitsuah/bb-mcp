@@ -47,7 +47,7 @@ export const createGradeColumnHandler = withMetrics(
       courseId: args.courseId,
     });
 
-    const res = await bbClient.post(`/courses/${args.courseId}/gradebook/columns`, {
+    const res = await bbClient.post<BbGradeColumn>(`/courses/${args.courseId}/gradebook/columns`, {
       name: args.name,
       description: args.description,
       pointsPossible: args.pointsPossible,
@@ -145,17 +145,16 @@ export const updateGradeHandler = withMetrics(
       );
     } else {
       // Create new attempt
+      const attemptPayload: Record<string, unknown> = { userId: args.userId };
+      if (args.score !== undefined) attemptPayload.score = args.score;
+      if (args.feedback) attemptPayload.feedback = args.feedback;
+      if (args.instructorNotes) attemptPayload.instructorNotes = args.instructorNotes;
+      if (args.status) attemptPayload.status = args.status.toLowerCase();
+
       attempt = await bbClient.createAttempt(
         args.courseId,
         args.columnId,
-        args.userId,
-        undefined, // studentComments
-        {
-          score: args.score,
-          feedback: args.feedback,
-          instructorNotes: args.instructorNotes,
-          status: args.status?.toLowerCase() ?? undefined,
-        }
+        args.userId
       );
     }
 

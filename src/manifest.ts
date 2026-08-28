@@ -4,66 +4,66 @@
  */
 
 import {
-  GetMyCoursesSchema,
-  ListCoursesSchema,
-  GetUpcomingAssignmentsSchema,
-  GetMyGradesSchema,
-  GetCourseContentSchema,
-  GetCourseContentsSchema,
-  GetAssignmentFeedbackSchema,
-  GetAnnouncementsSchema,
-  CreateAssignmentSubmissionSchema,
-} from "./tools/student";
+  getMyCoursesSchema,
+  listCoursesSchema,
+  getUpcomingAssignmentsSchema,
+  getMyGradesSchema,
+  getCourseContentSchema,
+  getCourseContentsSchema,
+  getAssignmentFeedbackSchema,
+  getAnnouncementsSchema,
+  createAssignmentSubmissionSchema,
+} from "./tools/student.js";
 
 import {
-  ListRosterSchema,
-  GetGradesSchema,
-  GetSubmissionStatusSchema,
-  GetGradeDistributionSchema,
-  GetDiscussionSummarySchema,
-  GetAtRiskStudentsSchema,
-  DraftAnnouncementSchema,
-} from "./tools/instructor";
+  listRosterSchema,
+  getGradesSchema,
+  getSubmissionStatusSchema,
+  getGradeDistributionSchema,
+  getDiscussionSummarySchema,
+  getAtRiskStudentsSchema,
+  draftAnnouncementSchema,
+} from "./tools/instructor.js";
 
-import { SearchCourseMaterialsSchema } from "./tools/shared";
+import { searchCourseMaterialsSchema } from "./tools/shared.js";
 
 // Admin tools
 import {
-  ListUsersSchema,
-  GetUserSchema,
-  ListEnrollmentsSchema,
-  CreateEnrollmentSchema,
-  UpdateEnrollmentSchema,
-  DeleteEnrollmentSchema,
-  ListAuditLogsSchema,
-} from "./tools/admin";
+  listUsersSchema,
+  getUserSchema,
+  listEnrollmentsSchema,
+  createEnrollmentSchema,
+  updateEnrollmentSchema,
+  deleteEnrollmentSchema,
+  listAuditLogsSchema,
+} from "./tools/admin.js";
 
 // Parent tools
 import {
-  GetMyChildrenSchema,
-  GetChildrenCoursesSchema,
-  GetChildrenGradesSchema,
-  GetChildrenUpcomingAssignmentsSchema,
-  GetChildrenAnnouncementsSchema,
-} from "./tools/parent";
+  getMyChildrenSchema,
+  getChildrenCoursesSchema,
+  getChildrenGradesSchema,
+  getChildrenUpcomingAssignmentsSchema,
+  getChildrenAnnouncementsSchema,
+} from "./tools/parent.js";
 
 // Grade write-back tools
 import {
-  CreateGradeColumnSchema,
-  UpdateGradeSchema,
-  DeleteGradeSchema,
-  ExemptGradeSchema,
-  GetGradeColumnSchema,
-} from "./tools/grade-writeback";
+  createGradeColumnSchema,
+  updateGradeSchema,
+  deleteGradeSchema,
+  exemptGradeSchema,
+  getGradeColumnSchema,
+} from "./tools/grade-writeback.js";
 
 // Webhook tools
 import {
-  ListWebhookSubscriptionsSchema,
-  GetWebhookSubscriptionSchema,
-  CreateWebhookSubscriptionSchema,
-  UpdateWebhookSubscriptionSchema,
-  DeleteWebhookSubscriptionSchema,
-} from "./tools/webhook-tools";
+  listWebhookSubscriptionsSchema,
+  getWebhookSubscriptionSchema,
+  createWebhookSubscriptionSchema,
+  updateWebhookSubscriptionSchema,
+  deleteWebhookSubscriptionSchema,
+} from "./tools/webhook-tools.js";
 
 /**
  * Build the MCP provider manifest.
@@ -78,57 +78,57 @@ export function buildProviderManifest(baseUrl: string) {
     description: "MCP server wrapping the Blackboard Learn REST API",
     tools: [
       // Student tools
-      GetMyCoursesSchema,
-      ListCoursesSchema,
-      GetUpcomingAssignmentsSchema,
-      GetMyGradesSchema,
-      GetCourseContentSchema,
-      GetCourseContentsSchema,
-      GetAssignmentFeedbackSchema,
-      GetAnnouncementsSchema,
-      CreateAssignmentSubmissionSchema,
+      getMyCoursesSchema,
+      listCoursesSchema,
+      getUpcomingAssignmentsSchema,
+      getMyGradesSchema,
+      getCourseContentSchema,
+      getCourseContentsSchema,
+      getAssignmentFeedbackSchema,
+      getAnnouncementsSchema,
+      createAssignmentSubmissionSchema,
 
       // Instructor tools
-      ListRosterSchema,
-      GetGradesSchema,
-      GetSubmissionStatusSchema,
-      GetGradeDistributionSchema,
-      GetDiscussionSummarySchema,
-      GetAtRiskStudentsSchema,
-      DraftAnnouncementSchema,
+      listRosterSchema,
+      getGradesSchema,
+      getSubmissionStatusSchema,
+      getGradeDistributionSchema,
+      getDiscussionSummarySchema,
+      getAtRiskStudentsSchema,
+      draftAnnouncementSchema,
 
       // Shared tools
-      SearchCourseMaterialsSchema,
+      searchCourseMaterialsSchema,
 
       // Admin tools
-      ListUsersSchema,
-      GetUserSchema,
-      ListEnrollmentsSchema,
-      CreateEnrollmentSchema,
-      UpdateEnrollmentSchema,
-      DeleteEnrollmentSchema,
-      ListAuditLogsSchema,
+      listUsersSchema,
+      getUserSchema,
+      listEnrollmentsSchema,
+      createEnrollmentSchema,
+      updateEnrollmentSchema,
+      deleteEnrollmentSchema,
+      listAuditLogsSchema,
 
       // Parent tools
-      GetMyChildrenSchema,
-      GetChildrenCoursesSchema,
-      GetChildrenGradesSchema,
-      GetChildrenUpcomingAssignmentsSchema,
-      GetChildrenAnnouncementsSchema,
+      getMyChildrenSchema,
+      getChildrenCoursesSchema,
+      getChildrenGradesSchema,
+      getChildrenUpcomingAssignmentsSchema,
+      getChildrenAnnouncementsSchema,
 
       // Grade write-back tools
-      CreateGradeColumnSchema,
-      UpdateGradeSchema,
-      DeleteGradeSchema,
-      ExemptGradeSchema,
-      GetGradeColumnSchema,
+      createGradeColumnSchema,
+      updateGradeSchema,
+      deleteGradeSchema,
+      exemptGradeSchema,
+      getGradeColumnSchema,
 
       // Webhook tools
-      ListWebhookSubscriptionsSchema,
-      GetWebhookSubscriptionSchema,
-      CreateWebhookSubscriptionSchema,
-      UpdateWebhookSubscriptionSchema,
-      DeleteWebhookSubscriptionSchema,
+      listWebhookSubscriptionsSchema,
+      getWebhookSubscriptionSchema,
+      createWebhookSubscriptionSchema,
+      updateWebhookSubscriptionSchema,
+      deleteWebhookSubscriptionSchema,
     ],
     resources: [
       {

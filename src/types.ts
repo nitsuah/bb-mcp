@@ -20,6 +20,11 @@ export interface BbAssignment {
   maxScore?: number;
   gradeColumnId?: string;
   status?: string;
+  columnId?: string;
+  name?: string;
+  description?: string;
+  weight?: number;
+  gradingType?: string;
 }
 
 export interface BbGrade {
@@ -31,6 +36,7 @@ export interface BbGrade {
   feedback?: string;
   instructor_notes?: string;
   attempt?: {
+    id?: string;
     created?: string;
     modified?: string;
     studentComments?: string;
@@ -58,9 +64,11 @@ export interface BbContent {
 
 export interface BbUser {
   id: string;
+  userId?: string;
   userName: string;
   name?: { given?: string; family?: string };
   emailAddress?: string;
+  role?: string;
 }
 
 export interface BbDiscussionPost {

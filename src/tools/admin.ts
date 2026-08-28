@@ -48,6 +48,13 @@ interface BbEnrollmentListResult {
   }>;
 }
 
+interface EnrollmentResult {
+  userId: string;
+  courseId: string;
+  role: string;
+  availability: { available: boolean };
+}
+
 interface BbEnrollmentSingle {
   userId: string;
   courseId: string;
@@ -78,7 +85,7 @@ export const listUsersHandler = withMetrics(
       toolName: "list_users",
     });
 
-    const res = await bbClient.get(`/users`, {
+    const res = await bbClient.get<BbUserListResult>(`/users`, {
       params: {
         limit: args.limit,
         offset: args.offset,
@@ -147,7 +154,7 @@ export const getUserHandler = withMetrics(
       toolName: "get_user",
     });
 
-    const user = await bbClient.get(`/users/${args.userId}`);
+    const user = await bbClient.get<BbUserSingle>(`/users/${args.userId}`);
 
     return {
       content: [
@@ -155,16 +162,16 @@ export const getUserHandler = withMetrics(
           type: "text",
           text: JSON.stringify(
             {
-              userId: user.id,
-              userName: user.userName,
-              name: user.name
-                ? `${user.name.given ?? ""} ${user.name.family ?? ""}`.trim() || null
+              userId: user.data.id,
+              userName: user.data.userName,
+              name: user.data.name
+                ? `${user.data.name.given ?? ""} ${user.data.name.family ?? ""}`.trim() || null
                 : null,
-              emailAddress: user.emailAddress,
-              created: user.created,
-              modified: user.modified,
-              institutionRoleIds: user.institutionRoleIds,
-              availability: user.availability,
+              emailAddress: user.data.emailAddress,
+              created: user.data.created,
+              modified: user.data.modified,
+              institutionRoleIds: user.data.institutionRoleIds,
+              availability: user.data.availability,
             },
             null,
             2
@@ -241,7 +248,8 @@ export const listEnrollmentsHandler = withMetrics(
     }> = [];
 
     if (res.data && typeof res.data === "object" && "results" in res.data) {
-      enrollments = res.data.results.map((e: any) => ({
+      const result = res.data as BbEnrollmentListResult;
+      enrollments = result.results.map((e) => ({
         userId: e.userId,
         courseId: e.courseId,
         user: e.user
@@ -327,7 +335,14 @@ export const createEnrollmentHandler = withMetrics(
       courseId: args.courseId,
     });
 
-    const res = await bbClient.post(
+    interface EnrollmentResult {
+  userId: string;
+  courseId: string;
+  role: string;
+  availability: { available: boolean };
+}
+
+    const res = await bbClient.post<EnrollmentResult>(
       `/courses/${args.courseId}/users/${args.userId}`,
       {
         role: args.role,
@@ -417,7 +432,7 @@ export const updateEnrollmentHandler = withMetrics(
     if (args.availability)
       updatePayload.availability = { available: args.availability === "Yes" };
 
-    const res = await bbClient.patch(
+    const res = await bbClient.patch<EnrollmentResult>(
       `/courses/${args.courseId}/users/${args.userId}`,
       updatePayload
     );
@@ -557,25 +572,29 @@ export const listAuditLogsHandler = withMetrics(
         ...(args.courseId ? { courseId: args.courseId } : {}),
       };
 
-      const res = await bbClient.get(`/audit/logs`, { params });
+      interface AuditLogResult {
+  results?: Array<Record<string, unknown>>;
+}
 
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(
-              {
-                count: res.data.results?.length ?? 0,
-                limit: args.limit,
-                offset: args.offset,
-                logs: res.data.results ?? [],
-              },
-              null,
-              2
-            ),
-          },
-        ],
-      };
+    const res = await bbClient.get<AuditLogResult>(`/audit/logs`, { params });
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              count: res.data.results?.length ?? 0,
+              limit: args.limit,
+              offset: args.offset,
+              logs: res.data.results ?? [],
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
     } catch (error) {
       // Audit log endpoint might not be available on all Blackboard instances
       return {

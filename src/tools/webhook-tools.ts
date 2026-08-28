@@ -36,14 +36,14 @@ export const listWebhookSubscriptionsHandler = withMetrics(
     });
 
     try {
-      const res = await bbClient.get(`/webhooks/subscriptions`, {
+      const res = await bbClient.get<{ results: BbWebhookSubscription[] }>(`/webhooks/subscriptions`, {
         params: {
           limit: args.limit,
           offset: args.offset,
         },
       });
 
-      const subscriptions = (res.data.results ?? []).map((sub: any) => ({
+      const subscriptions = (res.data.results ?? []).map((sub: BbWebhookSubscription) => ({
         id: sub.id,
         url: sub.url,
         description: sub.description,
@@ -125,7 +125,7 @@ export const getWebhookSubscriptionHandler = withMetrics(
     });
 
     try {
-      const res = await bbClient.get(`/webhooks/subscriptions/${args.subscriptionId}`);
+      const res = await bbClient.get<BbWebhookSubscription>(`/webhooks/subscriptions/${args.subscriptionId}`);
 
       const sub = res.data;
 
@@ -205,7 +205,7 @@ export const createWebhookSubscriptionHandler = withMetrics(
     });
 
     try {
-      const res = await bbClient.post(`/webhooks/subscriptions`, {
+      const res = await bbClient.post<BbWebhookSubscription>(`/webhooks/subscriptions`, {
         url: args.url,
         description: args.description,
         eventTypes: args.eventTypes,
@@ -305,7 +305,7 @@ export const updateWebhookSubscriptionHandler = withMetrics(
       if (args.format !== undefined) updateData.format = args.format;
       if (args.active !== undefined) updateData.active = args.active;
 
-      const res = await bbClient.patch(
+      const res = await bbClient.patch<BbWebhookSubscription>(
         `/webhooks/subscriptions/${args.subscriptionId}`,
         updateData
       );

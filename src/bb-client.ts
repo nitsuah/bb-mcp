@@ -22,6 +22,35 @@ import type {
   TokenCache,
 } from "./types.js";
 
+interface BbUserListResult {
+  results: Array<{
+    id: string;
+    userId: string;
+    userName: string;
+    name?: { given?: string; family?: string };
+    emailAddress?: string;
+    created?: string;
+    modified?: string;
+    institutionRoleIds?: string[];
+  }>;
+}
+
+interface BbEnrollmentListResult {
+  results: Array<{
+    userId: string;
+    courseId: string;
+    user?: {
+      id: string;
+      userName: string;
+      name?: { given?: string; family?: string };
+    };
+    course?: { id: string; courseId: string; name: string };
+    role: string;
+    availability: { available: boolean };
+    created: string;
+  }>;
+}
+
 class BbApiError extends Error {
   constructor(
     message: string,
@@ -242,6 +271,53 @@ export class BlackboardClient {
       { params: { limit: 200 } },
     );
     return res.data.results ?? [];
+  }
+
+  // ── Generic HTTP methods for admin/webhook tools ────────────────────────────
+
+  async get<T>(url: string, options?: { params?: Record<string, unknown> }): Promise<{ data: T }> {
+    const res = await this.http.get<T>(url, { params: options?.params });
+    return { data: res.data };
+  }
+
+  async post<T>(url: string, data: unknown): Promise<{ data: T }> {
+    const res = await this.http.post<T>(url, data);
+    return { data: res.data };
+  }
+
+  async patch<T>(url: string, data: unknown): Promise<{ data: T }> {
+    const res = await this.http.patch<T>(url, data);
+    return { data: res.data };
+  }
+
+  async delete<T>(url: string): Promise<{ data: T }> {
+    const res = await this.http.delete<T>(url);
+    return { data: res.data };
+  }
+
+  // ── Grade attempt management ───────────────────────────────────────────────
+
+  async updateAttempt(
+    courseId: string,
+    columnId: string,
+    attemptId: string,
+    payload: Record<string, unknown>
+  ): Promise<BbAttempt> {
+    const res = await this.http.patch<BbAttempt>(
+      `/courses/${courseId}/gradebook/columns/${columnId}/attempts/${attemptId}`,
+      payload
+    );
+    return res.data;
+  }
+
+  async deleteAttempt(
+    courseId: string,
+    columnId: string,
+    attemptId: string
+  ): Promise<void> {
+    await this.http.delete(
+      `/courses/${courseId}/gradebook/columns/${columnId}/attempts/${attemptId}`
+    );
   }
 }
 

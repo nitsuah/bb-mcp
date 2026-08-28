@@ -10,9 +10,11 @@ import { withMetrics } from "../metrics.js";
 
 interface BbUser {
   id: string;
+  userId?: string;
   userName: string;
   name?: { given?: string; family?: string };
   emailAddress?: string;
+  role?: string;
 }
 
 interface BbCourse {
@@ -88,11 +90,12 @@ export const getMyChildrenHandler = withMetrics(
         // This is a best-effort approach; production would use a dedicated guardian API
         const courseUsers = await bbClient.getEnrolledUsers(course.id);
         for (const user of courseUsers) {
-          if (user.userId !== identity.userId && user.role === "Student") {
+          // getEnrolledUsers returns BbUser which may not have role; filter by userId not being parent
+          if (user.userId !== identity.userId) {
             // Avoid duplicates
-            if (!children.some(c => c.userId === user.userId)) {
+            if (!children.some((c: { userId: string }) => c.userId === user.userId)) {
               children.push({
-                userId: user.userId,
+                userId: user.userId ?? user.id,
                 userName: user.userName,
                 name: user.name,
                 relationship: "observed_student",
@@ -158,10 +161,10 @@ export const getChildrenCoursesHandler = withMetrics(
 
     // Filter by childUserId if provided
     const targetChildren = args.childUserId
-      ? children.filter(c => c.userId === args.childUserId)
+      ? children.filter((c: { userId: string }) => c.userId === args.childUserId)
       : children;
 
-    const childrenCourses: Array<{
+    interface ChildCourseInfo {
       childUserId: string;
       childUserName: string;
       childName?: { given?: string; family?: string };
@@ -173,7 +176,9 @@ export const getChildrenCoursesHandler = withMetrics(
         term?: string;
         status: string;
       }>;
-    }> = [];
+    }
+
+    const childrenCourses: ChildCourseInfo[] = [];
 
     for (const child of targetChildren) {
       // Get courses for this child
@@ -252,7 +257,7 @@ export const getChildrenGradesHandler = withMetrics(
 
     // Filter by childUserId if provided
     const targetChildren = args.childUserId
-      ? children.filter(c => c.userId === args.childUserId)
+      ? children.filter((c: { userId: string }) => c.userId === args.childUserId)
       : children;
 
     const childrenGrades: Array<{
@@ -367,7 +372,7 @@ export const getChildrenUpcomingAssignmentsHandler = withMetrics(
 
     // Filter by childUserId if provided
     const targetChildren = args.childUserId
-      ? children.filter(c => c.userId === args.childUserId)
+      ? children.filter((c: { userId: string }) => c.userId === args.childUserId)
       : children;
 
     const now = Date.now();
@@ -502,7 +507,7 @@ export const getChildrenAnnouncementsHandler = withMetrics(
 
     // Filter by childUserId if provided
     const targetChildren = args.childUserId
-      ? children.filter(c => c.userId === args.childUserId)
+      ? children.filter((c: { userId: string }) => c.userId === args.childUserId)
       : children;
 
     const childrenAnnouncements: Array<{
@@ -551,7 +556,7 @@ export const getChildrenAnnouncementsHandler = withMetrics(
             body: a.body,
             created: a.created,
             modified: a.modified,
-            author: a.creator?.userName ?? null,
+            author: a.creator?.userName ?? undefined,
           })),
         });
       }
