@@ -11,7 +11,7 @@ Last Updated: 2026-08-28
 ### Multi-Persona Tool Coverage
 
 - [x] **Student tools**: all core read and write tools shipped — `get_my_courses`, `get_upcoming_assignments`, `get_my_grades`, `get_course_content`, `get_assignment_feedback`, `get_announcements`, `create_assignment_submission`.
-- [x] **Teacher/Instructor tools**: read tools shipped — `list_roster`, `get_grades`, `get_submission_status`, `get_grade_distribution`, `get_discussion_summary`, `get_at_risk_students`, `draft_announcement`. Grade write-back (`create_grade_column`, `update_grade`, `exempt_grade`) implemented, RBAC-gated to instructor/admin — see PR #109 status above.
+- [~] **Teacher/Instructor tools**: read tools shipped — `list_roster`, `get_grades`, `get_submission_status`, `get_grade_distribution`, `get_discussion_summary`, `get_at_risk_students`, `draft_announcement`. Grade write-back (`create_grade_column`, `update_grade`, `exempt_grade`) implemented, RBAC-gated to instructor/admin — see PR #109 status below.
 - [~] **Admin tools**: user management (read), enrollment management, institutional audit log access. Implemented in `src/tools/admin.ts`, but shipped on [PR #109](https://github.com/nitsuah/bb-mcp/pull/109) — **open, CI failing (`quality-gates`), `CHANGES_REQUESTED`** — not merged to main yet.
 - [~] **Parent tools** (read-only, guardian-scoped): student enrollment view, grade summary, upcoming assignment alerts. Implemented in `src/tools/parent.ts`; same open PR #109 as Admin tools above.
 - [ ] **Analytics/Product Owner tools**: event telemetry tap, engagement metrics aggregation, AI recommendation signal export.

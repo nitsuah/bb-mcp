@@ -68,6 +68,7 @@ Last Updated: 2026-08-28
 
 - [ ] **Analytics/Product Owner tools**: event telemetry tap, engagement metrics aggregation, AI recommendation signal export.
 - [ ] **Blackboard activity ingestion**: define an event schema for grade posts, submission events, login activity, and course changes.
+- [ ] **Event pipeline stub**: accept Blackboard LTI/webhook events and emit structured signals for downstream consumers (analytics, alerts, agent triggers).
 
 
 ### P4 - Q3 Enterprise Follow-On
