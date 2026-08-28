@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-08-21
+Last Updated: 2026-08-28
 
 ## Done
 
@@ -66,15 +66,17 @@ Last Updated: 2026-08-21
   - Context: admin directory lookup is useful, but not part of the initial foundation path.
   - Acceptance Criteria: administrators can query user records safely.
 
-- [ ] **Admin tools**: user management (read), enrollment management, institutional audit log access.
-- [ ] **Parent tools** (read-only, guardian-scoped): student enrollment view, grade summary, upcoming assignment alerts.
 - [ ] **Analytics/Product Owner tools**: event telemetry tap, engagement metrics aggregation, AI recommendation signal export.
 - [ ] **Blackboard activity ingestion**: define an event schema for grade posts, submission events, login activity, and course changes.
-- [ ] **Event pipeline stub**: accept Blackboard LTI/webhook events and emit structured signals for downstream consumers (analytics, alerts, agent triggers).
+
 
 ### P4 - Q3 Enterprise Follow-On
 
-- [ ] Add instructor assignment creation and grade write-back flows.
+- [ ] Fix PR #109 (`quality-gates` CI failure, `CHANGES_REQUESTED` review) blocking admin/parent/grade-write-back/webhook-subscription tools.
+  - Priority: P1
+  - Context: implementation for admin tools, parent tools, grade write-back, and webhook-subscription CRUD all landed on this one branch (`feat/add-admin-parent-grade-webhook-tools`), opened 2026-08-26, but CI has been red since then and the review is unaddressed.
+  - Acceptance Criteria: `quality-gates` passes, review threads resolved or replied to, PR merged to main.
+- [ ] Add instructor assignment creation flow (grade write-back itself is implemented — see PR #109 above).
 - [ ] Harden audit logging and expose it via the admin tool surface.
 - [ ] Evaluate event-driven pipeline scaling: handle high-volume submission bursts and grade-sync events.
 - [ ] Evaluate vector store integration for semantic course content search and AI recommendation signals.
