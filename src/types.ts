@@ -86,8 +86,10 @@ export interface BbAttempt {
   status?: string;
   created?: string;
   modified?: string;
+  submittedDate?: string;
   studentComments?: string;
   feedback?: string;
+  instructorNotes?: string;
   score?: number;
 }
 

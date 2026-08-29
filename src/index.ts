@@ -390,9 +390,7 @@ const TOOL_REGISTRATIONS: ToolRegistration[] = [
     description: listAuditLogsSchema.description,
     inputSchema: ListAuditLogsInput.shape,
     handler: (args: unknown) =>
-      listAuditLogsHandler(
-        args as Parameters<typeof listAuditLogsHandler>[0],
-      ),
+      listAuditLogsHandler(args as Parameters<typeof listAuditLogsHandler>[0]),
   },
 
   // Parent tools
@@ -476,7 +474,9 @@ const TOOL_REGISTRATIONS: ToolRegistration[] = [
     description: getGradeColumnSchema.description,
     inputSchema: GetGradeColumnInput.shape,
     handler: (args: unknown) =>
-      getGradeColumnHandler(args as Parameters<typeof getGradeColumnHandler>[0]),
+      getGradeColumnHandler(
+        args as Parameters<typeof getGradeColumnHandler>[0],
+      ),
   },
 
   // Webhook tools

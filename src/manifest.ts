@@ -71,6 +71,7 @@ import {
  * @returns MCP provider manifest object
  */
 export function buildProviderManifest(baseUrl: string) {
+  void baseUrl; // reserved for future resource-template URIs
   return {
     $schema: "http://modelcontextprotocol.io/schema/manifest.json",
     version: "1.0.0",

@@ -36,23 +36,28 @@ export const listWebhookSubscriptionsHandler = withMetrics(
     });
 
     try {
-      const res = await bbClient.get<{ results: BbWebhookSubscription[] }>(`/webhooks/subscriptions`, {
-        params: {
-          limit: args.limit,
-          offset: args.offset,
+      const res = await bbClient.get<{ results: BbWebhookSubscription[] }>(
+        `/webhooks/subscriptions`,
+        {
+          params: {
+            limit: args.limit,
+            offset: args.offset,
+          },
         },
-      });
+      );
 
-      const subscriptions = (res.data.results ?? []).map((sub: BbWebhookSubscription) => ({
-        id: sub.id,
-        url: sub.url,
-        description: sub.description,
-        eventTypes: sub.eventTypes,
-        format: sub.format,
-        active: sub.active,
-        createdDate: sub.createdDate,
-        modifiedDate: sub.modifiedDate,
-      }));
+      const subscriptions = (res.data.results ?? []).map(
+        (sub: BbWebhookSubscription) => ({
+          id: sub.id,
+          url: sub.url,
+          description: sub.description,
+          eventTypes: sub.eventTypes,
+          format: sub.format,
+          active: sub.active,
+          createdDate: sub.createdDate,
+          modifiedDate: sub.modifiedDate,
+        }),
+      );
 
       return {
         content: [
@@ -66,12 +71,12 @@ export const listWebhookSubscriptionsHandler = withMetrics(
                 count: subscriptions.length,
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
-    } catch (error) {
+    } catch {
       // Webhook endpoint might not be available on all Blackboard instances
       return {
         content: [
@@ -86,23 +91,28 @@ export const listWebhookSubscriptionsHandler = withMetrics(
                 note: "Webhook subscription endpoint not available on Blackboard instance. Check if webhooks feature is enabled.",
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
     }
-  }
+  },
 );
 
 export const listWebhookSubscriptionsSchema = {
   name: "list_webhook_subscriptions",
-  description: "Returns all webhook subscriptions. Requires admin role and FERPA authorization.",
+  description:
+    "Returns all webhook subscriptions. Requires admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
       caller_identity: { type: "object", required: ["userId", "role"] },
-      limit: { type: "number", description: "Max results (1-100)", default: 50 },
+      limit: {
+        type: "number",
+        description: "Max results (1-100)",
+        default: 50,
+      },
       offset: { type: "number", description: "Pagination offset", default: 0 },
     },
     required: ["caller_identity"],
@@ -125,7 +135,9 @@ export const getWebhookSubscriptionHandler = withMetrics(
     });
 
     try {
-      const res = await bbClient.get<BbWebhookSubscription>(`/webhooks/subscriptions/${args.subscriptionId}`);
+      const res = await bbClient.get<BbWebhookSubscription>(
+        `/webhooks/subscriptions/${args.subscriptionId}`,
+      );
 
       const sub = res.data;
 
@@ -147,12 +159,12 @@ export const getWebhookSubscriptionHandler = withMetrics(
                 },
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
-    } catch (error) {
+    } catch {
       // Webhook endpoint might not be available on all Blackboard instances
       return {
         content: [
@@ -160,27 +172,32 @@ export const getWebhookSubscriptionHandler = withMetrics(
             type: "text",
             text: JSON.stringify(
               {
-                error: "Webhook subscription not found or endpoint not available",
+                error:
+                  "Webhook subscription not found or endpoint not available",
                 subscriptionId: args.subscriptionId,
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
     }
-  }
+  },
 );
 
 export const getWebhookSubscriptionSchema = {
   name: "get_webhook_subscription",
-  description: "Returns a single webhook subscription by ID. Requires admin role and FERPA authorization.",
+  description:
+    "Returns a single webhook subscription by ID. Requires admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
       caller_identity: { type: "object", required: ["userId", "role"] },
-      subscriptionId: { type: "string", description: "Webhook subscription ID" },
+      subscriptionId: {
+        type: "string",
+        description: "Webhook subscription ID",
+      },
     },
     required: ["caller_identity", "subscriptionId"],
   },
@@ -205,13 +222,16 @@ export const createWebhookSubscriptionHandler = withMetrics(
     });
 
     try {
-      const res = await bbClient.post<BbWebhookSubscription>(`/webhooks/subscriptions`, {
-        url: args.url,
-        description: args.description,
-        eventTypes: args.eventTypes,
-        format: args.format,
-        active: true,
-      });
+      const res = await bbClient.post<BbWebhookSubscription>(
+        `/webhooks/subscriptions`,
+        {
+          url: args.url,
+          description: args.description,
+          eventTypes: args.eventTypes,
+          format: args.format,
+          active: true,
+        },
+      );
 
       return {
         content: [
@@ -230,12 +250,12 @@ export const createWebhookSubscriptionHandler = withMetrics(
                 },
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
-    } catch (error) {
+    } catch {
       // Webhook endpoint might not be available on all Blackboard instances
       return {
         content: [
@@ -243,35 +263,50 @@ export const createWebhookSubscriptionHandler = withMetrics(
             type: "text",
             text: JSON.stringify(
               {
-                error: "Failed to create webhook subscription. Endpoint might not be available.",
+                error:
+                  "Failed to create webhook subscription. Endpoint might not be available.",
                 url: args.url,
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
     }
-  }
+  },
 );
 
 export const createWebhookSubscriptionSchema = {
   name: "create_webhook_subscription",
-  description: "Creates a new webhook subscription. Requires admin role and FERPA authorization.",
+  description:
+    "Creates a new webhook subscription. Requires admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
       caller_identity: { type: "object", required: ["userId", "role"] },
-      url: { type: "string", description: "URL to receive webhook events", format: "uri" },
-      description: { type: "string", description: "Description of the webhook subscription (optional)" },
+      url: {
+        type: "string",
+        description: "URL to receive webhook events",
+        format: "uri",
+      },
+      description: {
+        type: "string",
+        description: "Description of the webhook subscription (optional)",
+      },
       eventTypes: {
         type: "array",
         items: { type: "string" },
-        description: "List of event types to subscribe to (e.g., ['course.created', 'grade.posted'])",
+        description:
+          "List of event types to subscribe to (e.g., ['course.created', 'grade.posted'])",
         minItems: 1,
       },
-      format: { type: "string", enum: ["JSON", "XML"], description: "Format of webhook payload", default: "JSON" },
+      format: {
+        type: "string",
+        enum: ["JSON", "XML"],
+        description: "Format of webhook payload",
+        default: "JSON",
+      },
     },
     required: ["caller_identity", "url", "eventTypes"],
   },
@@ -300,14 +335,16 @@ export const updateWebhookSubscriptionHandler = withMetrics(
     try {
       const updateData: Record<string, unknown> = {};
       if (args.url !== undefined) updateData.url = args.url;
-      if (args.description !== undefined) updateData.description = args.description;
-      if (args.eventTypes !== undefined) updateData.eventTypes = args.eventTypes;
+      if (args.description !== undefined)
+        updateData.description = args.description;
+      if (args.eventTypes !== undefined)
+        updateData.eventTypes = args.eventTypes;
       if (args.format !== undefined) updateData.format = args.format;
       if (args.active !== undefined) updateData.active = args.active;
 
       const res = await bbClient.patch<BbWebhookSubscription>(
         `/webhooks/subscriptions/${args.subscriptionId}`,
-        updateData
+        updateData,
       );
 
       return {
@@ -328,12 +365,12 @@ export const updateWebhookSubscriptionHandler = withMetrics(
                 },
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
-    } catch (error) {
+    } catch {
       // Webhook endpoint might not be available on all Blackboard instances
       return {
         content: [
@@ -341,37 +378,56 @@ export const updateWebhookSubscriptionHandler = withMetrics(
             type: "text",
             text: JSON.stringify(
               {
-                error: "Failed to update webhook subscription. Endpoint might not be available.",
+                error:
+                  "Failed to update webhook subscription. Endpoint might not be available.",
                 subscriptionId: args.subscriptionId,
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
     }
-  }
+  },
 );
 
 export const updateWebhookSubscriptionSchema = {
   name: "update_webhook_subscription",
-  description: "Updates an existing webhook subscription. Requires admin role and FERPA authorization.",
+  description:
+    "Updates an existing webhook subscription. Requires admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
       caller_identity: { type: "object", required: ["userId", "role"] },
-      subscriptionId: { type: "string", description: "Webhook subscription ID" },
-      url: { type: "string", description: "URL to receive webhook events (optional)", format: "uri" },
-      description: { type: "string", description: "Description of the webhook subscription (optional)" },
+      subscriptionId: {
+        type: "string",
+        description: "Webhook subscription ID",
+      },
+      url: {
+        type: "string",
+        description: "URL to receive webhook events (optional)",
+        format: "uri",
+      },
+      description: {
+        type: "string",
+        description: "Description of the webhook subscription (optional)",
+      },
       eventTypes: {
         type: "array",
         items: { type: "string" },
         description: "List of event types to subscribe to (optional)",
         minItems: 1,
       },
-      format: { type: "string", enum: ["JSON", "XML"], description: "Format of webhook payload (optional)" },
-      active: { type: "boolean", description: "Whether the subscription is active (optional)" },
+      format: {
+        type: "string",
+        enum: ["JSON", "XML"],
+        description: "Format of webhook payload (optional)",
+      },
+      active: {
+        type: "boolean",
+        description: "Whether the subscription is active (optional)",
+      },
     },
     required: ["caller_identity", "subscriptionId"],
   },
@@ -406,12 +462,12 @@ export const deleteWebhookSubscriptionHandler = withMetrics(
                 message: "Webhook subscription deleted",
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
-    } catch (error) {
+    } catch {
       // Webhook endpoint might not be available on all Blackboard instances
       return {
         content: [
@@ -419,27 +475,32 @@ export const deleteWebhookSubscriptionHandler = withMetrics(
             type: "text",
             text: JSON.stringify(
               {
-                error: "Failed to delete webhook subscription. Endpoint might not be available.",
+                error:
+                  "Failed to delete webhook subscription. Endpoint might not be available.",
                 subscriptionId: args.subscriptionId,
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
     }
-  }
+  },
 );
 
 export const deleteWebhookSubscriptionSchema = {
   name: "delete_webhook_subscription",
-  description: "Deletes a webhook subscription. Requires admin role and FERPA authorization.",
+  description:
+    "Deletes a webhook subscription. Requires admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
       caller_identity: { type: "object", required: ["userId", "role"] },
-      subscriptionId: { type: "string", description: "Webhook subscription ID" },
+      subscriptionId: {
+        type: "string",
+        description: "Webhook subscription ID",
+      },
     },
     required: ["caller_identity", "subscriptionId"],
   },

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { bbClient } from "../bb-client.js";
 import { checkAuthorization, parseIdentity } from "../auth.js";
 import { withMetrics } from "../metrics.js";
+import type { BbAttempt } from "../types.js";
 
 interface BbGradeColumn {
   id: string;
@@ -16,16 +17,6 @@ interface BbGradeColumn {
   pointsPossible?: number;
   weight?: number;
   gradingType?: string;
-}
-
-interface BbGradeAttempt {
-  id: string;
-  userId: string;
-  score?: number | null;
-  status?: string;
-  submittedDate?: string;
-  feedback?: string;
-  instructorNotes?: string;
 }
 
 // ── create_grade_column ─────────────────────────────────────────────────────
@@ -47,12 +38,15 @@ export const createGradeColumnHandler = withMetrics(
       courseId: args.courseId,
     });
 
-    const res = await bbClient.post<BbGradeColumn>(`/courses/${args.courseId}/gradebook/columns`, {
-      name: args.name,
-      description: args.description,
-      pointsPossible: args.pointsPossible,
-      gradingType: "POINT",
-    });
+    const res = await bbClient.post<BbGradeColumn>(
+      `/courses/${args.courseId}/gradebook/columns`,
+      {
+        name: args.name,
+        description: args.description,
+        pointsPossible: args.pointsPossible,
+        gradingType: "POINT",
+      },
+    );
 
     return {
       content: [
@@ -71,25 +65,34 @@ export const createGradeColumnHandler = withMetrics(
               },
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const createGradeColumnSchema = {
   name: "create_grade_column",
-  description: "Creates a new grade column (assignment) in a course. Requires instructor or admin role and FERPA authorization.",
+  description:
+    "Creates a new grade column (assignment) in a course. Requires instructor or admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
       caller_identity: { type: "object", required: ["userId", "role"] },
       courseId: { type: "string", description: "Blackboard course ID" },
       name: { type: "string", description: "Name of the grade column" },
-      description: { type: "string", description: "Description of the grade column (optional)" },
-      pointsPossible: { type: "number", description: "Points possible for the grade column", default: 100, min: 0 },
+      description: {
+        type: "string",
+        description: "Description of the grade column (optional)",
+      },
+      pointsPossible: {
+        type: "number",
+        description: "Points possible for the grade column",
+        default: 100,
+        min: 0,
+      },
     },
     required: ["caller_identity", "courseId", "name"],
   },
@@ -102,7 +105,9 @@ export const UpdateGradeInput = z.object({
   columnId: z.string(),
   userId: z.string(),
   score: z.number().int().min(0).optional(),
-  status: z.enum(["NeedsGrading", "InProgress", "Completed", "Exempt"]).optional(),
+  status: z
+    .enum(["NeedsGrading", "InProgress", "Completed", "Exempt"])
+    .optional(),
   feedback: z.string().optional(),
   instructorNotes: z.string().optional(),
 });
@@ -120,16 +125,19 @@ export const updateGradeHandler = withMetrics(
     // First, check if there's an existing attempt for this user and column
     let attemptId: string | undefined;
     try {
-      const grades = await bbClient.getColumnGrades(args.courseId, args.columnId);
-      const existingGrade = grades.find(g => g.userId === args.userId);
+      const grades = await bbClient.getColumnGrades(
+        args.courseId,
+        args.columnId,
+      );
+      const existingGrade = grades.find((g) => g.userId === args.userId);
       if (existingGrade && existingGrade.attempt?.id) {
         attemptId = existingGrade.attempt.id;
       }
-    } catch (error) {
+    } catch {
       // If we can't get existing grades, we'll try to create a new attempt
     }
 
-    let attempt: any;
+    let attempt: BbAttempt;
     if (attemptId) {
       // Update existing attempt
       attempt = await bbClient.updateAttempt(
@@ -141,20 +149,21 @@ export const updateGradeHandler = withMetrics(
           feedback: args.feedback,
           instructorNotes: args.instructorNotes,
           status: args.status?.toLowerCase() ?? undefined,
-        }
+        },
       );
     } else {
       // Create new attempt
       const attemptPayload: Record<string, unknown> = { userId: args.userId };
       if (args.score !== undefined) attemptPayload.score = args.score;
       if (args.feedback) attemptPayload.feedback = args.feedback;
-      if (args.instructorNotes) attemptPayload.instructorNotes = args.instructorNotes;
+      if (args.instructorNotes)
+        attemptPayload.instructorNotes = args.instructorNotes;
       if (args.status) attemptPayload.status = args.status.toLowerCase();
 
       attempt = await bbClient.createAttempt(
         args.courseId,
         args.columnId,
-        args.userId
+        args.userId,
       );
     }
 
@@ -171,21 +180,24 @@ export const updateGradeHandler = withMetrics(
                 status: attempt.status,
                 feedback: attempt.feedback,
                 instructorNotes: attempt.instructorNotes,
-                attempted: attempt.submittedDate ? new Date(attempt.submittedDate).toISOString() : null,
+                attempted: attempt.submittedDate
+                  ? new Date(attempt.submittedDate).toISOString()
+                  : null,
               },
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const updateGradeSchema = {
   name: "update_grade",
-  description: "Updates a grade for a specific user in a grade column. Requires instructor or admin role and FERPA authorization.",
+  description:
+    "Updates a grade for a specific user in a grade column. Requires instructor or admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
@@ -199,8 +211,14 @@ export const updateGradeSchema = {
         enum: ["NeedsGrading", "InProgress", "Completed", "Exempt"],
         description: "Grade status (optional)",
       },
-      feedback: { type: "string", description: "Feedback for the student (optional)" },
-      instructorNotes: { type: "string", description: "Instructor notes (optional)" },
+      feedback: {
+        type: "string",
+        description: "Feedback for the student (optional)",
+      },
+      instructorNotes: {
+        type: "string",
+        description: "Instructor notes (optional)",
+      },
     },
     required: ["caller_identity", "courseId", "columnId", "userId"],
   },
@@ -239,17 +257,18 @@ export const deleteGradeHandler = withMetrics(
               message: "Grade attempt deleted",
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const deleteGradeSchema = {
   name: "delete_grade",
-  description: "Deletes a grade attempt for a specific user in a grade column. Requires instructor or admin role and FERPA authorization.",
+  description:
+    "Deletes a grade attempt for a specific user in a grade column. Requires instructor or admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
@@ -287,7 +306,7 @@ export const exemptGradeHandler = withMetrics(
       args.userId, // This assumes we can get the attempt ID - in practice we'd need to look it up
       {
         status: "exempt",
-      }
+      },
     );
 
     return {
@@ -302,17 +321,18 @@ export const exemptGradeHandler = withMetrics(
               message: "Grade exempted",
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const exemptGradeSchema = {
   name: "exempt_grade",
-  description: "Exempts a grade for a specific user in a grade column. Requires instructor or admin role and FERPA authorization.",
+  description:
+    "Exempts a grade for a specific user in a grade column. Requires instructor or admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
@@ -344,7 +364,9 @@ export const getGradeColumnHandler = withMetrics(
 
     // Get all grade columns and find the specific one
     const columns = await bbClient.getAssignments(args.courseId);
-    const column = columns.find(c => c.id === args.columnId || c.columnId === args.columnId);
+    const column = columns.find(
+      (c) => c.id === args.columnId || c.columnId === args.columnId,
+    );
 
     if (!column) {
       throw new Error(`Grade column not found: ${args.columnId}`);
@@ -367,17 +389,18 @@ export const getGradeColumnHandler = withMetrics(
               },
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const getGradeColumnSchema = {
   name: "get_grade_column",
-  description: "Returns details of a specific grade column. Requires instructor or admin role and FERPA authorization.",
+  description:
+    "Returns details of a specific grade column. Requires instructor or admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {

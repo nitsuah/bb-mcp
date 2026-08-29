@@ -8,47 +8,6 @@ import { bbClient } from "../bb-client.js";
 import { checkAuthorization, parseIdentity } from "../auth.js";
 import { withMetrics } from "../metrics.js";
 
-interface BbUser {
-  id: string;
-  userId?: string;
-  userName: string;
-  name?: { given?: string; family?: string };
-  emailAddress?: string;
-  role?: string;
-}
-
-interface BbCourse {
-  id: string;
-  courseId: string;
-  name: string;
-  description?: string;
-  term?: string;
-  availability?: { available: boolean };
-}
-
-interface BbEnrollment {
-  userId: string;
-  courseId: string;
-  role: string;
-  availability: { available: boolean };
-  created: string;
-}
-
-interface BbGrade {
-  columnId: string;
-  status?: string;
-  score?: number | null;
-  text?: string;
-  feedback?: string;
-}
-
-interface BbAssignment {
-  id: string;
-  title: string;
-  due?: string;
-  maxScore?: number;
-}
-
 // ── get_my_children ─────────────────────────────────────────────────────────
 export const GetMyChildrenInput = z.object({
   caller_identity: z.unknown(),
@@ -64,7 +23,7 @@ export const getMyChildrenHandler = withMetrics(
     });
 
     // Get the parent's user info first to observe their children
-    const parentUser = await bbClient.get(`/users/${identity.userId}`);
+    await bbClient.get(`/users/${identity.userId}`);
 
     // In Blackboard, parent/guardian relationships are typically observed through course enrollments
     // We'll get courses where the parent is an observer, then get students in those courses
@@ -81,7 +40,9 @@ export const getMyChildrenHandler = withMetrics(
     for (const course of courses) {
       // Check if parent has observer role in this course
       const enrollments = await bbClient.getEnrolledUsers(course.id);
-      const parentEnrollment = enrollments.find(e => e.userId === identity.userId);
+      const parentEnrollment = enrollments.find(
+        (e) => e.userId === identity.userId,
+      );
 
       if (parentEnrollment && parentEnrollment.role === "Observer") {
         // Get all users in this course (students) - only those with explicit guardian relationship
@@ -93,7 +54,11 @@ export const getMyChildrenHandler = withMetrics(
           // getEnrolledUsers returns BbUser which may not have role; filter by userId not being parent
           if (user.userId !== identity.userId) {
             // Avoid duplicates
-            if (!children.some((c: { userId: string }) => c.userId === user.userId)) {
+            if (
+              !children.some(
+                (c: { userId: string }) => c.userId === user.userId,
+              )
+            ) {
               children.push({
                 userId: user.userId ?? user.id,
                 userName: user.userName,
@@ -116,17 +81,18 @@ export const getMyChildrenHandler = withMetrics(
               count: children.length,
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const getMyChildrenSchema = {
   name: "get_my_children",
-  description: "Returns list of children (observed students) for the parent/guardian.",
+  description:
+    "Returns list of children (observed students) for the parent/guardian.",
   inputSchema: {
     type: "object",
     properties: {
@@ -153,15 +119,18 @@ export const getChildrenCoursesHandler = withMetrics(
 
     // Get children first
     const childrenResult = await getMyChildrenHandler(args);
-    const childrenText = childrenResult.content[0].type === "text"
-      ? JSON.parse(childrenResult.content[0].text)
-      : { children: [] };
+    const childrenText =
+      childrenResult.content[0].type === "text"
+        ? JSON.parse(childrenResult.content[0].text)
+        : { children: [] };
 
     const children = childrenText.children;
 
     // Filter by childUserId if provided
     const targetChildren = args.childUserId
-      ? children.filter((c: { userId: string }) => c.userId === args.childUserId)
+      ? children.filter(
+          (c: { userId: string }) => c.userId === args.childUserId,
+        )
       : children;
 
     interface ChildCourseInfo {
@@ -188,13 +157,13 @@ export const getChildrenCoursesHandler = withMetrics(
         childUserId: child.userId,
         childUserName: child.userName,
         childName: child.name,
-        courses: courses.map(c => ({
+        courses: courses.map((c) => ({
           id: c.id,
           courseId: c.courseId,
           name: c.name,
           description: c.description,
           term: c.term,
-          status: c.availability?.available ?? false ? "Active" : "Inactive",
+          status: (c.availability?.available ?? false) ? "Active" : "Inactive",
         })),
       });
     }
@@ -209,22 +178,26 @@ export const getChildrenCoursesHandler = withMetrics(
               count: childrenCourses.length,
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const getChildrenCoursesSchema = {
   name: "get_children_courses",
-  description: "Returns courses for each child (observed student). Optionally filter by childUserId.",
+  description:
+    "Returns courses for each child (observed student). Optionally filter by childUserId.",
   inputSchema: {
     type: "object",
     properties: {
       caller_identity: { type: "object", required: ["userId", "role"] },
-      childUserId: { type: "string", description: "Blackboard user ID of the child (optional)" },
+      childUserId: {
+        type: "string",
+        description: "Blackboard user ID of the child (optional)",
+      },
     },
     required: ["caller_identity"],
   },
@@ -249,15 +222,18 @@ export const getChildrenGradesHandler = withMetrics(
 
     // Get children first
     const childrenResult = await getMyChildrenHandler(args);
-    const childrenText = childrenResult.content[0].type === "text"
-      ? JSON.parse(childrenResult.content[0].text)
-      : { children: [] };
+    const childrenText =
+      childrenResult.content[0].type === "text"
+        ? JSON.parse(childrenResult.content[0].text)
+        : { children: [] };
 
     const children = childrenText.children;
 
     // Filter by childUserId if provided
     const targetChildren = args.childUserId
-      ? children.filter((c: { userId: string }) => c.userId === args.childUserId)
+      ? children.filter(
+          (c: { userId: string }) => c.userId === args.childUserId,
+        )
       : children;
 
     const childrenGrades: Array<{
@@ -282,7 +258,7 @@ export const getChildrenGradesHandler = withMetrics(
 
       // Filter by courseId if provided
       const targetCourses = args.courseId
-        ? courses.filter(c => c.id === args.courseId)
+        ? courses.filter((c) => c.id === args.courseId)
         : courses;
 
       for (const course of targetCourses) {
@@ -290,10 +266,12 @@ export const getChildrenGradesHandler = withMetrics(
         const grades = await bbClient.getGrades(course.id, child.userId);
 
         // Calculate average
-        const scoredGrades = grades.filter(g => g.score != null);
-        const average = scoredGrades.length > 0
-          ? (scoredGrades.reduce((sum, g) => sum + (g.score ?? 0), 0) / scoredGrades.length)
-          : null;
+        const scoredGrades = grades.filter((g) => g.score != null);
+        const average =
+          scoredGrades.length > 0
+            ? scoredGrades.reduce((sum, g) => sum + (g.score ?? 0), 0) /
+              scoredGrades.length
+            : null;
 
         childrenGrades.push({
           childUserId: child.userId,
@@ -301,14 +279,17 @@ export const getChildrenGradesHandler = withMetrics(
           childName: child.name,
           courseId: course.id,
           courseName: course.name,
-          grades: grades.map(g => ({
+          grades: grades.map((g) => ({
             columnId: g.columnId,
             status: g.status,
             score: g.score,
             text: g.text,
             feedback: g.feedback,
           })),
-          average: average !== null && average !== undefined ? Number(average.toFixed(1)) : null,
+          average:
+            average !== null && average !== undefined
+              ? Number(average.toFixed(1))
+              : null,
         });
       }
     }
@@ -323,23 +304,30 @@ export const getChildrenGradesHandler = withMetrics(
               count: childrenGrades.length,
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const getChildrenGradesSchema = {
   name: "get_children_grades",
-  description: "Returns grades for each child (observed student). Optionally filter by childUserId or courseId.",
+  description:
+    "Returns grades for each child (observed student). Optionally filter by childUserId or courseId.",
   inputSchema: {
     type: "object",
     properties: {
       caller_identity: { type: "object", required: ["userId", "role"] },
-      childUserId: { type: "string", description: "Blackboard user ID of the child (optional)" },
-      courseId: { type: "string", description: "Blackboard course ID (optional)" },
+      childUserId: {
+        type: "string",
+        description: "Blackboard user ID of the child (optional)",
+      },
+      courseId: {
+        type: "string",
+        description: "Blackboard course ID (optional)",
+      },
     },
     required: ["caller_identity"],
   },
@@ -364,19 +352,22 @@ export const getChildrenUpcomingAssignmentsHandler = withMetrics(
 
     // Get children first
     const childrenResult = await getMyChildrenHandler(args);
-    const childrenText = childrenResult.content[0].type === "text"
-      ? JSON.parse(childrenResult.content[0].text)
-      : { children: [] };
+    const childrenText =
+      childrenResult.content[0].type === "text"
+        ? JSON.parse(childrenResult.content[0].text)
+        : { children: [] };
 
     const children = childrenText.children;
 
     // Filter by childUserId if provided
     const targetChildren = args.childUserId
-      ? children.filter((c: { userId: string }) => c.userId === args.childUserId)
+      ? children.filter(
+          (c: { userId: string }) => c.userId === args.childUserId,
+        )
       : children;
 
     const now = Date.now();
-    const cutoff = now + (args.daysAhead * 24 * 60 * 60 * 1000);
+    const cutoff = now + args.daysAhead * 24 * 60 * 60 * 1000;
 
     const childrenUpcoming: Array<{
       childUserId: string;
@@ -399,7 +390,7 @@ export const getChildrenUpcomingAssignmentsHandler = withMetrics(
 
       // Filter by courseId if provided
       const targetCourses = args.courseId
-        ? courses.filter(c => c.id === args.courseId)
+        ? courses.filter((c) => c.id === args.courseId)
         : courses;
 
       for (const course of targetCourses) {
@@ -420,7 +411,9 @@ export const getChildrenUpcomingAssignmentsHandler = withMetrics(
 
           const dueMs = new Date(assignment.due).getTime();
           if (dueMs >= now && dueMs <= cutoff) {
-            const daysUntilDue = Math.ceil((dueMs - now) / (24 * 60 * 60 * 1000));
+            const daysUntilDue = Math.ceil(
+              (dueMs - now) / (24 * 60 * 60 * 1000),
+            );
 
             upcomingAssignments.push({
               id: assignment.id,
@@ -456,24 +449,35 @@ export const getChildrenUpcomingAssignmentsHandler = withMetrics(
               count: childrenUpcoming.length,
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const getChildrenUpcomingAssignmentsSchema = {
   name: "get_children_upcoming_assignments",
-  description: "Returns upcoming assignments for each child (observed student) within N days. Optionally filter by childUserId or courseId.",
+  description:
+    "Returns upcoming assignments for each child (observed student) within N days. Optionally filter by childUserId or courseId.",
   inputSchema: {
     type: "object",
     properties: {
       caller_identity: { type: "object", required: ["userId", "role"] },
-      childUserId: { type: "string", description: "Blackboard user ID of the child (optional)" },
-      courseId: { type: "string", description: "Blackboard course ID (optional)" },
-      daysAhead: { type: "number", description: "How many days ahead to look (1-90, default 14)", default: 14 },
+      childUserId: {
+        type: "string",
+        description: "Blackboard user ID of the child (optional)",
+      },
+      courseId: {
+        type: "string",
+        description: "Blackboard course ID (optional)",
+      },
+      daysAhead: {
+        type: "number",
+        description: "How many days ahead to look (1-90, default 14)",
+        default: 14,
+      },
     },
     required: ["caller_identity"],
   },
@@ -499,15 +503,18 @@ export const getChildrenAnnouncementsHandler = withMetrics(
 
     // Get children first
     const childrenResult = await getMyChildrenHandler(args);
-    const childrenText = childrenResult.content[0].type === "text"
-      ? JSON.parse(childrenResult.content[0].text)
-      : { children: [] };
+    const childrenText =
+      childrenResult.content[0].type === "text"
+        ? JSON.parse(childrenResult.content[0].text)
+        : { children: [] };
 
     const children = childrenText.children;
 
     // Filter by childUserId if provided
     const targetChildren = args.childUserId
-      ? children.filter((c: { userId: string }) => c.userId === args.childUserId)
+      ? children.filter(
+          (c: { userId: string }) => c.userId === args.childUserId,
+        )
       : children;
 
     const childrenAnnouncements: Array<{
@@ -532,7 +539,7 @@ export const getChildrenAnnouncementsHandler = withMetrics(
 
       // Filter by courseId if provided
       const targetCourses = args.courseId
-        ? courses.filter(c => c.id === args.courseId)
+        ? courses.filter((c) => c.id === args.courseId)
         : courses;
 
       for (const course of targetCourses) {
@@ -541,7 +548,7 @@ export const getChildrenAnnouncementsHandler = withMetrics(
 
         // Filter by unreadOnly if needed (Blackboard API might not support this directly)
         const filteredAnnouncements = args.unreadOnly
-          ? announcements.filter(a => !a.modified) // Simplified: treat unmodified as unread
+          ? announcements.filter((a) => !a.modified) // Simplified: treat unmodified as unread
           : announcements;
 
         childrenAnnouncements.push({
@@ -550,7 +557,7 @@ export const getChildrenAnnouncementsHandler = withMetrics(
           childName: child.name,
           courseId: course.id,
           courseName: course.name,
-          announcements: filteredAnnouncements.map(a => ({
+          announcements: filteredAnnouncements.map((a) => ({
             id: a.id,
             title: a.title,
             body: a.body,
@@ -572,24 +579,35 @@ export const getChildrenAnnouncementsHandler = withMetrics(
               count: childrenAnnouncements.length,
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const getChildrenAnnouncementsSchema = {
   name: "get_children_announcements",
-  description: "Returns announcements for each child (observed student). Optionally filter by childUserId or courseId.",
+  description:
+    "Returns announcements for each child (observed student). Optionally filter by childUserId or courseId.",
   inputSchema: {
     type: "object",
     properties: {
       caller_identity: { type: "object", required: ["userId", "role"] },
-      childUserId: { type: "string", description: "Blackboard user ID of the child (optional)" },
-      courseId: { type: "string", description: "Blackboard course ID (optional)" },
-      unreadOnly: { type: "boolean", description: "Return only unread announcements", default: false },
+      childUserId: {
+        type: "string",
+        description: "Blackboard user ID of the child (optional)",
+      },
+      courseId: {
+        type: "string",
+        description: "Blackboard course ID (optional)",
+      },
+      unreadOnly: {
+        type: "boolean",
+        description: "Return only unread announcements",
+        default: false,
+      },
     },
     required: ["caller_identity"],
   },

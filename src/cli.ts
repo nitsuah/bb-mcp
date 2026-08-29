@@ -212,7 +212,8 @@ export function formatToolCatalog(baseUrl?: string): string {
   const manifest = buildProviderManifest(getManifestBaseUrl(baseUrl));
   return manifest.tools
     .map(
-      (tool) => `${tool.name} [${getAllowedRolesForTool(tool.name).join(", ")}] - ${tool.description}`,
+      (tool) =>
+        `${tool.name} [${getAllowedRolesForTool(tool.name).join(", ")}] - ${tool.description}`,
     )
     .join("\n");
 }

@@ -55,19 +55,6 @@ interface EnrollmentResult {
   availability: { available: boolean };
 }
 
-interface BbEnrollmentSingle {
-  userId: string;
-  courseId: string;
-  role: string;
-  availability: { available: boolean };
-  created: string;
-  modified?: string;
-}
-
-interface BbAuditLogResult {
-  results: unknown[];
-}
-
 // ── list_users ──────────────────────────────────────────────────────────────
 export const ListUsersInput = z.object({
   caller_identity: z.unknown(),
@@ -116,24 +103,32 @@ export const listUsersHandler = withMetrics(
               count: users.length,
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const listUsersSchema = {
   name: "list_users",
-  description: "Returns all users in system. Requires admin role and FERPA authorization.",
+  description:
+    "Returns all users in system. Requires admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
       caller_identity: { type: "object", required: ["userId", "role"] },
-      limit: { type: "number", description: "Max results (1-1000)", default: 100 },
+      limit: {
+        type: "number",
+        description: "Max results (1-1000)",
+        default: 100,
+      },
       offset: { type: "number", description: "Pagination offset", default: 0 },
-      search: { type: "string", description: "Search by name, userId, or email" },
+      search: {
+        type: "string",
+        description: "Search by name, userId, or email",
+      },
     },
     required: ["caller_identity"],
   },
@@ -165,7 +160,8 @@ export const getUserHandler = withMetrics(
               userId: user.data.id,
               userName: user.data.userName,
               name: user.data.name
-                ? `${user.data.name.given ?? ""} ${user.data.name.family ?? ""}`.trim() || null
+                ? `${user.data.name.given ?? ""} ${user.data.name.family ?? ""}`.trim() ||
+                  null
                 : null,
               emailAddress: user.data.emailAddress,
               created: user.data.created,
@@ -174,17 +170,18 @@ export const getUserHandler = withMetrics(
               availability: user.data.availability,
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const getUserSchema = {
   name: "get_user",
-  description: "Returns a single user by ID. Requires admin role and FERPA authorization.",
+  description:
+    "Returns a single user by ID. Requires admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
@@ -284,24 +281,32 @@ export const listEnrollmentsHandler = withMetrics(
               count: enrollments.length,
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const listEnrollmentsSchema = {
   name: "list_enrollments",
-  description: "Returns enrollments. Filter by courseId, userId, or both. Requires admin role and FERPA authorization.",
+  description:
+    "Returns enrollments. Filter by courseId, userId, or both. Requires admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
       caller_identity: { type: "object", required: ["userId", "role"] },
-      courseId: { type: "string", description: "Blackboard course ID (optional)" },
+      courseId: {
+        type: "string",
+        description: "Blackboard course ID (optional)",
+      },
       userId: { type: "string", description: "Blackboard user ID (optional)" },
-      limit: { type: "number", description: "Max results (1-1000)", default: 100 },
+      limit: {
+        type: "number",
+        description: "Max results (1-1000)",
+        default: 100,
+      },
       offset: { type: "number", description: "Pagination offset", default: 0 },
     },
     required: ["caller_identity"],
@@ -336,18 +341,18 @@ export const createEnrollmentHandler = withMetrics(
     });
 
     interface EnrollmentResult {
-  userId: string;
-  courseId: string;
-  role: string;
-  availability: { available: boolean };
-}
+      userId: string;
+      courseId: string;
+      role: string;
+      availability: { available: boolean };
+    }
 
     const res = await bbClient.post<EnrollmentResult>(
       `/courses/${args.courseId}/users/${args.userId}`,
       {
         role: args.role,
         availability: { available: args.availability === "Yes" },
-      }
+      },
     );
 
     return {
@@ -364,17 +369,18 @@ export const createEnrollmentHandler = withMetrics(
               },
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const createEnrollmentSchema = {
   name: "create_enrollment",
-  description: "Creates an enrollment for a user in a course. Requires admin role and FERPA authorization.",
+  description:
+    "Creates an enrollment for a user in a course. Requires admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
@@ -405,15 +411,17 @@ export const UpdateEnrollmentInput = z.object({
   caller_identity: z.unknown(),
   courseId: z.string(),
   userId: z.string(),
-  role: z.enum([
-    "Student",
-    "Instructor",
-    "TeachingAssistant",
-    "CourseBuilder",
-    "Grader",
-    "Guest",
-    "Observer",
-  ]).optional(),
+  role: z
+    .enum([
+      "Student",
+      "Instructor",
+      "TeachingAssistant",
+      "CourseBuilder",
+      "Grader",
+      "Guest",
+      "Observer",
+    ])
+    .optional(),
   availability: z.enum(["Yes", "No"]).optional(),
 });
 
@@ -434,7 +442,7 @@ export const updateEnrollmentHandler = withMetrics(
 
     const res = await bbClient.patch<EnrollmentResult>(
       `/courses/${args.courseId}/users/${args.userId}`,
-      updatePayload
+      updatePayload,
     );
 
     return {
@@ -451,17 +459,18 @@ export const updateEnrollmentHandler = withMetrics(
               },
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const updateEnrollmentSchema = {
   name: "update_enrollment",
-  description: "Updates an enrollment for a user in a course. Requires admin role and FERPA authorization.",
+  description:
+    "Updates an enrollment for a user in a course. Requires admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
@@ -518,17 +527,18 @@ export const deleteEnrollmentHandler = withMetrics(
               message: "Enrollment removed",
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 export const deleteEnrollmentSchema = {
   name: "delete_enrollment",
-  description: "Removes user's enrollment from a course. Requires admin role and FERPA authorization.",
+  description:
+    "Removes user's enrollment from a course. Requires admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
@@ -573,29 +583,29 @@ export const listAuditLogsHandler = withMetrics(
       };
 
       interface AuditLogResult {
-  results?: Array<Record<string, unknown>>;
-}
+        results?: Array<Record<string, unknown>>;
+      }
 
-    const res = await bbClient.get<AuditLogResult>(`/audit/logs`, { params });
+      const res = await bbClient.get<AuditLogResult>(`/audit/logs`, { params });
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(
-            {
-              count: res.data.results?.length ?? 0,
-              limit: args.limit,
-              offset: args.offset,
-              logs: res.data.results ?? [],
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
-    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                count: res.data.results?.length ?? 0,
+                limit: args.limit,
+                offset: args.offset,
+                logs: res.data.results ?? [],
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    } catch {
       // Audit log endpoint might not be available on all Blackboard instances
       return {
         content: [
@@ -610,29 +620,43 @@ export const listAuditLogsHandler = withMetrics(
                 note: "Audit log endpoint not available on Blackboard instance. Enable audit logging in Blackboard admin panel or check server stdout structured audit events.",
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
     }
-  }
+  },
 );
 
 export const listAuditLogsSchema = {
   name: "list_audit_logs",
-  description: "Returns institutional audit logs. Requires admin role and FERPA authorization.",
+  description:
+    "Returns institutional audit logs. Requires admin role and FERPA authorization.",
   inputSchema: {
     type: "object",
     properties: {
       caller_identity: { type: "object", required: ["userId", "role"] },
-      limit: { type: "number", description: "Max results (1-500)", default: 50 },
+      limit: {
+        type: "number",
+        description: "Max results (1-500)",
+        default: 50,
+      },
       offset: { type: "number", description: "Pagination offset", default: 0 },
-      startDate: { type: "string", description: "ISO 8601 start date (optional)" },
+      startDate: {
+        type: "string",
+        description: "ISO 8601 start date (optional)",
+      },
       endDate: { type: "string", description: "ISO 8601 end date (optional)" },
-      eventType: { type: "string", description: "Filter by event type (optional)" },
+      eventType: {
+        type: "string",
+        description: "Filter by event type (optional)",
+      },
       userId: { type: "string", description: "Filter by user ID (optional)" },
-      courseId: { type: "string", description: "Filter by course ID (optional)" },
+      courseId: {
+        type: "string",
+        description: "Filter by course ID (optional)",
+      },
     },
     required: ["caller_identity"],
   },
