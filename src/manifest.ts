@@ -155,12 +155,55 @@ function buildOutputSchema(toolName: string) {
   return schema;
 }
 
+interface McpToolManifestEntry {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+  roles: readonly string[];
+  outputSchema: Record<string, unknown>;
+}
+
+export interface ProviderManifest {
+  $schema: string;
+  version: string;
+  name: string;
+  description: string;
+  provider: { id: string; name: string };
+  endpoints: {
+    manifest: string;
+    mcp: string;
+    oauthAuthorize: string;
+    oauthCallback: string;
+  };
+  capabilities: {
+    transports: {
+      stdio: boolean;
+      streamableHttp: { enabled: boolean; endpoint: string };
+    };
+    auth: {
+      callerIdentity: boolean;
+      authorizationCode: {
+        enabled: boolean;
+        authorizeEndpoint: string;
+        callbackEndpoint: string;
+      };
+    };
+  };
+  tools: McpToolManifestEntry[];
+  resources: Array<{
+    name: string;
+    uriTemplate: string;
+    description: string;
+    mimeType: string;
+  }>;
+}
+
 /**
  * Build the MCP provider manifest.
  * @param baseUrl Base URL for the server (used for endpoints and resource templates)
  * @returns MCP provider manifest object
  */
-export function buildProviderManifest(baseUrl: string) {
+export function buildProviderManifest(baseUrl: string): ProviderManifest {
   return {
     $schema: "http://modelcontextprotocol.io/schema/manifest.json",
     version: "1.0.0",
