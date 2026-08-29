@@ -212,6 +212,52 @@ describe("admin tools", () => {
     expect(parsed.enrollments).toEqual([]);
   });
 
+  it("list_enrollments maps a single enrollment object for the courseId+userId endpoint", async () => {
+    const { listEnrollmentsHandler } = await import("../src/tools/admin.js");
+    bbClientMock.get.mockResolvedValue({
+      data: {
+        userId: "u1",
+        courseId: "course-a",
+        user: { id: "u1", userName: "alice", name: { given: "Alice" } },
+        course: { id: "course-a", courseId: "CS101", name: "Intro" },
+        role: "Student",
+        availability: { available: true },
+        created: "2026-01-01",
+      },
+    });
+
+    const result = await listEnrollmentsHandler({
+      caller_identity: { userId: "admin-1", role: "admin" },
+      courseId: "course-a",
+      userId: "u1",
+      limit: 100,
+      offset: 0,
+    });
+
+    const parsed = parseToolText(result);
+    expect(parsed.count).toBe(1);
+    expect(parsed.enrollments[0].userId).toBe("u1");
+    expect(parsed.enrollments[0].user.userName).toBe("alice");
+  });
+
+  it("list_enrollments encodes courseId and userId path segments", async () => {
+    const { listEnrollmentsHandler } = await import("../src/tools/admin.js");
+    bbClientMock.get.mockResolvedValue({ data: { results: [] } });
+
+    await listEnrollmentsHandler({
+      caller_identity: { userId: "admin-1", role: "admin" },
+      courseId: "course/a",
+      userId: "u 1",
+      limit: 100,
+      offset: 0,
+    });
+
+    expect(bbClientMock.get).toHaveBeenLastCalledWith(
+      "/courses/course%2Fa/users/u%201",
+      expect.anything(),
+    );
+  });
+
   it("create_enrollment posts role and availability", async () => {
     const { createEnrollmentHandler } = await import("../src/tools/admin.js");
 
@@ -268,27 +314,18 @@ describe("admin tools", () => {
     expect(parsed.enrollment.role).toBe("Instructor");
   });
 
-  it("update_enrollment sends an empty payload when no fields are given", async () => {
+  it("update_enrollment rejects a request with no mutable fields", async () => {
     const { updateEnrollmentHandler } = await import("../src/tools/admin.js");
-    bbClientMock.patch.mockResolvedValue({
-      data: {
-        userId: "u1",
+
+    await expect(
+      updateEnrollmentHandler({
+        caller_identity: { userId: "admin-1", role: "admin" },
         courseId: "course-a",
-        role: "Student",
-        availability: { available: true },
-      },
-    });
+        userId: "u1",
+      }),
+    ).rejects.toThrow(/requires at least one of/);
 
-    await updateEnrollmentHandler({
-      caller_identity: { userId: "admin-1", role: "admin" },
-      courseId: "course-a",
-      userId: "u1",
-    });
-
-    expect(bbClientMock.patch).toHaveBeenCalledWith(
-      "/courses/course-a/users/u1",
-      {},
-    );
+    expect(bbClientMock.patch).not.toHaveBeenCalled();
   });
 
   it("delete_enrollment removes the enrollment", async () => {
@@ -342,9 +379,11 @@ describe("admin tools", () => {
     expect(parsed.count).toBe(1);
   });
 
-  it("list_audit_logs falls back gracefully when the endpoint is unavailable", async () => {
+  it("list_audit_logs falls back gracefully when the endpoint returns 404", async () => {
     const { listAuditLogsHandler } = await import("../src/tools/admin.js");
-    bbClientMock.get.mockRejectedValue(new Error("404"));
+    bbClientMock.get.mockRejectedValue(
+      Object.assign(new Error("Not Found"), { status: 404 }),
+    );
 
     const result = await listAuditLogsHandler({
       caller_identity: { userId: "admin-1", role: "admin" },
@@ -355,5 +394,39 @@ describe("admin tools", () => {
     const parsed = parseToolText(result);
     expect(parsed.count).toBe(0);
     expect(parsed.note).toContain("not available");
+  });
+
+  it("list_audit_logs falls back gracefully when the endpoint returns 501", async () => {
+    const { listAuditLogsHandler } = await import("../src/tools/admin.js");
+    bbClientMock.get.mockRejectedValue(
+      Object.assign(new Error("Not Implemented"), {
+        response: { status: 501 },
+      }),
+    );
+
+    const result = await listAuditLogsHandler({
+      caller_identity: { userId: "admin-1", role: "admin" },
+      limit: 50,
+      offset: 0,
+    });
+
+    const parsed = parseToolText(result);
+    expect(parsed.count).toBe(0);
+    expect(parsed.note).toContain("not available");
+  });
+
+  it("list_audit_logs propagates non-404/501 errors instead of masking them", async () => {
+    const { listAuditLogsHandler } = await import("../src/tools/admin.js");
+    bbClientMock.get.mockRejectedValue(
+      Object.assign(new Error("Forbidden"), { status: 403 }),
+    );
+
+    await expect(
+      listAuditLogsHandler({
+        caller_identity: { userId: "admin-1", role: "admin" },
+        limit: 50,
+        offset: 0,
+      }),
+    ).rejects.toThrow("Forbidden");
   });
 });

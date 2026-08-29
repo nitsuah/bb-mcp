@@ -22,6 +22,13 @@ import type {
   TokenCache,
 } from "./types.js";
 
+export interface BbAttemptUpdatePayload {
+  score?: number;
+  feedback?: string;
+  instructorNotes?: string;
+  status?: string;
+}
+
 class BbApiError extends Error {
   constructor(
     message: string,
@@ -165,8 +172,9 @@ export class BlackboardClient {
     columnId: string,
     userId: string,
     studentComments?: string,
+    extra?: BbAttemptUpdatePayload,
   ): Promise<BbAttempt> {
-    const payload: Record<string, unknown> = { userId };
+    const payload: Record<string, unknown> = { userId, ...extra };
     if (studentComments) {
       payload.studentComments = studentComments;
     }
@@ -275,7 +283,7 @@ export class BlackboardClient {
     courseId: string,
     columnId: string,
     attemptId: string,
-    payload: Record<string, unknown>,
+    payload: BbAttemptUpdatePayload,
   ): Promise<BbAttempt> {
     const res = await this.http.patch<BbAttempt>(
       `/courses/${courseId}/gradebook/columns/${columnId}/attempts/${attemptId}`,

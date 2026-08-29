@@ -149,7 +149,9 @@ export const getUserHandler = withMetrics(
       toolName: "get_user",
     });
 
-    const user = await bbClient.get<BbUserSingle>(`/users/${args.userId}`);
+    const user = await bbClient.get<BbUserSingle>(
+      `/users/${encodeURIComponent(args.userId)}`,
+    );
 
     return {
       content: [
@@ -218,55 +220,62 @@ export const listEnrollmentsHandler = withMetrics(
       fields: "userId,courseId,user,course,role,availability,created",
     };
 
-    if (args.courseId && args.userId) {
-      url = `/courses/${args.courseId}/users/${args.userId}`;
+    const singleEnrollment = Boolean(args.courseId && args.userId);
+
+    if (singleEnrollment) {
+      url = `/courses/${encodeURIComponent(args.courseId!)}/users/${encodeURIComponent(args.userId!)}`;
     } else if (args.courseId) {
-      url = `/courses/${args.courseId}/users`;
+      url = `/courses/${encodeURIComponent(args.courseId)}/users`;
     } else if (args.userId) {
-      url = `/users/${args.userId}/courses`;
+      url = `/users/${encodeURIComponent(args.userId)}/courses`;
     } else {
       url = "/enrollments";
     }
 
     const res = await bbClient.get(url, { params });
 
-    let enrollments: Array<{
-      userId: string;
-      courseId: string;
-      user?: {
-        id: string;
-        userName: string;
-        name?: { given?: string; family?: string };
-      };
-      course?: { id: string; courseId: string; name: string };
-      role: string;
-      availability: { available: boolean };
-      created: string;
-    }> = [];
+    type BbEnrollment = BbEnrollmentListResult["results"][number];
 
-    if (res.data && typeof res.data === "object" && "results" in res.data) {
+    const mapEnrollment = (e: BbEnrollment) => ({
+      userId: e.userId,
+      courseId: e.courseId,
+      user: e.user
+        ? {
+            id: e.user.id,
+            userName: e.user.userName,
+            name: e.user.name,
+          }
+        : undefined,
+      course: e.course
+        ? {
+            id: e.course.id,
+            courseId: e.course.courseId,
+            name: e.course.name,
+          }
+        : undefined,
+      role: e.role,
+      availability: { available: e.availability?.available ?? false },
+      created: e.created,
+    });
+
+    let enrollments: Array<ReturnType<typeof mapEnrollment>> = [];
+
+    if (
+      singleEnrollment &&
+      res.data &&
+      typeof res.data === "object" &&
+      "userId" in res.data
+    ) {
+      // The courseId+userId endpoint returns a single enrollment object, not
+      // a { results: [...] } envelope.
+      enrollments = [mapEnrollment(res.data as BbEnrollment)];
+    } else if (
+      res.data &&
+      typeof res.data === "object" &&
+      "results" in res.data
+    ) {
       const result = res.data as BbEnrollmentListResult;
-      enrollments = result.results.map((e) => ({
-        userId: e.userId,
-        courseId: e.courseId,
-        user: e.user
-          ? {
-              id: e.user.id,
-              userName: e.user.userName,
-              name: e.user.name,
-            }
-          : undefined,
-        course: e.course
-          ? {
-              id: e.course.id,
-              courseId: e.course.courseId,
-              name: e.course.name,
-            }
-          : undefined,
-        role: e.role,
-        availability: { available: e.availability?.available ?? false },
-        created: e.created,
-      }));
+      enrollments = result.results.map(mapEnrollment);
     }
 
     return {
@@ -348,7 +357,7 @@ export const createEnrollmentHandler = withMetrics(
     }
 
     const res = await bbClient.post<EnrollmentResult>(
-      `/courses/${args.courseId}/users/${args.userId}`,
+      `/courses/${encodeURIComponent(args.courseId)}/users/${encodeURIComponent(args.userId)}`,
       {
         role: args.role,
         availability: { available: args.availability === "Yes" },
@@ -440,8 +449,14 @@ export const updateEnrollmentHandler = withMetrics(
     if (args.availability)
       updatePayload.availability = { available: args.availability === "Yes" };
 
+    if (Object.keys(updatePayload).length === 0) {
+      throw new Error(
+        "update_enrollment requires at least one of: role, availability.",
+      );
+    }
+
     const res = await bbClient.patch<EnrollmentResult>(
-      `/courses/${args.courseId}/users/${args.userId}`,
+      `/courses/${encodeURIComponent(args.courseId)}/users/${encodeURIComponent(args.userId)}`,
       updatePayload,
     );
 
@@ -513,7 +528,9 @@ export const deleteEnrollmentHandler = withMetrics(
       courseId: args.courseId,
     });
 
-    await bbClient.delete(`/courses/${args.courseId}/users/${args.userId}`);
+    await bbClient.delete(
+      `/courses/${encodeURIComponent(args.courseId)}/users/${encodeURIComponent(args.userId)}`,
+    );
 
     return {
       content: [
@@ -605,7 +622,13 @@ export const listAuditLogsHandler = withMetrics(
           },
         ],
       };
-    } catch {
+    } catch (error) {
+      const status =
+        (error as { status?: number; response?: { status?: number } }).status ??
+        (error as { response?: { status?: number } }).response?.status;
+      if (status !== 404 && status !== 501) {
+        throw error;
+      }
       // Audit log endpoint might not be available on all Blackboard instances
       return {
         content: [

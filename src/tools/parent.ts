@@ -5,8 +5,72 @@
 
 import { z } from "zod";
 import { bbClient } from "../bb-client.js";
-import { checkAuthorization, parseIdentity } from "../auth.js";
+import {
+  checkAuthorization,
+  parseIdentity,
+  type CallerIdentity,
+} from "../auth.js";
 import { withMetrics } from "../metrics.js";
+
+export interface ResolvedChild {
+  userId: string;
+  userName: string;
+  name?: { given?: string; family?: string };
+  relationship: string;
+}
+
+/**
+ * Blackboard's public REST API does not expose an explicit parent/guardian
+ * relationship resource. Children are inferred from course co-enrollment:
+ * any user holding the Student role in a course where the caller holds the
+ * Observer role. This is a best-effort heuristic, not a verified guardian
+ * mapping — institutions that need precise parent-child association should
+ * verify it through their SIS integration.
+ */
+export const CHILD_RELATIONSHIP_NOTE =
+  "Children are inferred from course co-enrollment (Student role in a course " +
+  "where the caller holds the Observer role), because Blackboard's public REST " +
+  "API does not expose an explicit guardian relationship. Verify guardian " +
+  "associations with your Blackboard administrator if a precise parent-child " +
+  "mapping is required.";
+
+/** Resolve the caller's children via best-effort Observer/Student co-enrollment. */
+async function resolveChildren(
+  identity: CallerIdentity,
+): Promise<ResolvedChild[]> {
+  // Get the parent's user info first to observe their children
+  await bbClient.get(`/users/${encodeURIComponent(identity.userId)}`);
+
+  const courses = await bbClient.getCourses(identity.userId);
+
+  const children: ResolvedChild[] = [];
+
+  for (const course of courses) {
+    const enrollments = await bbClient.getEnrolledUsers(course.id);
+    const isObserver = enrollments.some(
+      (e) => (e.userId ?? e.id) === identity.userId && e.role === "Observer",
+    );
+    if (!isObserver) continue;
+
+    for (const user of enrollments) {
+      const effectiveId = user.userId ?? user.id;
+      if (effectiveId === identity.userId) continue;
+      // Narrow to Student-role co-enrollees to avoid surfacing instructors,
+      // TAs, or other observers as "children".
+      if (user.role !== "Student") continue;
+      if (children.some((c) => c.userId === effectiveId)) continue;
+
+      children.push({
+        userId: effectiveId,
+        userName: user.userName,
+        name: user.name,
+        relationship: "observed_student",
+      });
+    }
+  }
+
+  return children;
+}
 
 // ── get_my_children ─────────────────────────────────────────────────────────
 export const GetMyChildrenInput = z.object({
@@ -22,54 +86,7 @@ export const getMyChildrenHandler = withMetrics(
       toolName: "get_my_children",
     });
 
-    // Get the parent's user info first to observe their children
-    await bbClient.get(`/users/${identity.userId}`);
-
-    // In Blackboard, parent/guardian relationships are typically observed through course enrollments
-    // We'll get courses where the parent is an observer, then get students in those courses
-    const courses = await bbClient.getCourses(identity.userId);
-
-    const children: Array<{
-      userId: string;
-      userName: string;
-      name?: { given?: string; family?: string };
-      relationship: string;
-    }> = [];
-
-    // For each course where parent is an observer, get enrolled users
-    for (const course of courses) {
-      // Check if parent has observer role in this course
-      const enrollments = await bbClient.getEnrolledUsers(course.id);
-      const parentEnrollment = enrollments.find(
-        (e) => e.userId === identity.userId,
-      );
-
-      if (parentEnrollment && parentEnrollment.role === "Observer") {
-        // Get all users in this course (students) - only those with explicit guardian relationship
-        // Blackboard typically doesn't expose parent-child relationships directly via this endpoint
-        // Filter to students who are enrolled in courses where the parent is an observer
-        // This is a best-effort approach; production would use a dedicated guardian API
-        const courseUsers = await bbClient.getEnrolledUsers(course.id);
-        for (const user of courseUsers) {
-          // getEnrolledUsers returns BbUser which may not have role; filter by userId not being parent
-          if (user.userId !== identity.userId) {
-            // Avoid duplicates
-            if (
-              !children.some(
-                (c: { userId: string }) => c.userId === user.userId,
-              )
-            ) {
-              children.push({
-                userId: user.userId ?? user.id,
-                userName: user.userName,
-                name: user.name,
-                relationship: "observed_student",
-              });
-            }
-          }
-        }
-      }
-    }
+    const children = await resolveChildren(identity);
 
     return {
       content: [
@@ -79,6 +96,7 @@ export const getMyChildrenHandler = withMetrics(
             {
               children,
               count: children.length,
+              note: CHILD_RELATIONSHIP_NOTE,
             },
             null,
             2,
@@ -118,19 +136,11 @@ export const getChildrenCoursesHandler = withMetrics(
     });
 
     // Get children first
-    const childrenResult = await getMyChildrenHandler(args);
-    const childrenText =
-      childrenResult.content[0].type === "text"
-        ? JSON.parse(childrenResult.content[0].text)
-        : { children: [] };
-
-    const children = childrenText.children;
+    const children = await resolveChildren(identity);
 
     // Filter by childUserId if provided
     const targetChildren = args.childUserId
-      ? children.filter(
-          (c: { userId: string }) => c.userId === args.childUserId,
-        )
+      ? children.filter((c) => c.userId === args.childUserId)
       : children;
 
     interface ChildCourseInfo {
@@ -221,19 +231,11 @@ export const getChildrenGradesHandler = withMetrics(
     });
 
     // Get children first
-    const childrenResult = await getMyChildrenHandler(args);
-    const childrenText =
-      childrenResult.content[0].type === "text"
-        ? JSON.parse(childrenResult.content[0].text)
-        : { children: [] };
-
-    const children = childrenText.children;
+    const children = await resolveChildren(identity);
 
     // Filter by childUserId if provided
     const targetChildren = args.childUserId
-      ? children.filter(
-          (c: { userId: string }) => c.userId === args.childUserId,
-        )
+      ? children.filter((c) => c.userId === args.childUserId)
       : children;
 
     const childrenGrades: Array<{
@@ -351,19 +353,11 @@ export const getChildrenUpcomingAssignmentsHandler = withMetrics(
     });
 
     // Get children first
-    const childrenResult = await getMyChildrenHandler(args);
-    const childrenText =
-      childrenResult.content[0].type === "text"
-        ? JSON.parse(childrenResult.content[0].text)
-        : { children: [] };
-
-    const children = childrenText.children;
+    const children = await resolveChildren(identity);
 
     // Filter by childUserId if provided
     const targetChildren = args.childUserId
-      ? children.filter(
-          (c: { userId: string }) => c.userId === args.childUserId,
-        )
+      ? children.filter((c) => c.userId === args.childUserId)
       : children;
 
     const now = Date.now();
@@ -501,20 +495,21 @@ export const getChildrenAnnouncementsHandler = withMetrics(
       courseId: args.courseId,
     });
 
-    // Get children first
-    const childrenResult = await getMyChildrenHandler(args);
-    const childrenText =
-      childrenResult.content[0].type === "text"
-        ? JSON.parse(childrenResult.content[0].text)
-        : { children: [] };
+    if (args.unreadOnly) {
+      // Blackboard's announcement API exposes no per-parent read state; a
+      // shared "modified" timestamp is not a substitute and would report an
+      // arbitrary subset as "unread".
+      throw new Error(
+        "unreadOnly is not supported: Blackboard does not expose per-parent read state for announcements.",
+      );
+    }
 
-    const children = childrenText.children;
+    // Get children first
+    const children = await resolveChildren(identity);
 
     // Filter by childUserId if provided
     const targetChildren = args.childUserId
-      ? children.filter(
-          (c: { userId: string }) => c.userId === args.childUserId,
-        )
+      ? children.filter((c) => c.userId === args.childUserId)
       : children;
 
     const childrenAnnouncements: Array<{
@@ -546,18 +541,13 @@ export const getChildrenAnnouncementsHandler = withMetrics(
         // Get announcements for this course
         const announcements = await bbClient.getAnnouncements(course.id);
 
-        // Filter by unreadOnly if needed (Blackboard API might not support this directly)
-        const filteredAnnouncements = args.unreadOnly
-          ? announcements.filter((a) => !a.modified) // Simplified: treat unmodified as unread
-          : announcements;
-
         childrenAnnouncements.push({
           childUserId: child.userId,
           childUserName: child.userName,
           childName: child.name,
           courseId: course.id,
           courseName: course.name,
-          announcements: filteredAnnouncements.map((a) => ({
+          announcements: announcements.map((a) => ({
             id: a.id,
             title: a.title,
             body: a.body,
@@ -605,7 +595,8 @@ export const getChildrenAnnouncementsSchema = {
       },
       unreadOnly: {
         type: "boolean",
-        description: "Return only unread announcements",
+        description:
+          "Not supported: Blackboard exposes no per-parent read state for announcements. Passing true fails the request.",
         default: false,
       },
     },

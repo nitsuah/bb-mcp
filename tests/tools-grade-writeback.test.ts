@@ -102,7 +102,7 @@ describe("grade write-back tools", () => {
     expect(parsed.grade.attempted).toBe("2026-01-05T00:00:00.000Z");
   });
 
-  it("update_grade creates a new attempt when none exists yet", async () => {
+  it("update_grade creates a new attempt when none exists yet, forwarding requested fields", async () => {
     const { updateGradeHandler } =
       await import("../src/tools/grade-writeback.js");
 
@@ -118,38 +118,72 @@ describe("grade write-back tools", () => {
       columnId: "col1",
       userId: "u2",
       score: 80,
+      feedback: "nice work",
+      instructorNotes: "note",
+      status: "Completed",
     });
 
     expect(bbClientMock.createAttempt).toHaveBeenCalledWith(
       "course-a",
       "col1",
       "u2",
+      undefined,
+      {
+        score: 80,
+        feedback: "nice work",
+        instructorNotes: "note",
+        status: "completed",
+      },
     );
     const parsed = parseToolText(result);
     expect(parsed.grade.score).toBe(80);
     expect(parsed.grade.attempted).toBeNull();
   });
 
-  it("update_grade creates a new attempt when the existing-grades lookup throws", async () => {
+  it("update_grade propagates errors from the existing-grades lookup instead of writing", async () => {
     const { updateGradeHandler } =
       await import("../src/tools/grade-writeback.js");
 
     bbClientMock.getColumnGrades.mockRejectedValue(new Error("boom"));
-    bbClientMock.createAttempt.mockResolvedValue({ score: 70 });
+
+    await expect(
+      updateGradeHandler({
+        caller_identity: { userId: "inst-1", role: "instructor" },
+        courseId: "course-a",
+        columnId: "col1",
+        userId: "u3",
+        feedback: "retry",
+        instructorNotes: "flagged",
+        status: "InProgress",
+      }),
+    ).rejects.toThrow("boom");
+
+    expect(bbClientMock.createAttempt).not.toHaveBeenCalled();
+    expect(bbClientMock.updateAttempt).not.toHaveBeenCalled();
+  });
+
+  it("update_grade returns a null attempted date when submittedDate is invalid", async () => {
+    const { updateGradeHandler } =
+      await import("../src/tools/grade-writeback.js");
+
+    bbClientMock.getColumnGrades.mockResolvedValue([
+      { userId: "u1", attempt: { id: "attempt-1" } },
+    ]);
+    bbClientMock.updateAttempt.mockResolvedValue({
+      score: 95,
+      submittedDate: "not-a-date",
+    });
 
     const result = await updateGradeHandler({
       caller_identity: { userId: "inst-1", role: "instructor" },
       courseId: "course-a",
       columnId: "col1",
-      userId: "u3",
-      feedback: "retry",
-      instructorNotes: "flagged",
-      status: "InProgress",
+      userId: "u1",
+      score: 95,
     });
 
-    expect(bbClientMock.createAttempt).toHaveBeenCalled();
     const parsed = parseToolText(result);
-    expect(parsed.grade.score).toBe(70);
+    expect(parsed.grade.attempted).toBeNull();
   });
 
   it("delete_grade deletes the attempt", async () => {
@@ -173,9 +207,12 @@ describe("grade write-back tools", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("exempt_grade marks the attempt exempt", async () => {
+  it("exempt_grade resolves the attempt ID and marks it exempt", async () => {
     const { exemptGradeHandler } =
       await import("../src/tools/grade-writeback.js");
+    bbClientMock.getColumnGrades.mockResolvedValue([
+      { userId: "u1", attempt: { id: "attempt-1" } },
+    ]);
     bbClientMock.updateAttempt.mockResolvedValue({});
 
     const result = await exemptGradeHandler({
@@ -188,11 +225,28 @@ describe("grade write-back tools", () => {
     expect(bbClientMock.updateAttempt).toHaveBeenCalledWith(
       "course-a",
       "col1",
-      "u1",
+      "attempt-1",
       { status: "exempt" },
     );
     const parsed = parseToolText(result);
     expect(parsed.message).toBe("Grade exempted");
+  });
+
+  it("exempt_grade throws when no existing attempt is found", async () => {
+    const { exemptGradeHandler } =
+      await import("../src/tools/grade-writeback.js");
+    bbClientMock.getColumnGrades.mockResolvedValue([]);
+
+    await expect(
+      exemptGradeHandler({
+        caller_identity: { userId: "inst-1", role: "instructor" },
+        courseId: "course-a",
+        columnId: "col1",
+        userId: "u1",
+      }),
+    ).rejects.toThrow("No existing grade attempt found");
+
+    expect(bbClientMock.updateAttempt).not.toHaveBeenCalled();
   });
 
   it("get_grade_column returns the matching column", async () => {

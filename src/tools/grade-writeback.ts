@@ -5,9 +5,17 @@
 
 import { z } from "zod";
 import { bbClient } from "../bb-client.js";
+import type { BbAttemptUpdatePayload } from "../bb-client.js";
 import { checkAuthorization, parseIdentity } from "../auth.js";
 import { withMetrics } from "../metrics.js";
 import type { BbAttempt } from "../types.js";
+
+/** Parse a Blackboard timestamp, returning null instead of throwing on an invalid date. */
+function toIsoOrNull(value?: string): string | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
 
 interface BbGradeColumn {
   id: string;
@@ -39,7 +47,7 @@ export const createGradeColumnHandler = withMetrics(
     });
 
     const res = await bbClient.post<BbGradeColumn>(
-      `/courses/${args.courseId}/gradebook/columns`,
+      `/courses/${encodeURIComponent(args.courseId)}/gradebook/columns`,
       {
         name: args.name,
         description: args.description,
@@ -122,20 +130,13 @@ export const updateGradeHandler = withMetrics(
       courseId: args.courseId,
     });
 
-    // First, check if there's an existing attempt for this user and column
-    let attemptId: string | undefined;
-    try {
-      const grades = await bbClient.getColumnGrades(
-        args.courseId,
-        args.columnId,
-      );
-      const existingGrade = grades.find((g) => g.userId === args.userId);
-      if (existingGrade && existingGrade.attempt?.id) {
-        attemptId = existingGrade.attempt.id;
-      }
-    } catch {
-      // If we can't get existing grades, we'll try to create a new attempt
-    }
+    // First, check if there's an existing attempt for this user and column.
+    // Lookup failures are propagated rather than swallowed: falling through
+    // to createAttempt on a failed read would silently turn a failed
+    // update_grade request into an unconditional grade write.
+    const grades = await bbClient.getColumnGrades(args.courseId, args.columnId);
+    const existingGrade = grades.find((g) => g.userId === args.userId);
+    const attemptId = existingGrade?.attempt?.id;
 
     let attempt: BbAttempt;
     if (attemptId) {
@@ -152,18 +153,21 @@ export const updateGradeHandler = withMetrics(
         },
       );
     } else {
-      // Create new attempt
-      const attemptPayload: Record<string, unknown> = { userId: args.userId };
-      if (args.score !== undefined) attemptPayload.score = args.score;
-      if (args.feedback) attemptPayload.feedback = args.feedback;
+      // Create new attempt, forwarding the requested grade fields so the
+      // first write for a user is not silently dropped.
+      const attemptExtra: BbAttemptUpdatePayload = {};
+      if (args.score !== undefined) attemptExtra.score = args.score;
+      if (args.feedback) attemptExtra.feedback = args.feedback;
       if (args.instructorNotes)
-        attemptPayload.instructorNotes = args.instructorNotes;
-      if (args.status) attemptPayload.status = args.status.toLowerCase();
+        attemptExtra.instructorNotes = args.instructorNotes;
+      if (args.status) attemptExtra.status = args.status.toLowerCase();
 
       attempt = await bbClient.createAttempt(
         args.courseId,
         args.columnId,
         args.userId,
+        undefined,
+        attemptExtra,
       );
     }
 
@@ -180,9 +184,7 @@ export const updateGradeHandler = withMetrics(
                 status: attempt.status,
                 feedback: attempt.feedback,
                 instructorNotes: attempt.instructorNotes,
-                attempted: attempt.submittedDate
-                  ? new Date(attempt.submittedDate).toISOString()
-                  : null,
+                attempted: toIsoOrNull(attempt.submittedDate),
               },
             },
             null,
@@ -299,15 +301,22 @@ export const exemptGradeHandler = withMetrics(
       courseId: args.courseId,
     });
 
-    // Set the grade status to Exempt
-    await bbClient.updateAttempt(
-      args.courseId,
-      args.columnId,
-      args.userId, // This assumes we can get the attempt ID - in practice we'd need to look it up
-      {
-        status: "exempt",
-      },
-    );
+    // Resolve the attempt ID for this user/column before exempting — a
+    // Blackboard user ID is not an attempt ID, and updateAttempt requires
+    // the latter as its third argument.
+    const grades = await bbClient.getColumnGrades(args.courseId, args.columnId);
+    const existingGrade = grades.find((g) => g.userId === args.userId);
+    const attemptId = existingGrade?.attempt?.id;
+
+    if (!attemptId) {
+      throw new Error(
+        `No existing grade attempt found for user ${args.userId} in column ${args.columnId}; cannot exempt.`,
+      );
+    }
+
+    await bbClient.updateAttempt(args.courseId, args.columnId, attemptId, {
+      status: "exempt",
+    });
 
     return {
       content: [

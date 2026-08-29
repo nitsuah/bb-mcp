@@ -196,29 +196,18 @@ describe("webhook subscription tools", () => {
     expect(parsed.subscription.active).toBe(false);
   });
 
-  it("update_webhook_subscription sends an empty payload when nothing changes", async () => {
+  it("update_webhook_subscription rejects a request with no mutable fields", async () => {
     const { updateWebhookSubscriptionHandler } =
       await import("../src/tools/webhook-tools.js");
-    bbClientMock.patch.mockResolvedValue({
-      data: {
-        id: "sub1",
-        url: "u",
-        eventTypes: [],
-        format: "JSON",
-        active: true,
-        createdDate: "d",
-      },
-    });
 
-    await updateWebhookSubscriptionHandler({
-      caller_identity: { userId: "admin-1", role: "admin" },
-      subscriptionId: "sub1",
-    });
+    await expect(
+      updateWebhookSubscriptionHandler({
+        caller_identity: { userId: "admin-1", role: "admin" },
+        subscriptionId: "sub1",
+      }),
+    ).rejects.toThrow(/requires at least one of/);
 
-    expect(bbClientMock.patch).toHaveBeenCalledWith(
-      "/webhooks/subscriptions/sub1",
-      {},
-    );
+    expect(bbClientMock.patch).not.toHaveBeenCalled();
   });
 
   it("update_webhook_subscription reports an error when the update fails", async () => {

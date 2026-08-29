@@ -50,8 +50,79 @@ describe("parent tools", () => {
         userName: "parentA",
         role: "Observer",
       },
-      { id: "u1", userId: "u1", userName: "alice", name: { given: "Alice" } },
-      { id: "u1", userId: "u1", userName: "alice", name: { given: "Alice" } },
+      {
+        id: "u1",
+        userId: "u1",
+        userName: "alice",
+        name: { given: "Alice" },
+        role: "Student",
+      },
+      {
+        id: "u1",
+        userId: "u1",
+        userName: "alice",
+        name: { given: "Alice" },
+        role: "Student",
+      },
+    ]);
+
+    const result = await getMyChildrenHandler({
+      caller_identity: { userId: "parent-1", role: "parent" },
+    });
+
+    const parsed = parseToolText(result);
+    expect(parsed.count).toBe(1);
+    expect(parsed.children[0].userId).toBe("u1");
+    expect(parsed.note).toContain("co-enrollment");
+  });
+
+  it("get_my_children excludes non-Student co-enrollees (instructors, TAs, other observers)", async () => {
+    const { getMyChildrenHandler } = await import("../src/tools/parent.js");
+
+    bbClientMock.getCourses.mockResolvedValue([
+      { id: "course-a", courseId: "CS101", name: "Intro" },
+    ]);
+    bbClientMock.getEnrolledUsers.mockResolvedValue([
+      {
+        id: "parent-1",
+        userId: "parent-1",
+        userName: "parentA",
+        role: "Observer",
+      },
+      { id: "inst-1", userId: "inst-1", userName: "prof", role: "Instructor" },
+      { id: "ta-1", userId: "ta-1", userName: "ta", role: "TeachingAssistant" },
+      {
+        id: "parent-2",
+        userId: "parent-2",
+        userName: "parentB",
+        role: "Observer",
+      },
+      { id: "u1", userId: "u1", userName: "alice", role: "Student" },
+    ]);
+
+    const result = await getMyChildrenHandler({
+      caller_identity: { userId: "parent-1", role: "parent" },
+    });
+
+    const parsed = parseToolText(result);
+    expect(parsed.count).toBe(1);
+    expect(parsed.children[0].userId).toBe("u1");
+  });
+
+  it("get_my_children normalizes users that only have `id` (no `userId`)", async () => {
+    const { getMyChildrenHandler } = await import("../src/tools/parent.js");
+
+    bbClientMock.getCourses.mockResolvedValue([
+      { id: "course-a", courseId: "CS101", name: "Intro" },
+    ]);
+    bbClientMock.getEnrolledUsers.mockResolvedValue([
+      {
+        id: "parent-1",
+        userId: "parent-1",
+        userName: "parentA",
+        role: "Observer",
+      },
+      { id: "u1", userName: "alice", role: "Student" },
     ]);
 
     const result = await getMyChildrenHandler({
@@ -76,7 +147,7 @@ describe("parent tools", () => {
         userName: "parentA",
         role: "Student",
       },
-      { id: "u1", userId: "u1", userName: "alice" },
+      { id: "u1", userId: "u1", userName: "alice", role: "Student" },
     ]);
 
     const result = await getMyChildrenHandler({
@@ -116,7 +187,7 @@ describe("parent tools", () => {
         userName: "parentA",
         role: "Observer",
       },
-      { id: "u1", userId: "u1", userName: "alice" },
+      { id: "u1", userId: "u1", userName: "alice", role: "Student" },
     ]);
 
     const result = await getChildrenCoursesHandler({
@@ -163,7 +234,7 @@ describe("parent tools", () => {
         userName: "parentA",
         role: "Observer",
       },
-      { id: "u1", userId: "u1", userName: "alice" },
+      { id: "u1", userId: "u1", userName: "alice", role: "Student" },
     ]);
     bbClientMock.getGrades.mockResolvedValue([
       { columnId: "col1", score: 90 },
@@ -195,7 +266,7 @@ describe("parent tools", () => {
         userName: "parentA",
         role: "Observer",
       },
-      { id: "u1", userId: "u1", userName: "alice" },
+      { id: "u1", userId: "u1", userName: "alice", role: "Student" },
     ]);
     bbClientMock.getGrades.mockResolvedValue([
       { columnId: "col1", score: null },
@@ -226,7 +297,7 @@ describe("parent tools", () => {
         userName: "parentA",
         role: "Observer",
       },
-      { id: "u1", userId: "u1", userName: "alice" },
+      { id: "u1", userId: "u1", userName: "alice", role: "Student" },
     ]);
     bbClientMock.getAssignments.mockResolvedValue([
       {
@@ -285,7 +356,7 @@ describe("parent tools", () => {
         userName: "parentA",
         role: "Observer",
       },
-      { id: "u1", userId: "u1", userName: "alice" },
+      { id: "u1", userId: "u1", userName: "alice", role: "Student" },
     ]);
     bbClientMock.getAssignments.mockResolvedValue([]);
 
@@ -300,45 +371,18 @@ describe("parent tools", () => {
     expect(parsed.childrenUpcoming[0].courseId).toBe("course-b");
   });
 
-  it("get_children_announcements filters unread announcements", async () => {
+  it("get_children_announcements rejects unreadOnly (no per-parent read state exists)", async () => {
     const { getChildrenAnnouncementsHandler } =
       await import("../src/tools/parent.js");
 
-    bbClientMock.getCourses.mockImplementation(async (userId: string) => {
-      if (userId === "parent-1")
-        return [{ id: "course-a", courseId: "CS101", name: "Intro" }];
-      return [{ id: "course-a", courseId: "CS101", name: "Intro" }];
-    });
-    bbClientMock.getEnrolledUsers.mockResolvedValue([
-      {
-        id: "parent-1",
-        userId: "parent-1",
-        userName: "parentA",
-        role: "Observer",
-      },
-      { id: "u1", userId: "u1", userName: "alice" },
-    ]);
-    bbClientMock.getAnnouncements.mockResolvedValue([
-      { id: "an1", title: "Read", body: "b", modified: "2026-01-02" },
-      {
-        id: "an2",
-        title: "Unread",
-        body: "b",
-        creator: { id: "i1", userName: "prof" },
-      },
-    ]);
+    await expect(
+      getChildrenAnnouncementsHandler({
+        caller_identity: { userId: "parent-1", role: "parent" },
+        unreadOnly: true,
+      }),
+    ).rejects.toThrow(/unreadOnly is not supported/);
 
-    const result = await getChildrenAnnouncementsHandler({
-      caller_identity: { userId: "parent-1", role: "parent" },
-      unreadOnly: true,
-    });
-
-    const parsed = parseToolText(result);
-    expect(parsed.childrenAnnouncements[0].announcements).toHaveLength(1);
-    expect(parsed.childrenAnnouncements[0].announcements[0].id).toBe("an2");
-    expect(parsed.childrenAnnouncements[0].announcements[0].author).toBe(
-      "prof",
-    );
+    expect(bbClientMock.getAnnouncements).not.toHaveBeenCalled();
   });
 
   it("get_children_announcements returns all announcements when unreadOnly is false", async () => {
@@ -357,10 +401,16 @@ describe("parent tools", () => {
         userName: "parentA",
         role: "Observer",
       },
-      { id: "u1", userId: "u1", userName: "alice" },
+      { id: "u1", userId: "u1", userName: "alice", role: "Student" },
     ]);
     bbClientMock.getAnnouncements.mockResolvedValue([
-      { id: "an1", title: "Read", body: "b", modified: "2026-01-02" },
+      {
+        id: "an1",
+        title: "Read",
+        body: "b",
+        modified: "2026-01-02",
+        creator: { id: "i1", userName: "prof" },
+      },
       { id: "an2", title: "Unread", body: "b" },
     ]);
 
@@ -372,5 +422,8 @@ describe("parent tools", () => {
 
     const parsed = parseToolText(result);
     expect(parsed.childrenAnnouncements[0].announcements).toHaveLength(2);
+    expect(parsed.childrenAnnouncements[0].announcements[0].author).toBe(
+      "prof",
+    );
   });
 });

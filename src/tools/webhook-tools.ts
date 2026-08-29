@@ -136,7 +136,7 @@ export const getWebhookSubscriptionHandler = withMetrics(
 
     try {
       const res = await bbClient.get<BbWebhookSubscription>(
-        `/webhooks/subscriptions/${args.subscriptionId}`,
+        `/webhooks/subscriptions/${encodeURIComponent(args.subscriptionId)}`,
       );
 
       const sub = res.data;
@@ -332,18 +332,23 @@ export const updateWebhookSubscriptionHandler = withMetrics(
       toolName: "update_webhook_subscription",
     });
 
-    try {
-      const updateData: Record<string, unknown> = {};
-      if (args.url !== undefined) updateData.url = args.url;
-      if (args.description !== undefined)
-        updateData.description = args.description;
-      if (args.eventTypes !== undefined)
-        updateData.eventTypes = args.eventTypes;
-      if (args.format !== undefined) updateData.format = args.format;
-      if (args.active !== undefined) updateData.active = args.active;
+    const updateData: Record<string, unknown> = {};
+    if (args.url !== undefined) updateData.url = args.url;
+    if (args.description !== undefined)
+      updateData.description = args.description;
+    if (args.eventTypes !== undefined) updateData.eventTypes = args.eventTypes;
+    if (args.format !== undefined) updateData.format = args.format;
+    if (args.active !== undefined) updateData.active = args.active;
 
+    if (Object.keys(updateData).length === 0) {
+      throw new Error(
+        "update_webhook_subscription requires at least one of: url, description, eventTypes, format, active.",
+      );
+    }
+
+    try {
       const res = await bbClient.patch<BbWebhookSubscription>(
-        `/webhooks/subscriptions/${args.subscriptionId}`,
+        `/webhooks/subscriptions/${encodeURIComponent(args.subscriptionId)}`,
         updateData,
       );
 
@@ -449,7 +454,9 @@ export const deleteWebhookSubscriptionHandler = withMetrics(
     });
 
     try {
-      await bbClient.delete(`/webhooks/subscriptions/${args.subscriptionId}`);
+      await bbClient.delete(
+        `/webhooks/subscriptions/${encodeURIComponent(args.subscriptionId)}`,
+      );
 
       return {
         content: [
