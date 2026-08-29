@@ -27,6 +27,9 @@ import {
 
 import { searchCourseMaterialsSchema } from "./tools/shared.js";
 
+import { getAllowedRolesForTool } from "./rbac.js";
+import { getOutputSchemaForTool } from "./schemas.js";
+
 // Admin tools
 import {
   listUsersSchema,
@@ -65,72 +68,136 @@ import {
   deleteWebhookSubscriptionSchema,
 } from "./tools/webhook-tools.js";
 
+const RAW_TOOL_SCHEMAS = [
+  // Student tools
+  getMyCoursesSchema,
+  listCoursesSchema,
+  getUpcomingAssignmentsSchema,
+  getMyGradesSchema,
+  getCourseContentSchema,
+  getCourseContentsSchema,
+  getAssignmentFeedbackSchema,
+  getAnnouncementsSchema,
+  createAssignmentSubmissionSchema,
+
+  // Instructor tools
+  listRosterSchema,
+  getGradesSchema,
+  getSubmissionStatusSchema,
+  getGradeDistributionSchema,
+  getDiscussionSummarySchema,
+  getAtRiskStudentsSchema,
+  draftAnnouncementSchema,
+
+  // Shared tools
+  searchCourseMaterialsSchema,
+
+  // Admin tools
+  listUsersSchema,
+  getUserSchema,
+  listEnrollmentsSchema,
+  createEnrollmentSchema,
+  updateEnrollmentSchema,
+  deleteEnrollmentSchema,
+  listAuditLogsSchema,
+
+  // Parent tools
+  getMyChildrenSchema,
+  getChildrenCoursesSchema,
+  getChildrenGradesSchema,
+  getChildrenUpcomingAssignmentsSchema,
+  getChildrenAnnouncementsSchema,
+
+  // Grade write-back tools
+  createGradeColumnSchema,
+  updateGradeSchema,
+  deleteGradeSchema,
+  exemptGradeSchema,
+  getGradeColumnSchema,
+
+  // Webhook tools
+  listWebhookSubscriptionsSchema,
+  getWebhookSubscriptionSchema,
+  createWebhookSubscriptionSchema,
+  updateWebhookSubscriptionSchema,
+  deleteWebhookSubscriptionSchema,
+];
+
+/**
+ * Every tool handler responds with the standard MCP tool-call envelope
+ * (`{ content: [{ type, text }], isError? }`). When a tool has a
+ * tool-specific structured schema registered in schemas.ts, it's attached
+ * under `structuredContent` describing the JSON embedded in `content[].text`.
+ */
+function buildOutputSchema(toolName: string) {
+  const dataSchema = getOutputSchemaForTool(toolName);
+
+  const schema: Record<string, unknown> = {
+    type: "object",
+    properties: {
+      content: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            type: { type: "string" },
+            text: { type: "string" },
+          },
+          required: ["type", "text"],
+        },
+      },
+      isError: { type: "boolean" },
+      ...(dataSchema ? { structuredContent: dataSchema } : {}),
+    },
+    required: ["content"],
+  };
+
+  return schema;
+}
+
 /**
  * Build the MCP provider manifest.
- * @param baseUrl Base URL for the server (used for resource templates)
+ * @param baseUrl Base URL for the server (used for endpoints and resource templates)
  * @returns MCP provider manifest object
  */
 export function buildProviderManifest(baseUrl: string) {
-  void baseUrl; // reserved for future resource-template URIs
   return {
     $schema: "http://modelcontextprotocol.io/schema/manifest.json",
     version: "1.0.0",
     name: "blackboard-learn-mcp",
     description: "MCP server wrapping the Blackboard Learn REST API",
-    tools: [
-      // Student tools
-      getMyCoursesSchema,
-      listCoursesSchema,
-      getUpcomingAssignmentsSchema,
-      getMyGradesSchema,
-      getCourseContentSchema,
-      getCourseContentsSchema,
-      getAssignmentFeedbackSchema,
-      getAnnouncementsSchema,
-      createAssignmentSubmissionSchema,
-
-      // Instructor tools
-      listRosterSchema,
-      getGradesSchema,
-      getSubmissionStatusSchema,
-      getGradeDistributionSchema,
-      getDiscussionSummarySchema,
-      getAtRiskStudentsSchema,
-      draftAnnouncementSchema,
-
-      // Shared tools
-      searchCourseMaterialsSchema,
-
-      // Admin tools
-      listUsersSchema,
-      getUserSchema,
-      listEnrollmentsSchema,
-      createEnrollmentSchema,
-      updateEnrollmentSchema,
-      deleteEnrollmentSchema,
-      listAuditLogsSchema,
-
-      // Parent tools
-      getMyChildrenSchema,
-      getChildrenCoursesSchema,
-      getChildrenGradesSchema,
-      getChildrenUpcomingAssignmentsSchema,
-      getChildrenAnnouncementsSchema,
-
-      // Grade write-back tools
-      createGradeColumnSchema,
-      updateGradeSchema,
-      deleteGradeSchema,
-      exemptGradeSchema,
-      getGradeColumnSchema,
-
-      // Webhook tools
-      listWebhookSubscriptionsSchema,
-      getWebhookSubscriptionSchema,
-      createWebhookSubscriptionSchema,
-      updateWebhookSubscriptionSchema,
-      deleteWebhookSubscriptionSchema,
-    ],
+    provider: {
+      id: "blackboard-learn-mcp",
+      name: "Blackboard Learn MCP",
+    },
+    endpoints: {
+      manifest: `${baseUrl}/manifest`,
+      mcp: `${baseUrl}/mcp`,
+      oauthAuthorize: `${baseUrl}/oauth/authorize`,
+      oauthCallback: `${baseUrl}/oauth/callback`,
+    },
+    capabilities: {
+      transports: {
+        stdio: true,
+        streamableHttp: {
+          enabled: true,
+          endpoint: `${baseUrl}/mcp`,
+        },
+      },
+      auth: {
+        callerIdentity: true,
+        authorizationCode: {
+          enabled: true,
+          authorizeEndpoint: `${baseUrl}/oauth/authorize`,
+          callbackEndpoint: `${baseUrl}/oauth/callback`,
+        },
+      },
+    },
+    tools: RAW_TOOL_SCHEMAS.map((schema) => ({
+      ...schema,
+      roles: getAllowedRolesForTool(schema.name),
+      outputSchema: buildOutputSchema(schema.name),
+    })),
     resources: [
       {
         name: "Course",
