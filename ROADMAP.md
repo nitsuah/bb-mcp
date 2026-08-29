@@ -1,6 +1,6 @@
 # ROADMAP
 
-Last Updated: 2026-08-22
+Last Updated: 2026-08-28
 
 ## 2025–2026 Q1 ✅
 
@@ -11,9 +11,9 @@ Last Updated: 2026-08-22
 ### Multi-Persona Tool Coverage
 
 - [x] **Student tools**: all core read and write tools shipped — `get_my_courses`, `get_upcoming_assignments`, `get_my_grades`, `get_course_content`, `get_assignment_feedback`, `get_announcements`, `create_assignment_submission`.
-- [x] **Teacher/Instructor tools**: read tools shipped — `list_roster`, `get_grades`, `get_submission_status`, `get_grade_distribution`, `get_discussion_summary`, `get_at_risk_students`, `draft_announcement`. Grade write-back deferred to Q3.
-- [ ] **Admin tools**: user management (read), enrollment management, institutional audit log access.
-- [ ] **Parent tools** (read-only, guardian-scoped): student enrollment view, grade summary, upcoming assignment alerts.
+- [~] **Teacher/Instructor tools**: read tools shipped — `list_roster`, `get_grades`, `get_submission_status`, `get_grade_distribution`, `get_discussion_summary`, `get_at_risk_students`, `draft_announcement`. Grade write-back (`create_grade_column`, `update_grade`, `exempt_grade`) implemented, RBAC-gated to instructor/admin — see PR #109 status below.
+- [~] **Admin tools**: user management (read), enrollment management, institutional audit log access. Implemented in `src/tools/admin.ts`, but shipped on [PR #109](https://github.com/nitsuah/bb-mcp/pull/109) — **open, CI failing (`quality-gates`), `CHANGES_REQUESTED`** — not merged to main yet.
+- [~] **Parent tools** (read-only, guardian-scoped): student enrollment view, grade summary, upcoming assignment alerts. Implemented in `src/tools/parent.ts`; same open PR #109 as Admin tools above.
 - [ ] **Analytics/Product Owner tools**: event telemetry tap, engagement metrics aggregation, AI recommendation signal export.
 
 ### AI Orchestration Surface
@@ -41,13 +41,14 @@ Last Updated: 2026-08-22
 
 ## 2026 Q3 - Enterprise Follow-On
 
-- [ ] Add instructor assignment creation and grade write-back flows.
+- [~] Add instructor assignment creation and grade write-back flows. Grade write-back implemented on PR #109 (open, CI failing); assignment creation not yet started.
 - [ ] Harden audit logging and expose it via the admin tool surface.
 - [ ] Evaluate event-driven pipeline scaling: handle high-volume submission bursts and grade-sync events.
 - [ ] Evaluate vector store integration for semantic course content search and AI recommendation signals.
 - [ ] Publish a stable MCP client SDK / integration contract so agent-board and other consumers can bind without coupling to internals.
-- [ ] **Webhook-to-SSE bridge** — accept incoming Blackboard LTI/REST webhook events and broadcast them as SSE events on the MCP transport so agents can react to grade posts, submissions, and roster changes in real time without polling.
+- [ ] **Webhook-to-SSE bridge** — accept incoming Blackboard LTI/REST webhook events and broadcast them as SSE events on the MCP transport so agents can react to grade posts, submissions, and roster changes in real time without polling. Building block landed on PR #109: `src/tools/webhook-tools.ts` adds admin-gated CRUD for *registering* webhook subscriptions with Blackboard, but nothing yet receives an inbound webhook call or bridges it to the existing SSE transport (`src/index.ts` SSE is currently only wired to `search_course_materials`).
 - [ ] **Tool call batching** — allow a single agent request to specify multiple tool calls against the same courseId (e.g., contents + announcements + grades in one round-trip) and receive a combined response; reduces latency for multi-context agent queries.
+- [ ] **PR #109 CI triage** — new idea (2026-08-28): the admin/parent/grade-write-back/webhook-tools PR has been open since 2026-08-26 with a failing `quality-gates` check and a `CHANGES_REQUESTED` review; it's blocking every roadmap item above that depends on it. Worth a dedicated pass to unblock before starting anything new in this quarter, rather than letting three roadmap items sit at "implemented but unmerged" indefinitely.
 
 ## Notes
 
