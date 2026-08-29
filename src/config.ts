@@ -51,6 +51,7 @@ export const config = {
         10,
       ),
       admin: parseInt(process.env.RATE_LIMIT_ADMIN_PER_MINUTE ?? "180", 10),
+      parent: parseInt(process.env.RATE_LIMIT_PARENT_PER_MINUTE ?? "60", 10),
     },
   },
 } as const;

@@ -24,7 +24,7 @@ import { config } from "./config.js";
 import { scrubLogText, toAuditSubject } from "./privacy.js";
 import { canRoleAccessTool, getAllowedRolesForTool } from "./rbac.js";
 
-export type Role = "student" | "instructor" | "admin";
+export type Role = "student" | "instructor" | "admin" | "parent";
 
 export interface CallerIdentity {
   userId: string; // opaque identifier — Blackboard user ID or service account
@@ -170,7 +170,7 @@ export function parseIdentity(raw: unknown): CallerIdentity {
     );
   }
 
-  const validRoles: Role[] = ["student", "instructor", "admin"];
+  const validRoles: Role[] = ["student", "instructor", "admin", "parent"];
   if (!validRoles.includes(obj.role as Role)) {
     throw new AuthorizationError(
       `caller_identity.role must be one of: ${validRoles.join(", ")}.`,
