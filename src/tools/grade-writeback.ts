@@ -244,8 +244,20 @@ export const deleteGradeHandler = withMetrics(
       courseId: args.courseId,
     });
 
-    // Delete the attempt for this user and column
-    await bbClient.deleteAttempt(args.courseId, args.columnId, args.userId);
+    // Resolve the attempt ID for this user/column before deleting — a
+    // Blackboard user ID is not an attempt ID, and deleteAttempt requires
+    // the latter as its third argument.
+    const grades = await bbClient.getColumnGrades(args.courseId, args.columnId);
+    const existingGrade = grades.find((g) => g.userId === args.userId);
+    const attemptId = existingGrade?.attempt?.id;
+
+    if (!attemptId) {
+      throw new Error(
+        `No existing grade attempt found for user ${args.userId} in column ${args.columnId}; cannot delete.`,
+      );
+    }
+
+    await bbClient.deleteAttempt(args.courseId, args.columnId, attemptId);
 
     return {
       content: [

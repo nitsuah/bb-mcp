@@ -186,9 +186,12 @@ describe("grade write-back tools", () => {
     expect(parsed.grade.attempted).toBeNull();
   });
 
-  it("delete_grade deletes the attempt", async () => {
+  it("delete_grade resolves the attempt ID before deleting", async () => {
     const { deleteGradeHandler } =
       await import("../src/tools/grade-writeback.js");
+    bbClientMock.getColumnGrades.mockResolvedValue([
+      { userId: "u1", attempt: { id: "attempt-1" } },
+    ]);
     bbClientMock.deleteAttempt.mockResolvedValue(undefined);
 
     const result = await deleteGradeHandler({
@@ -201,10 +204,27 @@ describe("grade write-back tools", () => {
     expect(bbClientMock.deleteAttempt).toHaveBeenCalledWith(
       "course-a",
       "col1",
-      "u1",
+      "attempt-1",
     );
     const parsed = parseToolText(result);
     expect(parsed.success).toBe(true);
+  });
+
+  it("delete_grade throws when no existing attempt is found", async () => {
+    const { deleteGradeHandler } =
+      await import("../src/tools/grade-writeback.js");
+    bbClientMock.getColumnGrades.mockResolvedValue([]);
+
+    await expect(
+      deleteGradeHandler({
+        caller_identity: { userId: "inst-1", role: "instructor" },
+        courseId: "course-a",
+        columnId: "col1",
+        userId: "u1",
+      }),
+    ).rejects.toThrow("No existing grade attempt found");
+
+    expect(bbClientMock.deleteAttempt).not.toHaveBeenCalled();
   });
 
   it("exempt_grade resolves the attempt ID and marks it exempt", async () => {
