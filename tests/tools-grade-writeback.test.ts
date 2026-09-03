@@ -36,6 +36,87 @@ beforeEach(() => {
 });
 
 describe("grade write-back tools", () => {
+  it("create_assignment creates the content item and its linked grade column", async () => {
+    const { createAssignmentHandler } =
+      await import("../src/tools/grade-writeback.js");
+
+    bbClientMock.post
+      .mockResolvedValueOnce({
+        data: {
+          id: "content-1",
+          title: "Essay 1",
+          availability: { available: "Yes" },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          id: "col1",
+          columnId: "col1",
+          name: "Essay 1",
+          pointsPossible: 50,
+        },
+      });
+
+    const result = await createAssignmentHandler({
+      caller_identity: { userId: "inst-1", role: "instructor" },
+      courseId: "course-a",
+      title: "Essay 1",
+      instructions: "Write 500 words.",
+      pointsPossible: 50,
+      dueDate: "2026-10-01T00:00:00Z",
+      available: true,
+    });
+
+    expect(bbClientMock.post).toHaveBeenNthCalledWith(
+      1,
+      "/courses/course-a/contents",
+      expect.objectContaining({
+        title: "Essay 1",
+        contentHandler: { id: "resource/x-bb-assignment" },
+        availability: { available: "Yes" },
+      }),
+    );
+    expect(bbClientMock.post).toHaveBeenNthCalledWith(
+      2,
+      "/courses/course-a/gradebook/columns",
+      expect.objectContaining({
+        name: "Essay 1",
+        contentId: "content-1",
+        pointsPossible: 50,
+        grading: { due: "2026-10-01T00:00:00Z" },
+      }),
+    );
+
+    const parsed = parseToolText(result);
+    expect(parsed.assignment).toEqual({
+      contentId: "content-1",
+      title: "Essay 1",
+      available: "Yes",
+      columnId: "col1",
+      pointsPossible: 50,
+      dueDate: "2026-10-01T00:00:00Z",
+    });
+  });
+
+  it("create_assignment surfaces a clear error when the grade column step fails after content creation", async () => {
+    const { createAssignmentHandler } =
+      await import("../src/tools/grade-writeback.js");
+
+    bbClientMock.post
+      .mockResolvedValueOnce({
+        data: { id: "content-2", title: "Quiz 1" },
+      })
+      .mockRejectedValueOnce(new Error("gradebook unavailable"));
+
+    await expect(
+      createAssignmentHandler({
+        caller_identity: { userId: "inst-1", role: "instructor" },
+        courseId: "course-a",
+        title: "Quiz 1",
+      }),
+    ).rejects.toThrow(/content-2.*gradebook unavailable/s);
+  });
+
   it("create_grade_column posts the column definition", async () => {
     const { createGradeColumnHandler } =
       await import("../src/tools/grade-writeback.js");

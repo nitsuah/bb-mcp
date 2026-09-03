@@ -7,6 +7,7 @@
  */
 
 import { config } from "./config.js";
+import { scrubMcpToolResult } from "./output-scrub.js";
 
 interface ToolStats {
   calls: number;
@@ -98,7 +99,13 @@ export async function pushMetrics(): Promise<void> {
   }
 }
 
-/** Wrap an async tool handler with automatic metric recording */
+/**
+ * Wrap an async tool handler with automatic metric recording and tool-output
+ * PII scrubbing. Every MCP tool handler in `src/tools/*.ts` is wrapped with
+ * this, so this is the single choke point through which all tool responses
+ * pass before reaching the MCP client — scrubbing PII here means no
+ * individual tool handler can forget to sanitize its own output.
+ */
 export function withMetrics<T extends unknown[], R>(
   toolName: string,
   fn: (...args: T) => Promise<R>,
@@ -107,7 +114,8 @@ export function withMetrics<T extends unknown[], R>(
     const start = Date.now();
     let error = false;
     try {
-      return await fn(...args);
+      const result = await fn(...args);
+      return scrubMcpToolResult(result);
     } catch (err) {
       error = true;
       throw err;

@@ -7,6 +7,7 @@ beforeAll(() => {
 
 const parseIdentityMock = vi.fn((raw: unknown) => raw as any);
 const checkAuthorizationMock = vi.fn();
+const getLocalAuditLogEntriesMock = vi.fn(() => ({ entries: [], total: 0 }));
 
 const bbClientMock = {
   get: vi.fn(),
@@ -18,6 +19,7 @@ const bbClientMock = {
 vi.mock("../src/auth.js", () => ({
   parseIdentity: parseIdentityMock,
   checkAuthorization: checkAuthorizationMock,
+  getLocalAuditLogEntries: getLocalAuditLogEntriesMock,
 }));
 
 vi.mock("../src/bb-client.js", () => ({
@@ -68,6 +70,36 @@ describe("admin tools", () => {
         params: expect.objectContaining({ search: "alice" }),
       }),
     );
+  });
+
+  it("list_users scrubs raw email addresses out of the response payload", async () => {
+    const { listUsersHandler } = await import("../src/tools/admin.js");
+
+    bbClientMock.get.mockResolvedValue({
+      data: {
+        results: [
+          {
+            id: "u1",
+            userId: "u1",
+            userName: "alice",
+            name: { given: "Alice", family: "Doe" },
+            emailAddress: "alice@example.edu",
+            created: "2026-01-01",
+          },
+        ],
+      },
+    });
+
+    const result = await listUsersHandler({
+      caller_identity: { userId: "admin-1", role: "admin" },
+      limit: 10,
+      offset: 0,
+    });
+
+    expect(result.content[0].text).not.toContain("alice@example.edu");
+    const parsed = parseToolText(result);
+    expect(parsed.users[0].emailAddress).toBe("[redacted-email]");
+    expect(parsed.users[0].userName).toBe("alice");
   });
 
   it("list_users handles missing results and no search filter", async () => {
@@ -394,6 +426,77 @@ describe("admin tools", () => {
     const parsed = parseToolText(result);
     expect(parsed.count).toBe(0);
     expect(parsed.note).toContain("not available");
+  });
+
+  it("list_audit_logs falls back to bb-mcp's own local audit trail when upstream is unavailable", async () => {
+    const { listAuditLogsHandler } = await import("../src/tools/admin.js");
+    bbClientMock.get.mockRejectedValue(
+      Object.assign(new Error("Not Found"), { status: 404 }),
+    );
+    getLocalAuditLogEntriesMock.mockReturnValueOnce({
+      entries: [
+        {
+          timestamp: "2026-09-01T00:00:00.000Z",
+          event: "access.denied",
+          tool: "list_users",
+          subject: "anon:abcdef123456",
+          role: "admin",
+          courseId: null,
+          clientApp: "agent-board",
+          reason: "FERPA authorization required",
+          piiRedaction: "hashed-subject",
+        },
+      ],
+      total: 1,
+    });
+
+    const result = await listAuditLogsHandler({
+      caller_identity: { userId: "admin-1", role: "admin" },
+      limit: 50,
+      offset: 0,
+    });
+
+    const parsed = parseToolText(result);
+    expect(parsed.localAuditTrail.count).toBe(1);
+    expect(parsed.localAuditTrail.entries[0].subject).toBe(
+      "anon:abcdef123456",
+    );
+    // The local trail never carries a raw userId — only the hashed subject.
+    expect(JSON.stringify(parsed.localAuditTrail)).not.toContain("admin-1");
+  });
+
+  it("list_audit_logs includes the local audit trail alongside a successful upstream response", async () => {
+    const { listAuditLogsHandler } = await import("../src/tools/admin.js");
+    bbClientMock.get.mockResolvedValue({
+      data: { results: [{ event: "login" }] },
+    });
+    getLocalAuditLogEntriesMock.mockReturnValueOnce({
+      entries: [
+        {
+          timestamp: "2026-09-01T00:00:00.000Z",
+          event: "access.granted",
+          tool: "get_grades",
+          subject: "anon:112233445566",
+          role: "instructor",
+          courseId: "course-a",
+          clientApp: null,
+          reason: null,
+          piiRedaction: "hashed-subject",
+        },
+      ],
+      total: 1,
+    });
+
+    const result = await listAuditLogsHandler({
+      caller_identity: { userId: "admin-1", role: "admin" },
+      limit: 50,
+      offset: 0,
+    });
+
+    const parsed = parseToolText(result);
+    expect(parsed.count).toBe(1); // upstream count, unaffected
+    expect(parsed.localAuditTrail.entries).toHaveLength(1);
+    expect(parsed.localAuditTrail.entries[0].tool).toBe("get_grades");
   });
 
   it("list_audit_logs falls back gracefully when the endpoint returns 501", async () => {

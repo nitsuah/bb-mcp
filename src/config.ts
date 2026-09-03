@@ -39,7 +39,15 @@ export const config = {
   security: {
     restrictedTools: (
       process.env.RESTRICTED_TOOLS ??
-      "get_at_risk_students,get_grade_distribution,get_submission_status,get_grades"
+      // Any tool that returns another person's PII (names, IDs, emails,
+      // grades) requires an explicit ferpa_authorized=true assertion from
+      // the calling client, on top of the role check. The admin-surface
+      // tools below were previously gated on role=admin alone, which meant
+      // a compromised or misconfigured admin-role client could pull the
+      // full user/enrollment/audit directory with no FERPA gate at all —
+      // closed as part of the 2026-09 audit logging hardening pass.
+      "get_at_risk_students,get_grade_distribution,get_submission_status,get_grades," +
+        "list_users,get_user,list_enrollments,list_audit_logs"
     )
       .split(",")
       .map((s) => s.trim())

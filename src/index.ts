@@ -140,6 +140,9 @@ import {
 } from "./tools/parent.js";
 
 import {
+  CreateAssignmentInput,
+  createAssignmentHandler,
+  createAssignmentSchema,
   CreateGradeColumnInput,
   createGradeColumnHandler,
   createGradeColumnSchema,
@@ -439,6 +442,15 @@ const TOOL_REGISTRATIONS: ToolRegistration[] = [
   },
 
   // Grade write-back tools
+  {
+    name: createAssignmentSchema.name,
+    description: createAssignmentSchema.description,
+    inputSchema: CreateAssignmentInput.shape,
+    handler: (args: unknown) =>
+      createAssignmentHandler(
+        args as Parameters<typeof createAssignmentHandler>[0],
+      ),
+  },
   {
     name: createGradeColumnSchema.name,
     description: createGradeColumnSchema.description,

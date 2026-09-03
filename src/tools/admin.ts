@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 import { bbClient } from "../bb-client.js";
-import { checkAuthorization, parseIdentity } from "../auth.js";
+import { checkAuthorization, getLocalAuditLogEntries, parseIdentity } from "../auth.js";
 import { withMetrics } from "../metrics.js";
 
 interface BbUserListResult {
@@ -588,6 +588,22 @@ export const listAuditLogsHandler = withMetrics(
       toolName: "list_audit_logs",
     });
 
+    // The server's own structured access-audit trail (access.granted /
+    // access.denied for every tool call, hashed-subject only — see
+    // src/auth.ts) is always included. It doesn't depend on the upstream
+    // Blackboard instance having audit logging enabled, and it's the record
+    // of what bb-mcp itself allowed or denied, which the remote Blackboard
+    // audit log does not capture at all.
+    const local = getLocalAuditLogEntries({
+      limit: args.limit,
+      offset: args.offset,
+      eventType: args.eventType,
+      userId: args.userId,
+      courseId: args.courseId,
+      startDate: args.startDate,
+      endDate: args.endDate,
+    });
+
     try {
       const params: Record<string, unknown> = {
         limit: args.limit,
@@ -615,6 +631,12 @@ export const listAuditLogsHandler = withMetrics(
                 limit: args.limit,
                 offset: args.offset,
                 logs: res.data.results ?? [],
+                localAuditTrail: {
+                  source: "bb-mcp access log (in-memory, hashed subject)",
+                  count: local.entries.length,
+                  total: local.total,
+                  entries: local.entries,
+                },
               },
               null,
               2,
@@ -629,18 +651,27 @@ export const listAuditLogsHandler = withMetrics(
       if (status !== 404 && status !== 501) {
         throw error;
       }
-      // Audit log endpoint might not be available on all Blackboard instances
+      // Audit log endpoint might not be available on all Blackboard
+      // instances — fall back to bb-mcp's own local audit trail so
+      // list_audit_logs still returns real, actionable data instead of an
+      // empty result with just an explanatory note.
       return {
         content: [
           {
             type: "text",
             text: JSON.stringify(
               {
-                count: 0,
+                count: local.entries.length,
                 limit: args.limit,
                 offset: args.offset,
                 logs: [],
-                note: "Audit log endpoint not available on Blackboard instance. Enable audit logging in Blackboard admin panel or check server stdout structured audit events.",
+                localAuditTrail: {
+                  source: "bb-mcp access log (in-memory, hashed subject)",
+                  count: local.entries.length,
+                  total: local.total,
+                  entries: local.entries,
+                },
+                note: "Blackboard's /audit/logs endpoint is not available on this instance; returning bb-mcp's own local access-audit trail (access.granted / access.denied) instead. Enable audit logging in the Blackboard admin panel for upstream coverage too.",
               },
               null,
               2,

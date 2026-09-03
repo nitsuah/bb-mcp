@@ -54,6 +54,73 @@ interface RateWindow {
 const RATE_WINDOW_MS = 60_000;
 const rateWindows = new Map<string, RateWindow>();
 
+export interface AuditLogEntry {
+  timestamp: string;
+  event: "access.granted" | "access.denied";
+  tool: string;
+  subject: string;
+  role: Role;
+  courseId: string | null;
+  clientApp: string | null;
+  reason: string | null;
+  piiRedaction: "hashed-subject";
+}
+
+// Bounded in-memory ring buffer of the server's own structured audit trail.
+// Every access.granted / access.denied event is already written to stdout
+// for external log aggregators (Datadog, CloudWatch, Loki); this buffer lets
+// the admin tool surface (list_audit_logs) expose that same trail directly
+// through MCP instead of depending entirely on the upstream Blackboard
+// /audit/logs endpoint, which is not available on every Blackboard instance.
+const AUDIT_LOG_CAPACITY = 1000;
+const auditLogBuffer: AuditLogEntry[] = [];
+
+function recordAuditLogEntry(entry: AuditLogEntry): void {
+  auditLogBuffer.push(entry);
+  if (auditLogBuffer.length > AUDIT_LOG_CAPACITY) {
+    auditLogBuffer.splice(0, auditLogBuffer.length - AUDIT_LOG_CAPACITY);
+  }
+}
+
+export interface AuditLogQuery {
+  limit?: number;
+  offset?: number;
+  eventType?: string;
+  userId?: string; // matched against the hashed subject, not the raw ID
+  courseId?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+/** Read back the server's own local audit trail (most recent first). */
+export function getLocalAuditLogEntries(query: AuditLogQuery = {}): {
+  entries: AuditLogEntry[];
+  total: number;
+} {
+  const { limit = 50, offset = 0 } = query;
+  const startMs = query.startDate ? Date.parse(query.startDate) : null;
+  const endMs = query.endDate ? Date.parse(query.endDate) : null;
+  const subjectFilter = query.userId ? toAuditSubject(query.userId) : null;
+
+  const filtered = auditLogBuffer
+    .filter((e) => !query.eventType || e.event === query.eventType)
+    .filter((e) => !query.courseId || e.courseId === query.courseId)
+    .filter((e) => !subjectFilter || e.subject === subjectFilter)
+    .filter((e) => !startMs || Date.parse(e.timestamp) >= startMs)
+    .filter((e) => !endMs || Date.parse(e.timestamp) <= endMs)
+    .slice()
+    .reverse();
+
+  return {
+    entries: filtered.slice(offset, offset + limit),
+    total: filtered.length,
+  };
+}
+
+export function __resetAuditLogForTests(): void {
+  auditLogBuffer.length = 0;
+}
+
 function getRateLimit(role: Role): number {
   return config.security.rateLimitPerMinute[role] ?? 60;
 }
@@ -93,7 +160,7 @@ function auditLog(
   ctx: AuthContext,
   reason?: string,
 ): void {
-  const entry = {
+  const entry: AuditLogEntry = {
     timestamp: new Date().toISOString(),
     event,
     tool: ctx.toolName,
@@ -105,6 +172,7 @@ function auditLog(
     piiRedaction: "hashed-subject",
   };
   process.stdout.write(JSON.stringify(entry) + "\n");
+  recordAuditLogEntry(entry);
 }
 
 export function checkAuthorization(ctx: AuthContext): void {
