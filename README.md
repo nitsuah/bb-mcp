@@ -31,7 +31,9 @@ The integration logic lives here, not in the client. Tools like agent-board, Cla
 │                                                  │
 │   Auth layer       → OAuth2, role gate, FERPA,   │
 │                      rate limiting, PII scrub     │
-│   Tools (17)       → student + instructor tools  │
+│   Tools (40)       → student, instructor, admin, │
+│                      parent, grade write-back,   │
+│                      webhook-subscription tools  │
 │   Metrics          → Prometheus /metrics         │
 │   Audit log        → structured JSON → stdout    │
 └──────────────────────┬──────────────────────────┘
@@ -55,7 +57,7 @@ docker compose -f config/docker-compose.yml up -d
 All checks run via Docker — no local Node.js required.
 
 ```bash
-# Run all tests (79 tests, TypeScript)
+# Run all tests (151 tests, TypeScript)
 docker compose -f config/docker-compose.yml --profile test run --rm test
 
 # Full quality gate: lint + coverage + audit + complexity
@@ -183,10 +185,11 @@ Copy `.env.example` to `.env` and set:
 | `LOG_LEVEL` | — | `info` or `debug` (default `info`) |
 | `PUBLIC_BASE_URL` | — | Publicly reachable base URL of this server (e.g. `https://mcp.example.com`); used in manifest generation and as the OAuth redirect base; defaults to `http://localhost:<PORT>` |
 | `METRICS_PUSH_URL` | — | Prometheus push gateway URL (optional) |
-| `RESTRICTED_TOOLS` | — | Comma-separated tool names requiring FERPA auth (default: `get_at_risk_students,get_grade_distribution,get_submission_status,get_grades`) |
+| `RESTRICTED_TOOLS` | — | Comma-separated tool names requiring FERPA auth (default: `get_at_risk_students,get_grade_distribution,get_submission_status,get_grades,list_users,get_user,list_enrollments,list_audit_logs`) |
 | `RATE_LIMIT_STUDENT_PER_MINUTE` | — | Max tool calls per minute for student role (default `60`) |
 | `RATE_LIMIT_INSTRUCTOR_PER_MINUTE` | — | Max tool calls per minute for instructor role (default `120`) |
 | `RATE_LIMIT_ADMIN_PER_MINUTE` | — | Max tool calls per minute for admin role (default `180`) |
+| `RATE_LIMIT_PARENT_PER_MINUTE` | — | Max tool calls per minute for parent role (default `60`) |
 
 **Getting Blackboard credentials:**  
 Register a REST API application at [developer.blackboard.com](https://developer.blackboard.com/portal/applications). Use the free developer sandbox for testing — no live Blackboard instance required.
@@ -245,6 +248,57 @@ For FERPA-restricted tools, add `"ferpa_authorized": true` — the calling appli
 | `get_at_risk_students` | Students with low grades or many missing submissions | ✅ |
 | `draft_announcement` | AI-assisted announcement draft, optionally posted | — |
 
+### Grade write-back tools
+
+| Tool | Description | FERPA required |
+|---|---|---|
+| `create_assignment` | Creates a student-visible content item + linked grade column in one call | — |
+| `create_grade_column` | Creates a gradebook column only (no content item) | — |
+| `update_grade` | Updates (or creates) a student's grade attempt for a column | — |
+| `delete_grade` | Deletes a student's grade attempt for a column | — |
+| `exempt_grade` | Marks a student's grade as exempt for a column | — |
+| `get_grade_column` | Returns details of a specific grade column | — |
+
+All require instructor or admin role.
+
+### Admin tools
+
+| Tool | Description | FERPA required |
+|---|---|---|
+| `list_users` | Paginated user directory with optional search | ✅ |
+| `get_user` | Single user record by ID | ✅ |
+| `list_enrollments` | Enrollments filtered by course, user, or both | ✅ |
+| `create_enrollment` | Enrolls a user in a course | — |
+| `update_enrollment` | Updates an enrollment's role/availability | — |
+| `delete_enrollment` | Removes an enrollment | — |
+| `list_audit_logs` | Institutional audit logs — Blackboard's own (when available) plus bb-mcp's local access-audit trail | ✅ |
+
+All require admin role.
+
+### Parent tools (guardian-scoped, read-only)
+
+| Tool | Description |
+|---|---|
+| `get_my_children` | Students the caller is a registered guardian/observer for |
+| `get_children_courses` | Course enrollments for one or all children |
+| `get_children_grades` | Grade summaries for one or all children |
+| `get_children_upcoming_assignments` | Upcoming assignments across children |
+| `get_children_announcements` | Course announcements relevant to children |
+
+All require parent role.
+
+### Webhook subscription tools
+
+| Tool | Description |
+|---|---|
+| `list_webhook_subscriptions` | Lists registered Blackboard webhook subscriptions |
+| `get_webhook_subscription` | Returns a single webhook subscription |
+| `create_webhook_subscription` | Registers a new webhook subscription |
+| `update_webhook_subscription` | Updates an existing subscription |
+| `delete_webhook_subscription` | Removes a subscription |
+
+All require admin role. This is subscription *registration* only — receiving inbound webhook calls and bridging them to the MCP SSE transport is tracked in `ROADMAP.md`'s 2027 section.
+
 ### Shared tools
 
 | Tool | Description |
@@ -266,9 +320,11 @@ The auth layer enforces four things before any Blackboard API call is made:
 1. **`caller_identity` is required** on every tool call — the client asserts who is asking
 2. **Rate gate** — per-role, per-minute call limits prevent bulk data extraction; 429 responses include a retry-after interval
 3. **Role gate** — instructor-only tools reject `role: "student"` callers
-4. **FERPA gate** — tools that access protected student data require `ferpa_authorized: true`
+4. **FERPA gate** — tools that access protected student data require `ferpa_authorized: true`; this covers the instructor at-risk/grade/submission tools and the full admin directory surface (`list_users`, `get_user`, `list_enrollments`, `list_audit_logs`)
 
-Every access attempt (granted or denied) is written to stdout as structured JSON. User identifiers are SHA-256 hashed before emission; raw user IDs are never written to logs.
+Every access attempt (granted or denied) is written to stdout as structured JSON, and kept in a bounded in-memory ring buffer that's also queryable directly through the `list_audit_logs` admin tool. User identifiers are SHA-256 hashed before emission or storage; raw user IDs are never written to logs or returned from `list_audit_logs`.
+
+On top of the audit-log scrubbing above, every tool response is separately scrubbed before it reaches the MCP client — `src/output-scrub.ts` strips email addresses (by field name and by pattern) out of the actual `get_my_grades` / `list_roster` / `list_users` / etc. payloads, applied centrally via `withMetrics()` so no individual tool can skip it.
 
 ```json
 {
@@ -337,15 +393,21 @@ bb-mcp/
 │   ├── oauth.ts          PKCE authorization code flow + session store
 │   ├── manifest.ts       Provider manifest builder (GET /manifest)
 │   ├── metrics.ts        Prometheus metrics + withMetrics() wrapper
-│   ├── privacy.ts        PII scrubbing and audit subject hashing
+│   │                     (also applies output-scrub to every tool result)
+│   ├── privacy.ts        PII scrubbing (audit logs) and subject hashing
+│   ├── output-scrub.ts   PII scrubbing (tool-call responses to the client)
 │   ├── schemas.ts        Shared Zod schemas
 │   ├── cli.ts            CLI subcommands (--doctor, --probe, --tools, etc.)
 │   ├── constants.ts      SERVER_NAME, SERVER_VERSION
 │   ├── types.ts          Domain types (BbCourse, BbGrade, etc.)
 │   └── tools/
-│       ├── student.ts    Student-facing tools (9 tools incl. aliases)
-│       ├── instructor.ts Instructor-facing tools (7 tools)
-│       └── shared.ts     search_course_materials
+│       ├── student.ts         Student-facing tools (9 incl. aliases)
+│       ├── instructor.ts      Instructor-facing tools (7)
+│       ├── grade-writeback.ts Grade write-back + create_assignment (6)
+│       ├── admin.ts           Admin directory/enrollment/audit tools (7)
+│       ├── parent.ts          Guardian-scoped read-only tools (5)
+│       ├── webhook-tools.ts   Webhook subscription CRUD (5)
+│       └── shared.ts          search_course_materials (1)
 ├── config/
 │   ├── docker-compose.yml  Standalone stack (port 3100)
 │   ├── vitest.config.ts    Test runner config

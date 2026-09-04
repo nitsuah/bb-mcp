@@ -1,0 +1,9 @@
+# Force LF line endings for text files regardless of a contributor's local
+# core.autocrlf setting. Without this, a Windows checkout with
+# core.autocrlf=true converts every source file to CRLF on disk; the git
+# blobs themselves stay LF-only, but `docker build` COPYs the working-tree
+# bytes (CRLF) into the image, and eslint's prettier/prettier rule then
+# reports thousands of `Delete \r` errors that have nothing to do with the
+# actual code (verified during the 2026-09 audit pass: after normalizing to
+# LF, exactly one real lint issue remained, unrelated to line endings).
+* text=auto eol=lf

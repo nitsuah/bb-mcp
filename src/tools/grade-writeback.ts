@@ -105,6 +105,7 @@ export const createAssignmentHandler = withMetrics(
           `but creating its linked grade column failed: ${message}. ` +
           "The content item exists in Blackboard without a grade column — " +
           "retry with create_grade_column, passing contentId manually if the API supports it, or delete the orphaned content item.",
+        { cause: error },
       );
     }
 
