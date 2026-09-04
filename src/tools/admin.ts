@@ -5,7 +5,11 @@
 
 import { z } from "zod";
 import { bbClient } from "../bb-client.js";
-import { checkAuthorization, getLocalAuditLogEntries, parseIdentity } from "../auth.js";
+import {
+  checkAuthorization,
+  getLocalAuditLogEntries,
+  parseIdentity,
+} from "../auth.js";
 import { withMetrics } from "../metrics.js";
 
 interface BbUserListResult {

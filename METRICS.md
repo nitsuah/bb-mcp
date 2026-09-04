@@ -4,14 +4,16 @@ This document tracks the key performance indicators (KPIs), code quality standar
 
 ## Project Health & Quality Metrics
 
+_Last refreshed: 2026-09-04, via `docker build --target test` + the commands below on this branch (`v2026/roadmap-and-docs-2026-09`)._
+
 | Metric | Value | Status |
 | :--- | :--- | :--- |
-| Code Coverage | 91.86% | 🟢 Pass |
-| Total Test Cases | 79 | 🟢 Pass |
-| Critical/High Vulnerabilities | 0 | 🟢 Pass |
-| Average Cyclomatic Complexity | 2.63 (70 functions, core scope) | 🟢 Pass |
-| Cold Build Duration (Clean) | 7.08s (Docker builder, no cache) | 🟢 Pass |
-| Production Bundle Size (dist) | 424K (Docker test image) | 🟢 Pass |
+| Code Coverage | 93.70% stmts / 93.67% lines | 🟢 Pass |
+| Total Test Cases | 151 | 🟢 Pass |
+| Critical/High Vulnerabilities | 1 high, 1 moderate | 🟡 Tracked |
+| Average Cyclomatic Complexity | 2.49 (92 functions, core scope) | 🟢 Pass |
+| Cold Build Duration (Clean) | 75s (Docker builder, no cache, Windows/Docker Desktop) | 🟡 See note |
+| Production Bundle Size (dist) | 672K (Docker test image) | 🟢 Pass |
 | Linting Errors/Warnings | 0 | 🟢 Pass |
 
 ### Target Thresholds
@@ -25,11 +27,17 @@ This document tracks the key performance indicators (KPIs), code quality standar
 - Production Bundle Size (dist): `< 5MB`
 - Linting Errors/Warnings: `0`
 
+### Notes on the current numbers
+
+- **Vulnerabilities (1 high, 1 moderate)**: both are transitive — `fast-uri` (high, via `@modelcontextprotocol/sdk` → `ajv`) and `qs` (moderate, via `@modelcontextprotocol/sdk` → `express`). `npm audit fix` (non-forced) has no resolvable fix; forcing would mean bumping `@modelcontextprotocol/sdk` to a version outside its current allowed range, which is out of scope for a docs/roadmap pass and risks breaking the MCP transport integration. Tracked for a dedicated dependency-bump pass; `.github/dependabot.yml`'s npm group already watches for a compatible upstream fix. This replaces a previously reported `0`, which was accurate at the time but is stale — always re-run `npm audit` rather than trusting the last recorded value.
+- **Cold build duration (75s, exceeds the <30s target)**: measured on Windows + Docker Desktop, which adds virtualization and filesystem-translation overhead `npm ci`/layer export don't see on native Linux CI runners. The previous 7.08s figure was almost certainly measured pre-PR#109, before the admin/parent/grade-writeback/webhook tool set (and `output-scrub.ts`, this pass) roughly doubled `src/`. Worth re-baselining from CI (`.github/workflows/ci.yml`) rather than a local Windows Docker Desktop run for an apples-to-apples number.
+- **Linting**: this repo previously had no `.gitattributes`, so a Windows checkout with `core.autocrlf=true` (a common default) produces CRLF working-tree files; `docker build`'s `COPY` reads those raw bytes and `eslint`'s `prettier/prettier` rule reported ~6700 "delete CR" errors that were pure checkout-environment noise, not code issues. Added `.gitattributes` (`eol=lf`) this pass, which fixes it for every future checkout (verified via a fresh scratch clone). The `0` above is the genuine post-fix result, not the raw pre-fix number.
+
 Coverage scope note: Unit coverage excludes `src/index.ts`, `src/types.ts`, and `src/constants.ts` in `vitest.config.ts`.
 
-Coverage detail: `src/tools` coverage is now 98.57% lines / 72.16% branches (`student.ts` 96.62% lines / 78.75% branches, `instructor.ts` 100% lines / 66.03% branches, `shared.ts` 100% lines / 87.5% branches).
+Coverage detail: `src/tools` coverage is 98.86% lines / 78.11% branches (`admin.ts` 100%/87.3%, `grade-writeback.ts` 100%/75%, `instructor.ts` 100%/67.92%, `parent.ts` 97.14%/84%, `shared.ts` 100%/87.5%, `student.ts` 96.62%/78.75%, `webhook-tools.ts` 100%/92.85%). `src/output-scrub.ts` is 100% lines / 92% branches.
 
-Complexity/TSDoc scope note: metrics scripts in `scripts/metrics-complexity.mjs` and `scripts/metrics-doc-coverage.mjs` use the same core scope as unit coverage.
+Complexity/TSDoc scope note: metrics scripts in `scripts/metrics-complexity.mjs` and `scripts/metrics-doc-coverage.mjs` use the same core scope as unit coverage. TSDoc module coverage: 11/11 modules documented (100%).
 
 ## How to Update
 

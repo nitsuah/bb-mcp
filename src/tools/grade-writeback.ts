@@ -120,7 +120,8 @@ export const createAssignmentHandler = withMetrics(
                 title: contentRes.data.title,
                 available: contentRes.data.availability?.available ?? null,
                 columnId: gradeColumn.columnId ?? gradeColumn.id,
-                pointsPossible: gradeColumn.pointsPossible ?? args.pointsPossible,
+                pointsPossible:
+                  gradeColumn.pointsPossible ?? args.pointsPossible,
                 dueDate: args.dueDate ?? null,
               },
             },
@@ -164,7 +165,8 @@ export const createAssignmentSchema = {
       },
       available: {
         type: "boolean",
-        description: "Whether the assignment is immediately visible to students",
+        description:
+          "Whether the assignment is immediately visible to students",
         default: true,
       },
     },
