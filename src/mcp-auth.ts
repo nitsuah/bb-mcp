@@ -7,15 +7,19 @@
  * "anyone who can reach this port" and "a client the operator has actually
  * issued a key to."
  *
- * mcpApiKey is unset ("opt-in") only for a server explicitly bound to
+ * mcpApiKey is unset ("opt-in") only for a server actually listening on
  * loopback — index.ts's startHttpServer refuses to start otherwise
  * (assertSafeMcpAuthConfig below), so isAuthorizedMcpRequest allowing every
  * request when mcpApiKey is unset never actually happens on a
  * network-reachable bind (CWE-306: Missing Authentication for Critical
- * Function). A non-loopback bind additionally requires TLS — either served
- * directly or via an operator-acknowledged reverse proxy — since a bearer
- * token sent over plain HTTP can be captured and replayed (CWE-319:
- * Cleartext Transmission of Sensitive Information).
+ * Function). A non-loopback bind additionally requires real TLS, since a
+ * bearer token sent over plain HTTP can be captured and replayed (CWE-319:
+ * Cleartext Transmission of Sensitive Information) — trusting an external
+ * reverse proxy (TRUST_PROXY_TLS) only means anything without direct
+ * network access to this process, so resolveListenHost forces the actual
+ * bind to loopback in that mode rather than merely asserting a proxy
+ * exists: an operator claim can't be verified from inside this process,
+ * but an unreachable port can be.
  */
 import { timingSafeEqual } from "crypto";
 import type { IncomingMessage } from "http";
@@ -27,13 +31,30 @@ export function isLoopbackHost(host: string): boolean {
   return LOOPBACK_HOSTS.has(host);
 }
 
+/**
+ * The host this server should actually bind to. TRUST_PROXY_TLS asserts a
+ * trusted TLS-terminating reverse proxy sits in front of this server, but
+ * that assertion is only meaningful if this process is *unreachable* any
+ * other way — a configured HOST is otherwise still a second, unprotected
+ * path straight to the plain-HTTP listener. So trustProxyTls overrides
+ * whatever HOST was configured and forces a loopback bind: only a proxy
+ * sharing this process's network namespace (same container, Docker's
+ * `network_mode: service:<name>`, a Kubernetes sidecar, etc.) can reach it,
+ * and nothing routes to it from outside that boundary.
+ */
+export function resolveListenHost(
+  host: string,
+  trustProxyTls: boolean,
+): string {
+  return trustProxyTls ? "127.0.0.1" : host;
+}
+
 export interface McpAuthConfigCheck {
+  /** The host this server will actually listen on (post resolveListenHost). */
   host: string;
   mcpApiKey: string | null;
   /** True when both TLS_CERT_PATH and TLS_KEY_PATH are configured. */
   tlsConfigured: boolean;
-  /** Operator's explicit acknowledgment of an external TLS-terminating proxy. */
-  trustProxyTls: boolean;
 }
 
 /**
@@ -43,16 +64,16 @@ export interface McpAuthConfigCheck {
  *    required.
  *  - A bearer token sent over plain HTTP can be captured and replayed by
  *    an on-path attacker, so MCP_API_KEY alone isn't sufficient either —
- *    the deployment must also either serve real HTTPS (tlsConfigured) or
- *    have the operator explicitly acknowledge a trusted TLS-terminating
- *    reverse proxy in front of it (trustProxyTls). Neither is assumed by
- *    default.
+ *    the deployment must also serve real HTTPS (tlsConfigured). There is
+ *    no "trust me, there's a proxy" escape hatch here: resolveListenHost
+ *    has already turned that trust into an actual loopback bind before
+ *    this function ever sees a non-loopback host.
  *
  * Throws on the first unmet requirement. Call this before the HTTP server
  * starts listening, not after — nothing here is enforced at request time.
  */
 export function assertSafeMcpAuthConfig(check: McpAuthConfigCheck): void {
-  const { host, mcpApiKey, tlsConfigured, trustProxyTls } = check;
+  const { host, mcpApiKey, tlsConfigured } = check;
   if (isLoopbackHost(host)) return;
 
   if (!mcpApiKey) {
@@ -64,14 +85,15 @@ export function assertSafeMcpAuthConfig(check: McpAuthConfigCheck): void {
     );
   }
 
-  if (!tlsConfigured && !trustProxyTls) {
+  if (!tlsConfigured) {
     throw new Error(
       `HOST ("${host}") is not loopback, and this server speaks plain ` +
         "HTTP — an on-path attacker could capture and replay the " +
         "MCP_API_KEY bearer token. Set TLS_CERT_PATH and TLS_KEY_PATH to " +
-        "serve HTTPS directly, or set TRUST_PROXY_TLS=true if a trusted " +
-        "TLS-terminating reverse proxy already sits in front of this " +
-        "server.",
+        "serve HTTPS directly, or set TRUST_PROXY_TLS=true and run a " +
+        "TLS-terminating reverse proxy sharing this process's network " +
+        "namespace (which forces this server itself to bind to loopback, " +
+        "reachable only from that proxy).",
     );
   }
 }

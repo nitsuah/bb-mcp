@@ -39,7 +39,7 @@ import {
 import {
   assertSafeMcpAuthConfig,
   isAuthorizedMcpRequest,
-  isLoopbackHost,
+  resolveListenHost,
 } from "./mcp-auth.js";
 
 // ── Tool imports ─────────────────────────────────────────────────────────
@@ -629,34 +629,46 @@ async function startHttpServer(): Promise<void> {
     config.server.tls.certPath && config.server.tls.keyPath,
   );
 
+  // TRUST_PROXY_TLS isn't just an assertion — it forces the actual listen
+  // host to loopback, since a configured HOST would otherwise remain a
+  // second, unprotected path straight to this plain-HTTP listener. Only a
+  // proxy sharing this process's network namespace can reach a loopback
+  // bind, which is what makes the "trust" meaningful.
+  const listenHost = resolveListenHost(
+    config.server.host,
+    config.server.trustProxyTls,
+  );
+  if (config.server.trustProxyTls && listenHost !== config.server.host) {
+    console.warn(
+      `TRUST_PROXY_TLS=true overrides HOST ("${config.server.host}") — ` +
+        `this server will bind to loopback ("${listenHost}") instead, so ` +
+        "only a reverse proxy sharing this process's network namespace " +
+        "(same container, Docker's network_mode: service:<name>, a " +
+        "Kubernetes sidecar, etc.) can reach it.",
+    );
+  }
+
   // Fail closed: refuses to start rather than silently serving an
   // unauthenticated /mcp endpoint, or serving a real MCP_API_KEY over
   // plain HTTP, on a network-reachable host (CWE-306, CWE-319). Only a
-  // server explicitly bound to loopback (HOST=127.0.0.1) may skip both —
-  // nothing outside the machine can reach it there.
+  // server actually listening on loopback may skip both — nothing outside
+  // the machine (or outside a trusted proxy's shared network namespace,
+  // once TRUST_PROXY_TLS has forced the bind above) can reach it there.
   assertSafeMcpAuthConfig({
-    host: config.server.host,
+    host: listenHost,
     mcpApiKey: config.security.mcpApiKey,
     tlsConfigured,
-    trustProxyTls: config.server.trustProxyTls,
   });
 
   if (!config.security.mcpApiKey) {
     console.warn(
-      "WARNING: MCP_API_KEY is not set. This is only safe because HOST is " +
-        `loopback ("${config.server.host}"); on a non-loopback host this ` +
-        "server refuses to start without a key. The /mcp endpoint accepts " +
-        "requests from anyone who can reach this port with no credential " +
-        "check, and every tool call trusts whatever caller_identity " +
-        "(userId, role, ferpa_authorized) the request supplies.",
-    );
-  } else if (!isLoopbackHost(config.server.host) && !tlsConfigured) {
-    console.warn(
-      "WARNING: this server speaks plain HTTP, not HTTPS. MCP_API_KEY is " +
-        "configured, and TRUST_PROXY_TLS confirms a TLS-terminating " +
-        "reverse proxy is in front of this port — but if that proxy is " +
-        "ever misconfigured or bypassed, the bearer token would be sent " +
-        "in cleartext.",
+      "WARNING: MCP_API_KEY is not set. This is only safe because this " +
+        `server is listening on loopback ("${listenHost}"); on any other ` +
+        "host this server refuses to start without a key. The /mcp " +
+        "endpoint accepts requests from anyone who can reach this port " +
+        "with no credential check, and every tool call trusts whatever " +
+        "caller_identity (userId, role, ferpa_authorized) the request " +
+        "supplies.",
     );
   }
 
@@ -967,9 +979,9 @@ async function startHttpServer(): Promise<void> {
     : http.createServer(requestHandler);
 
   const scheme = tlsConfigured ? "https" : "http";
-  httpServer.listen(config.server.port, config.server.host, () => {
+  httpServer.listen(config.server.port, listenHost, () => {
     console.log(
-      `blackboard-learn-mcp ${scheme.toUpperCase()} server listening on ${config.server.host}:${config.server.port}`,
+      `blackboard-learn-mcp ${scheme.toUpperCase()} server listening on ${listenHost}:${config.server.port}`,
     );
     console.log(
       `  MCP endpoint : ${scheme}://localhost:${config.server.port}/mcp`,
