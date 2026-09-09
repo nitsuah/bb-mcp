@@ -15,7 +15,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "crypto";
+import { readFileSync } from "fs";
 import http from "http";
+import https from "https";
 import { getMetricsText, getMetricsSummary, pushMetrics } from "./metrics.js";
 import { buildProviderManifest } from "./manifest.js";
 import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
@@ -623,11 +625,21 @@ function isTruthy(value: string | null): boolean {
 async function startHttpServer(): Promise<void> {
   const { config } = await import("./config.js");
 
+  const tlsConfigured = Boolean(
+    config.server.tls.certPath && config.server.tls.keyPath,
+  );
+
   // Fail closed: refuses to start rather than silently serving an
-  // unauthenticated /mcp endpoint on a network-reachable host (CWE-306).
-  // Only a server explicitly bound to loopback (HOST=127.0.0.1) may skip
-  // MCP_API_KEY — nothing outside the machine can reach it there.
-  assertSafeMcpAuthConfig(config.server.host, config.security.mcpApiKey);
+  // unauthenticated /mcp endpoint, or serving a real MCP_API_KEY over
+  // plain HTTP, on a network-reachable host (CWE-306, CWE-319). Only a
+  // server explicitly bound to loopback (HOST=127.0.0.1) may skip both —
+  // nothing outside the machine can reach it there.
+  assertSafeMcpAuthConfig({
+    host: config.server.host,
+    mcpApiKey: config.security.mcpApiKey,
+    tlsConfigured,
+    trustProxyTls: config.server.trustProxyTls,
+  });
 
   if (!config.security.mcpApiKey) {
     console.warn(
@@ -638,20 +650,20 @@ async function startHttpServer(): Promise<void> {
         "check, and every tool call trusts whatever caller_identity " +
         "(userId, role, ferpa_authorized) the request supplies.",
     );
-  } else if (!isLoopbackHost(config.server.host)) {
+  } else if (!isLoopbackHost(config.server.host) && !tlsConfigured) {
     console.warn(
       "WARNING: this server speaks plain HTTP, not HTTPS. MCP_API_KEY is " +
-        "configured, but the bearer token is sent in cleartext — put a " +
-        "TLS-terminating reverse proxy (nginx, Traefik, Caddy, etc.) in " +
-        "front of this port for any deployment reachable beyond localhost, " +
-        "or an on-path attacker can capture and replay the token.",
+        "configured, and TRUST_PROXY_TLS confirms a TLS-terminating " +
+        "reverse proxy is in front of this port — but if that proxy is " +
+        "ever misconfigured or bypassed, the bearer token would be sent " +
+        "in cleartext.",
     );
   }
 
   // Per-session transports (stateful SSE / streamable HTTP)
   const transports = new Map<string, StreamableHTTPServerTransport>();
 
-  const httpServer = http.createServer(async (req, res) => {
+  const requestHandler: http.RequestListener = async (req, res) => {
     const url = new URL(
       req.url ?? "/",
       `http://localhost:${config.server.port}`,
@@ -770,6 +782,21 @@ async function startHttpServer(): Promise<void> {
       req.method === "GET" &&
       url.pathname === "/sse/search-course-materials"
     ) {
+      // Same gate as /mcp — this route builds caller_identity straight from
+      // query parameters with no other verification, so without this check
+      // it would accept forged identity claims from anyone who can reach it.
+      if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: "unauthorized",
+            message:
+              "Missing or invalid Authorization: Bearer <MCP_API_KEY> header.",
+          }),
+        );
+        return;
+      }
+
       const query = url.searchParams.get("query")?.trim();
       if (!query) {
         res.writeHead(400, { "Content-Type": "application/json" });
@@ -927,21 +954,34 @@ async function startHttpServer(): Promise<void> {
 
     res.writeHead(404);
     res.end("Not Found");
-  });
+  };
 
+  const httpServer = tlsConfigured
+    ? https.createServer(
+        {
+          cert: readFileSync(config.server.tls.certPath!),
+          key: readFileSync(config.server.tls.keyPath!),
+        },
+        requestHandler,
+      )
+    : http.createServer(requestHandler);
+
+  const scheme = tlsConfigured ? "https" : "http";
   httpServer.listen(config.server.port, config.server.host, () => {
     console.log(
-      `blackboard-learn-mcp HTTP server listening on ${config.server.host}:${config.server.port}`,
-    );
-    console.log(`  MCP endpoint : http://localhost:${config.server.port}/mcp`);
-    console.log(
-      `  Health       : http://localhost:${config.server.port}/health`,
+      `blackboard-learn-mcp ${scheme.toUpperCase()} server listening on ${config.server.host}:${config.server.port}`,
     );
     console.log(
-      `  Metrics      : http://localhost:${config.server.port}/metrics`,
+      `  MCP endpoint : ${scheme}://localhost:${config.server.port}/mcp`,
     );
     console.log(
-      `  Manifest     : http://localhost:${config.server.port}/manifest`,
+      `  Health       : ${scheme}://localhost:${config.server.port}/health`,
+    );
+    console.log(
+      `  Metrics      : ${scheme}://localhost:${config.server.port}/metrics`,
+    );
+    console.log(
+      `  Manifest     : ${scheme}://localhost:${config.server.port}/manifest`,
     );
   });
 

@@ -53,18 +53,52 @@ describe("isLoopbackHost", () => {
   });
 });
 
-describe("assertSafeMcpAuthConfig (fail closed, CWE-306)", () => {
+describe("assertSafeMcpAuthConfig (fail closed, CWE-306 + CWE-319)", () => {
+  const base = { tlsConfigured: false, trustProxyTls: false };
+
   it("throws when bound beyond loopback with no MCP_API_KEY configured", () => {
-    expect(() => assertSafeMcpAuthConfig("0.0.0.0", null)).toThrow(/MCP_API_KEY is required/);
-    expect(() => assertSafeMcpAuthConfig("192.168.1.10", null)).toThrow(/MCP_API_KEY is required/);
+    expect(() =>
+      assertSafeMcpAuthConfig({ host: "0.0.0.0", mcpApiKey: null, ...base }),
+    ).toThrow(/MCP_API_KEY is required/);
+    expect(() =>
+      assertSafeMcpAuthConfig({ host: "192.168.1.10", mcpApiKey: null, ...base }),
+    ).toThrow(/MCP_API_KEY is required/);
   });
 
-  it("does not throw when bound beyond loopback with MCP_API_KEY configured", () => {
-    expect(() => assertSafeMcpAuthConfig("0.0.0.0", "secret-key")).not.toThrow();
+  it("throws when bound beyond loopback with MCP_API_KEY but no TLS and no trusted proxy", () => {
+    expect(() =>
+      assertSafeMcpAuthConfig({ host: "0.0.0.0", mcpApiKey: "secret-key", ...base }),
+    ).toThrow(/plain HTTP/);
   });
 
-  it("does not throw when bound to loopback, even with no MCP_API_KEY", () => {
-    expect(() => assertSafeMcpAuthConfig("127.0.0.1", null)).not.toThrow();
-    expect(() => assertSafeMcpAuthConfig("localhost", null)).not.toThrow();
+  it("does not throw when bound beyond loopback with MCP_API_KEY and TLS configured", () => {
+    expect(() =>
+      assertSafeMcpAuthConfig({
+        host: "0.0.0.0",
+        mcpApiKey: "secret-key",
+        tlsConfigured: true,
+        trustProxyTls: false,
+      }),
+    ).not.toThrow();
+  });
+
+  it("does not throw when bound beyond loopback with MCP_API_KEY and an explicitly trusted proxy", () => {
+    expect(() =>
+      assertSafeMcpAuthConfig({
+        host: "0.0.0.0",
+        mcpApiKey: "secret-key",
+        tlsConfigured: false,
+        trustProxyTls: true,
+      }),
+    ).not.toThrow();
+  });
+
+  it("does not throw when bound to loopback, even with no MCP_API_KEY, TLS, or trusted proxy", () => {
+    expect(() =>
+      assertSafeMcpAuthConfig({ host: "127.0.0.1", mcpApiKey: null, ...base }),
+    ).not.toThrow();
+    expect(() =>
+      assertSafeMcpAuthConfig({ host: "localhost", mcpApiKey: null, ...base }),
+    ).not.toThrow();
   });
 });

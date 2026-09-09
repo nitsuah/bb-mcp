@@ -33,8 +33,25 @@ export const config = {
     // non-loopback interface — keep working. Set HOST=127.0.0.1 for a
     // genuinely local-only deployment; startHttpServer (index.ts) then
     // requires MCP_API_KEY to be set for any *other* host, failing closed
-    // instead of silently serving an unauthenticated /mcp endpoint.
+    // instead of silently serving an unauthenticated /mcp endpoint. A
+    // non-loopback host additionally requires either TLS (below) or
+    // TRUST_PROXY_TLS — a bare MCP_API_KEY alone no longer satisfies the
+    // startup check, since a key sent over plain HTTP can still be
+    // captured and replayed by an on-path attacker.
     host: process.env.HOST ?? "0.0.0.0",
+    // Optional: serve HTTPS directly instead of plain HTTP. Both must be
+    // set together (a PEM cert chain and its matching private key file).
+    tls: {
+      certPath: process.env.TLS_CERT_PATH ?? null,
+      keyPath: process.env.TLS_KEY_PATH ?? null,
+    },
+    // Explicit operator acknowledgment that a trusted TLS-terminating
+    // reverse proxy (nginx, Traefik, Caddy, etc.) sits in front of this
+    // plain-HTTP server on a non-loopback host — the alternative to
+    // configuring `tls` above. Deliberately opt-in rather than assumed, so
+    // a non-loopback deployment can't end up serving MCP_API_KEY over
+    // plain HTTP with no one having actually decided that was fine.
+    trustProxyTls: process.env.TRUST_PROXY_TLS === "true",
     logLevel: process.env.LOG_LEVEL ?? "info",
     // Trusted base URL for manifest endpoint generation (e.g. https://mcp.example.com).
     // Falls back to http://localhost:<PORT> when not set.
