@@ -66,6 +66,11 @@ Last Updated: 2026-09-02
 
 ### P2 - Medium
 
+- [ ] Bind `caller_identity` to real end-user authentication instead of trusting the client's claim.
+  - Priority: P2
+  - Context: `auth.ts` intentionally delegates end-user identity verification to the calling MCP client (documented in its module docstring) — `parseIdentity` trusts whatever `userId`/`role`/`ferpa_authorized` the request supplies. `MCP_API_KEY` (PR #115) closes the transport-level gap (any client without the key can't reach `/mcp` at all) but doesn't verify that a client *holding* the key is telling the truth about who's asking. The OAuth authorization-code flow in `oauth.ts` produces application-level Blackboard API sessions, not per-end-user identity tokens usable for this. Flagged by CodeRabbit on PR #115 (2026-09-09); deliberately deferred rather than redesigning the identity model blind under a review pass — needs a real design decision (e.g. requiring the calling client to forward a verified Blackboard/SSO identity token bb-mcp can validate per request) rather than a rushed fix.
+  - Acceptance Criteria: a request's `caller_identity` claims are checked against some server-verifiable proof of the actual end user, not accepted as-is from the request body.
+
 - [ ] Add JSON schemas for all shipped tool inputs.
 
 - [ ] Improve Blackboard error mapping.
