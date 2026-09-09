@@ -182,9 +182,10 @@ Copy `.env.example` to `.env` and set:
 | `BB_OAUTH_AUTHORIZATION_PATH` | — | Override Blackboard authorization endpoint path |
 | `BB_OAUTH_TOKEN_PATH` | — | Override Blackboard token endpoint path |
 | `PORT` | — | HTTP port (default `3100`) |
+| `HOST` | — | Bind address (default `0.0.0.0`, all interfaces — unchanged from before `MCP_API_KEY` existed, so `docker compose`'s `-p 3100:3100` port publishing keeps working). Set to `127.0.0.1` for a genuinely local-only deployment; see `MCP_API_KEY` below. |
 | `LOG_LEVEL` | — | `info` or `debug` (default `info`) |
 | `PUBLIC_BASE_URL` | — | Publicly reachable base URL of this server (e.g. `https://mcp.example.com`); used in manifest generation and as the OAuth redirect base; defaults to `http://localhost:<PORT>` |
-| `MCP_API_KEY` | Strongly recommended beyond localhost | Shared secret required as `Authorization: Bearer <MCP_API_KEY>` on every `/mcp` request. Without it, anyone who can reach the port can call any tool with any `caller_identity` — see [Identity & access control](#identity--access-control). The server logs a startup warning when unset. |
+| `MCP_API_KEY` | Required unless `HOST` is loopback | Shared secret required as `Authorization: Bearer <MCP_API_KEY>` on every `/mcp` request. **The server refuses to start without it on any non-loopback `HOST`** (fails closed — see [Identity & access control](#identity--access-control)); only `HOST=127.0.0.1`/`localhost`/`::1` may skip it, since nothing outside the machine can reach a loopback bind. This server speaks plain HTTP only, so a configured key still needs a TLS-terminating reverse proxy in front of it for any non-localhost deployment — an on-path attacker on plain HTTP can otherwise capture and replay the bearer token. |
 | `METRICS_PUSH_URL` | — | Prometheus push gateway URL (optional) |
 | `RESTRICTED_TOOLS` | — | Comma-separated tool names requiring FERPA auth (default: `get_at_risk_students,get_grade_distribution,get_submission_status,get_grades,list_users,get_user,list_enrollments,list_audit_logs`) |
 | `RATE_LIMIT_STUDENT_PER_MINUTE` | — | Max tool calls per minute for student role (default `60`) |
@@ -316,7 +317,7 @@ All require admin role. This is subscription *registration* only — receiving i
 
 ## Identity & access control
 
-**Transport gate (`MCP_API_KEY`)** — the `/mcp` endpoint itself has no other credential check, so without `MCP_API_KEY` configured, anyone who can reach the port can call any tool asserting any `caller_identity`. Set it in production; the server warns on startup if it's unset. See [Configuration](#configuration).
+**Transport gate (`MCP_API_KEY`)** — the `/mcp` endpoint itself has no other credential check, so without `MCP_API_KEY` configured, anyone who can reach the port can call any tool asserting any `caller_identity`. The server fails closed: it refuses to start without a key unless `HOST` is bound to loopback (`127.0.0.1`/`localhost`/`::1`), where only local processes can reach it anyway. A configured key still only protects against a client that lacks it — this server speaks plain HTTP, not HTTPS, so a non-loopback deployment needs a TLS-terminating reverse proxy in front to keep the bearer token from being captured and replayed on the wire. See [Configuration](#configuration).
 
 Once past the transport gate, the auth layer enforces the following before any Blackboard API call is made:
 

@@ -34,7 +34,11 @@ import {
   getOAuthSession,
   startAuthorizationCodeFlow,
 } from "./oauth.js";
-import { isAuthorizedMcpRequest } from "./mcp-auth.js";
+import {
+  assertSafeMcpAuthConfig,
+  isAuthorizedMcpRequest,
+  isLoopbackHost,
+} from "./mcp-auth.js";
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -619,13 +623,28 @@ function isTruthy(value: string | null): boolean {
 async function startHttpServer(): Promise<void> {
   const { config } = await import("./config.js");
 
+  // Fail closed: refuses to start rather than silently serving an
+  // unauthenticated /mcp endpoint on a network-reachable host (CWE-306).
+  // Only a server explicitly bound to loopback (HOST=127.0.0.1) may skip
+  // MCP_API_KEY — nothing outside the machine can reach it there.
+  assertSafeMcpAuthConfig(config.server.host, config.security.mcpApiKey);
+
   if (!config.security.mcpApiKey) {
     console.warn(
-      "WARNING: MCP_API_KEY is not set. The /mcp endpoint accepts requests " +
-        "from anyone who can reach this port with no credential check, and " +
-        "every tool call trusts whatever caller_identity (userId, role, " +
-        "ferpa_authorized) the request supplies. Set MCP_API_KEY before " +
-        "exposing this server beyond localhost.",
+      "WARNING: MCP_API_KEY is not set. This is only safe because HOST is " +
+        `loopback ("${config.server.host}"); on a non-loopback host this ` +
+        "server refuses to start without a key. The /mcp endpoint accepts " +
+        "requests from anyone who can reach this port with no credential " +
+        "check, and every tool call trusts whatever caller_identity " +
+        "(userId, role, ferpa_authorized) the request supplies.",
+    );
+  } else if (!isLoopbackHost(config.server.host)) {
+    console.warn(
+      "WARNING: this server speaks plain HTTP, not HTTPS. MCP_API_KEY is " +
+        "configured, but the bearer token is sent in cleartext — put a " +
+        "TLS-terminating reverse proxy (nginx, Traefik, Caddy, etc.) in " +
+        "front of this port for any deployment reachable beyond localhost, " +
+        "or an on-path attacker can capture and replay the token.",
     );
   }
 
@@ -910,9 +929,9 @@ async function startHttpServer(): Promise<void> {
     res.end("Not Found");
   });
 
-  httpServer.listen(config.server.port, () => {
+  httpServer.listen(config.server.port, config.server.host, () => {
     console.log(
-      `blackboard-learn-mcp HTTP server listening on port ${config.server.port}`,
+      `blackboard-learn-mcp HTTP server listening on ${config.server.host}:${config.server.port}`,
     );
     console.log(`  MCP endpoint : http://localhost:${config.server.port}/mcp`);
     console.log(

@@ -165,12 +165,18 @@ describe('local audit trail', () => {
     });
 
     // Date.parse('1970-01-01T00:00:00.000Z') === 0, which a truthy check on
-    // startMs would treat the same as "no startDate provided", silently
-    // disabling the filter rather than applying it. It should still filter.
-    const { entries } = getLocalAuditLogEntries({
-      startDate: '1970-01-01T00:00:00.000Z',
-    });
-    expect(entries).toHaveLength(1);
+    // startMs/endMs would treat the same as "not provided", silently
+    // disabling the filter. The startDate direction alone doesn't actually
+    // discriminate this bug — every entry's real timestamp is after epoch,
+    // so it's included either way. The endDate direction does: a
+    // truthiness bug would wrongly include the entry (filter disabled)
+    // instead of excluding it (real entries are after the epoch cutoff).
+    expect(
+      getLocalAuditLogEntries({ startDate: '1970-01-01T00:00:00.000Z' }).entries,
+    ).toHaveLength(1);
+    expect(
+      getLocalAuditLogEntries({ endDate: '1970-01-01T00:00:00.000Z' }).entries,
+    ).toHaveLength(0);
   });
 
   it('rejects an unparseable startDate/endDate instead of silently ignoring it', async () => {

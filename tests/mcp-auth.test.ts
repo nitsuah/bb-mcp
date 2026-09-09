@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAuthorizedMcpRequest } from "../src/mcp-auth.js";
+import { assertSafeMcpAuthConfig, isAuthorizedMcpRequest, isLoopbackHost } from "../src/mcp-auth.js";
 
 function reqWith(authorization?: string): { headers: Record<string, string | undefined> } {
   return { headers: { authorization } };
@@ -34,5 +34,37 @@ describe("isAuthorizedMcpRequest (transport-level auth gate, CWE-862)", () => {
 
   it("rejects an empty bearer token", () => {
     expect(isAuthorizedMcpRequest(reqWith("Bearer "), "secret-key")).toBe(false);
+  });
+});
+
+describe("isLoopbackHost", () => {
+  it("recognizes standard loopback hosts", () => {
+    expect(isLoopbackHost("127.0.0.1")).toBe(true);
+    expect(isLoopbackHost("localhost")).toBe(true);
+    expect(isLoopbackHost("::1")).toBe(true);
+    expect(isLoopbackHost("[::1]")).toBe(true);
+  });
+
+  it("rejects any non-loopback host", () => {
+    expect(isLoopbackHost("0.0.0.0")).toBe(false);
+    expect(isLoopbackHost("192.168.1.10")).toBe(false);
+    expect(isLoopbackHost("mcp.example.com")).toBe(false);
+    expect(isLoopbackHost("")).toBe(false);
+  });
+});
+
+describe("assertSafeMcpAuthConfig (fail closed, CWE-306)", () => {
+  it("throws when bound beyond loopback with no MCP_API_KEY configured", () => {
+    expect(() => assertSafeMcpAuthConfig("0.0.0.0", null)).toThrow(/MCP_API_KEY is required/);
+    expect(() => assertSafeMcpAuthConfig("192.168.1.10", null)).toThrow(/MCP_API_KEY is required/);
+  });
+
+  it("does not throw when bound beyond loopback with MCP_API_KEY configured", () => {
+    expect(() => assertSafeMcpAuthConfig("0.0.0.0", "secret-key")).not.toThrow();
+  });
+
+  it("does not throw when bound to loopback, even with no MCP_API_KEY", () => {
+    expect(() => assertSafeMcpAuthConfig("127.0.0.1", null)).not.toThrow();
+    expect(() => assertSafeMcpAuthConfig("localhost", null)).not.toThrow();
   });
 });

@@ -703,9 +703,16 @@ export const listAuditLogsSchema = {
       offset: { type: "number", description: "Pagination offset", default: 0 },
       startDate: {
         type: "string",
-        description: "ISO 8601 start date (optional)",
+        format: "date-time",
+        description:
+          "ISO 8601 date-time with timezone, e.g. 2026-01-01T00:00:00Z (optional)",
       },
-      endDate: { type: "string", description: "ISO 8601 end date (optional)" },
+      endDate: {
+        type: "string",
+        format: "date-time",
+        description:
+          "ISO 8601 date-time with timezone, e.g. 2026-01-31T23:59:59Z (optional)",
+      },
       eventType: {
         type: "string",
         description: "Filter by event type (optional)",

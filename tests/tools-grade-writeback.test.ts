@@ -80,6 +80,20 @@ describe("CreateAssignmentInput dueDate validation", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects a timezone-less local datetime", async () => {
+    // { offset: true } specifically requires a Z or +HH:MM/-HH:MM offset —
+    // "next Friday" above only proves arbitrary text is rejected, not that
+    // a well-formed but unqualified ISO datetime is.
+    const { CreateAssignmentInput } = await import("../src/tools/grade-writeback.js");
+    const result = CreateAssignmentInput.safeParse({
+      caller_identity: { userId: "inst-1", role: "instructor" },
+      courseId: "course-a",
+      title: "Essay 1",
+      dueDate: "2026-10-01T00:00:00",
+    });
+    expect(result.success).toBe(false);
+  });
+
   it("still treats dueDate as optional", async () => {
     const { CreateAssignmentInput } = await import("../src/tools/grade-writeback.js");
     const result = CreateAssignmentInput.safeParse({

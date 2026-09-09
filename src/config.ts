@@ -28,6 +28,13 @@ export const config = {
   },
   server: {
     port: parseInt(process.env.PORT ?? "3100", 10),
+    // Unchanged default (all interfaces) so existing Docker deployments —
+    // which rely on `-p 3100:3100` port publishing reaching the container's
+    // non-loopback interface — keep working. Set HOST=127.0.0.1 for a
+    // genuinely local-only deployment; startHttpServer (index.ts) then
+    // requires MCP_API_KEY to be set for any *other* host, failing closed
+    // instead of silently serving an unauthenticated /mcp endpoint.
+    host: process.env.HOST ?? "0.0.0.0",
     logLevel: process.env.LOG_LEVEL ?? "info",
     // Trusted base URL for manifest endpoint generation (e.g. https://mcp.example.com).
     // Falls back to http://localhost:<PORT> when not set.
