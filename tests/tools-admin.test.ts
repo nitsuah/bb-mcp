@@ -533,3 +533,49 @@ describe("admin tools", () => {
     ).rejects.toThrow("Forbidden");
   });
 });
+
+describe("ListAuditLogsInput startDate/endDate validation", () => {
+  // The MCP SDK validates against this Zod schema before listAuditLogsHandler
+  // is ever invoked (server.tool(..., ListAuditLogsInput.shape, ...) in
+  // index.ts) — this is the boundary that rejects an invalid date string
+  // instead of it silently reaching getLocalAuditLogEntries as absent.
+  it("accepts Z-suffixed and offset-qualified ISO 8601 datetimes", async () => {
+    const { ListAuditLogsInput } = await import("../src/tools/admin.js");
+    expect(
+      ListAuditLogsInput.safeParse({
+        caller_identity: { userId: "admin-1", role: "admin" },
+        startDate: "2026-01-01T00:00:00Z",
+        endDate: "2026-01-31T23:59:59+02:00",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects a date-only string missing a time component", async () => {
+    const { ListAuditLogsInput } = await import("../src/tools/admin.js");
+    expect(
+      ListAuditLogsInput.safeParse({
+        caller_identity: { userId: "admin-1", role: "admin" },
+        startDate: "2026-01-01",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a non-ISO-8601 string", async () => {
+    const { ListAuditLogsInput } = await import("../src/tools/admin.js");
+    expect(
+      ListAuditLogsInput.safeParse({
+        caller_identity: { userId: "admin-1", role: "admin" },
+        endDate: "not a date",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("still treats startDate/endDate as optional", async () => {
+    const { ListAuditLogsInput } = await import("../src/tools/admin.js");
+    expect(
+      ListAuditLogsInput.safeParse({
+        caller_identity: { userId: "admin-1", role: "admin" },
+      }).success,
+    ).toBe(true);
+  });
+});

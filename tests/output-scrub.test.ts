@@ -1,18 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { scrubMcpToolResult, scrubToolOutput } from "../src/output-scrub.js";
 
+interface ScrubTestUser {
+  userId: string;
+  name: string;
+  emailAddress?: string;
+  email?: string;
+}
+
 describe("scrubToolOutput", () => {
   it("masks direct email fields regardless of nesting depth", () => {
-    const input = {
+    const input: { users: ScrubTestUser[] } = {
       users: [
         { userId: "u1", name: "Alice Doe", emailAddress: "alice@example.edu" },
         { userId: "u2", name: "Bob Roe", email: "bob@example.edu" },
       ],
     };
 
-    const scrubbed = scrubToolOutput(input) as typeof input;
+    // scrubToolOutput<T>(value: T): T — no cast needed, the input's own type
+    // already covers both the emailAddress and email keys.
+    const scrubbed = scrubToolOutput(input);
     expect(scrubbed.users[0].emailAddress).toBe("[redacted-email]");
-    expect((scrubbed.users[1] as any).email).toBe("[redacted-email]");
+    expect(scrubbed.users[1].email).toBe("[redacted-email]");
     // Names are left intact — the RBAC/FERPA gate already authorized this response.
     expect(scrubbed.users[0].name).toBe("Alice Doe");
   });
@@ -48,17 +57,22 @@ describe("scrubToolOutput", () => {
   });
 
   it("scrubs arrays and deeply nested objects", () => {
-    const input = {
+    const input: {
+      results: Array<{
+        studentComments?: string;
+        nested?: { instructorNotes: string };
+      }>;
+    } = {
       results: [
         { studentComments: "email me at kid@school.edu please" },
         { nested: { instructorNotes: "cc jane@school.edu" } },
       ],
     };
-    const scrubbed = scrubToolOutput(input) as any;
+    const scrubbed = scrubToolOutput(input);
     expect(scrubbed.results[0].studentComments).toBe(
       "email me at [redacted-email] please",
     );
-    expect(scrubbed.results[1].nested.instructorNotes).toBe(
+    expect(scrubbed.results[1].nested?.instructorNotes).toBe(
       "cc [redacted-email]",
     );
   });

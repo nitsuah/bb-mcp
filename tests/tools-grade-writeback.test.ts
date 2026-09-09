@@ -7,6 +7,7 @@ beforeAll(() => {
 
 const parseIdentityMock = vi.fn((raw: unknown) => raw as any);
 const checkAuthorizationMock = vi.fn();
+const checkCourseEntitlementMock = vi.fn();
 
 const bbClientMock = {
   post: vi.fn(),
@@ -15,11 +16,13 @@ const bbClientMock = {
   createAttempt: vi.fn(),
   deleteAttempt: vi.fn(),
   getAssignments: vi.fn(),
+  getCourseMembership: vi.fn(),
 };
 
 vi.mock("../src/auth.js", () => ({
   parseIdentity: parseIdentityMock,
   checkAuthorization: checkAuthorizationMock,
+  checkCourseEntitlement: checkCourseEntitlementMock,
 }));
 
 vi.mock("../src/bb-client.js", () => ({
@@ -33,6 +36,59 @@ function parseToolText(result: any): any {
 beforeEach(() => {
   vi.clearAllMocks();
   parseIdentityMock.mockImplementation((raw: unknown) => raw as any);
+  // checkCourseEntitlement is exercised directly in auth-privacy.test.ts;
+  // here the handlers are tested against a mocked authorization layer, same
+  // as checkAuthorization above.
+  checkCourseEntitlementMock.mockResolvedValue(undefined);
+});
+
+describe("CreateAssignmentInput dueDate validation", () => {
+  // The MCP SDK validates against this Zod schema before createAssignmentHandler
+  // is ever invoked (see server.tool(..., CreateAssignmentInput.shape, ...) in
+  // index.ts) — so the schema itself, not the handler, is what enforces the
+  // "ISO 8601 due date/time" contract documented in its own .describe().
+  it("accepts a Z-suffixed ISO 8601 datetime", async () => {
+    const { CreateAssignmentInput } = await import("../src/tools/grade-writeback.js");
+    const result = CreateAssignmentInput.safeParse({
+      caller_identity: { userId: "inst-1", role: "instructor" },
+      courseId: "course-a",
+      title: "Essay 1",
+      dueDate: "2026-10-01T00:00:00Z",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts an offset-qualified ISO 8601 datetime", async () => {
+    const { CreateAssignmentInput } = await import("../src/tools/grade-writeback.js");
+    const result = CreateAssignmentInput.safeParse({
+      caller_identity: { userId: "inst-1", role: "instructor" },
+      courseId: "course-a",
+      title: "Essay 1",
+      dueDate: "2026-10-01T00:00:00+02:00",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a non-ISO-8601 dueDate string", async () => {
+    const { CreateAssignmentInput } = await import("../src/tools/grade-writeback.js");
+    const result = CreateAssignmentInput.safeParse({
+      caller_identity: { userId: "inst-1", role: "instructor" },
+      courseId: "course-a",
+      title: "Essay 1",
+      dueDate: "next Friday",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("still treats dueDate as optional", async () => {
+    const { CreateAssignmentInput } = await import("../src/tools/grade-writeback.js");
+    const result = CreateAssignmentInput.safeParse({
+      caller_identity: { userId: "inst-1", role: "instructor" },
+      courseId: "course-a",
+      title: "Essay 1",
+    });
+    expect(result.success).toBe(true);
+  });
 });
 
 describe("grade write-back tools", () => {
@@ -144,6 +200,56 @@ describe("grade write-back tools", () => {
     );
     const parsed = parseToolText(result);
     expect(parsed.gradeColumn.name).toBe("Midterm");
+  });
+
+  it("create_grade_column forwards contentId to link an orphaned content item instead of creating a standalone column", async () => {
+    const { createGradeColumnHandler } =
+      await import("../src/tools/grade-writeback.js");
+
+    bbClientMock.post.mockResolvedValue({
+      data: {
+        id: "col2",
+        columnId: "col2",
+        name: "Essay 1",
+        pointsPossible: 50,
+        gradingType: "POINT",
+        contentId: "content-1",
+      },
+    });
+
+    const result = await createGradeColumnHandler({
+      caller_identity: { userId: "inst-1", role: "instructor" },
+      courseId: "course-a",
+      name: "Essay 1",
+      pointsPossible: 50,
+      contentId: "content-1",
+    });
+
+    expect(bbClientMock.post).toHaveBeenCalledWith(
+      "/courses/course-a/gradebook/columns",
+      expect.objectContaining({ name: "Essay 1", contentId: "content-1" }),
+    );
+    const parsed = parseToolText(result);
+    expect(parsed.gradeColumn.contentId).toBe("content-1");
+  });
+
+  it("create_grade_column omits contentId from the request when not provided", async () => {
+    const { createGradeColumnHandler } =
+      await import("../src/tools/grade-writeback.js");
+
+    bbClientMock.post.mockResolvedValue({
+      data: { id: "col1", columnId: "col1", name: "Midterm", pointsPossible: 100, gradingType: "POINT" },
+    });
+
+    await createGradeColumnHandler({
+      caller_identity: { userId: "inst-1", role: "instructor" },
+      courseId: "course-a",
+      name: "Midterm",
+      pointsPossible: 100,
+    });
+
+    const [, payload] = bbClientMock.post.mock.calls[0];
+    expect(payload).not.toHaveProperty("contentId");
   });
 
   it("update_grade updates an existing attempt when one is found", async () => {
@@ -385,5 +491,99 @@ describe("grade write-back tools", () => {
         columnId: "missing",
       }),
     ).rejects.toThrow("Grade column not found: missing");
+  });
+
+  it("every grade-writeback handler checks course entitlement before touching Blackboard, and a rejection blocks the call", async () => {
+    const {
+      createAssignmentHandler,
+      createGradeColumnHandler,
+      updateGradeHandler,
+      deleteGradeHandler,
+      exemptGradeHandler,
+      getGradeColumnHandler,
+    } = await import("../src/tools/grade-writeback.js");
+
+    const identity = { userId: "inst-1", role: "instructor" };
+    const cases: Array<[string, () => Promise<unknown>]> = [
+      [
+        "create_assignment",
+        () =>
+          createAssignmentHandler({
+            caller_identity: identity,
+            courseId: "course-a",
+            title: "Essay",
+            pointsPossible: 100,
+            available: true,
+          }),
+      ],
+      [
+        "create_grade_column",
+        () =>
+          createGradeColumnHandler({
+            caller_identity: identity,
+            courseId: "course-a",
+            name: "Quiz",
+            pointsPossible: 100,
+          }),
+      ],
+      [
+        "update_grade",
+        () =>
+          updateGradeHandler({
+            caller_identity: identity,
+            courseId: "course-a",
+            columnId: "col1",
+            userId: "student-1",
+          }),
+      ],
+      [
+        "delete_grade",
+        () =>
+          deleteGradeHandler({
+            caller_identity: identity,
+            courseId: "course-a",
+            columnId: "col1",
+            userId: "student-1",
+          }),
+      ],
+      [
+        "exempt_grade",
+        () =>
+          exemptGradeHandler({
+            caller_identity: identity,
+            courseId: "course-a",
+            columnId: "col1",
+            userId: "student-1",
+          }),
+      ],
+      [
+        "get_grade_column",
+        () =>
+          getGradeColumnHandler({
+            caller_identity: identity,
+            courseId: "course-a",
+            columnId: "col1",
+          }),
+      ],
+    ];
+
+    for (const [toolName, call] of cases) {
+      vi.clearAllMocks();
+      parseIdentityMock.mockImplementation((raw: unknown) => raw as any);
+      checkCourseEntitlementMock.mockRejectedValue(
+        new Error(`not entitled in course-a`),
+      );
+
+      await expect(call()).rejects.toThrow("not entitled in course-a");
+      expect(checkCourseEntitlementMock).toHaveBeenCalledWith(
+        expect.objectContaining({ toolName, courseId: "course-a" }),
+        bbClientMock,
+      );
+      // No Blackboard call of any kind should have happened once
+      // entitlement failed — not just the "write" methods.
+      for (const method of Object.values(bbClientMock)) {
+        expect(method).not.toHaveBeenCalled();
+      }
+    }
   });
 });

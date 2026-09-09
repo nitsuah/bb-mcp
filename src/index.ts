@@ -34,6 +34,7 @@ import {
   getOAuthSession,
   startAuthorizationCodeFlow,
 } from "./oauth.js";
+import { isAuthorizedMcpRequest } from "./mcp-auth.js";
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -618,6 +619,16 @@ function isTruthy(value: string | null): boolean {
 async function startHttpServer(): Promise<void> {
   const { config } = await import("./config.js");
 
+  if (!config.security.mcpApiKey) {
+    console.warn(
+      "WARNING: MCP_API_KEY is not set. The /mcp endpoint accepts requests " +
+        "from anyone who can reach this port with no credential check, and " +
+        "every tool call trusts whatever caller_identity (userId, role, " +
+        "ferpa_authorized) the request supplies. Set MCP_API_KEY before " +
+        "exposing this server beyond localhost.",
+    );
+  }
+
   // Per-session transports (stateful SSE / streamable HTTP)
   const transports = new Map<string, StreamableHTTPServerTransport>();
 
@@ -822,6 +833,18 @@ async function startHttpServer(): Promise<void> {
 
     // ── MCP endpoint ──
     if (url.pathname === "/mcp") {
+      if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: "unauthorized",
+            message:
+              "Missing or invalid Authorization: Bearer <MCP_API_KEY> header.",
+          }),
+        );
+        return;
+      }
+
       // GET → SSE stream for existing session
       if (req.method === "GET") {
         const sessionId = url.searchParams.get("sessionId");

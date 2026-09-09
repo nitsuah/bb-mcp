@@ -153,4 +153,120 @@ describe('local audit trail', () => {
     const { total } = getLocalAuditLogEntries({ limit: 5000 });
     expect(total).toBeLessThanOrEqual(1000);
   });
+
+  it('treats an epoch-instant startDate as a real boundary, not an absent one (regression)', async () => {
+    const { checkAuthorization, getLocalAuditLogEntries, __resetAuditLogForTests } =
+      await import('../src/auth.js');
+    __resetAuditLogForTests();
+
+    checkAuthorization({
+      identity: { userId: 'student-1', role: 'student' },
+      toolName: 'get_my_courses',
+    });
+
+    // Date.parse('1970-01-01T00:00:00.000Z') === 0, which a truthy check on
+    // startMs would treat the same as "no startDate provided", silently
+    // disabling the filter rather than applying it. It should still filter.
+    const { entries } = getLocalAuditLogEntries({
+      startDate: '1970-01-01T00:00:00.000Z',
+    });
+    expect(entries).toHaveLength(1);
+  });
+
+  it('rejects an unparseable startDate/endDate instead of silently ignoring it', async () => {
+    const { getLocalAuditLogEntries, __resetAuditLogForTests } =
+      await import('../src/auth.js');
+    __resetAuditLogForTests();
+
+    expect(() => getLocalAuditLogEntries({ startDate: 'not-a-date' })).toThrow(
+      /Invalid startDate/,
+    );
+    expect(() => getLocalAuditLogEntries({ endDate: 'also-not-a-date' })).toThrow(
+      /Invalid endDate/,
+    );
+  });
+});
+
+describe('checkCourseEntitlement (IDOR guard, CWE-639)', () => {
+  it('allows an instructor who is actually enrolled in the course as Instructor', async () => {
+    const { checkCourseEntitlement } = await import('../src/auth.js');
+    const client = {
+      getCourseMembership: vi.fn().mockResolvedValue({ userId: 'inst-1', courseRoleId: 'Instructor' }),
+    };
+
+    await expect(
+      checkCourseEntitlement(
+        { identity: { userId: 'inst-1', role: 'instructor' }, toolName: 'update_grade', courseId: 'course-a' },
+        client,
+      ),
+    ).resolves.toBeUndefined();
+    expect(client.getCourseMembership).toHaveBeenCalledWith('course-a', 'inst-1');
+  });
+
+  it('allows a TeachingAssistant or CourseBuilder, not just Instructor', async () => {
+    const { checkCourseEntitlement } = await import('../src/auth.js');
+    for (const courseRoleId of ['TeachingAssistant', 'CourseBuilder']) {
+      const client = {
+        getCourseMembership: vi.fn().mockResolvedValue({ userId: 'inst-1', courseRoleId }),
+      };
+      await expect(
+        checkCourseEntitlement(
+          { identity: { userId: 'inst-1', role: 'instructor' }, toolName: 'update_grade', courseId: 'course-a' },
+          client,
+        ),
+      ).resolves.toBeUndefined();
+    }
+  });
+
+  it('rejects an instructor who is not enrolled in the target course at all (IDOR)', async () => {
+    const { AuthorizationError, checkCourseEntitlement } = await import('../src/auth.js');
+    const client = { getCourseMembership: vi.fn().mockResolvedValue(null) };
+
+    await expect(
+      checkCourseEntitlement(
+        { identity: { userId: 'inst-1', role: 'instructor' }, toolName: 'update_grade', courseId: 'course-not-mine' },
+        client,
+      ),
+    ).rejects.toThrow(AuthorizationError);
+  });
+
+  it('rejects an instructor enrolled in the course only as Student', async () => {
+    const { AuthorizationError, checkCourseEntitlement } = await import('../src/auth.js');
+    const client = {
+      getCourseMembership: vi.fn().mockResolvedValue({ userId: 'inst-1', courseRoleId: 'Student' }),
+    };
+
+    await expect(
+      checkCourseEntitlement(
+        { identity: { userId: 'inst-1', role: 'instructor' }, toolName: 'update_grade', courseId: 'course-a' },
+        client,
+      ),
+    ).rejects.toThrow(AuthorizationError);
+  });
+
+  it('bypasses the course-membership lookup entirely for role=admin', async () => {
+    const { checkCourseEntitlement } = await import('../src/auth.js');
+    const client = { getCourseMembership: vi.fn() };
+
+    await expect(
+      checkCourseEntitlement(
+        { identity: { userId: 'admin-1', role: 'admin' }, toolName: 'update_grade', courseId: 'any-course' },
+        client,
+      ),
+    ).resolves.toBeUndefined();
+    expect(client.getCourseMembership).not.toHaveBeenCalled();
+  });
+
+  it('rejects when no courseId is present on the auth context', async () => {
+    const { AuthorizationError, checkCourseEntitlement } = await import('../src/auth.js');
+    const client = { getCourseMembership: vi.fn() };
+
+    await expect(
+      checkCourseEntitlement(
+        { identity: { userId: 'inst-1', role: 'instructor' }, toolName: 'update_grade' },
+        client,
+      ),
+    ).rejects.toThrow(AuthorizationError);
+    expect(client.getCourseMembership).not.toHaveBeenCalled();
+  });
 });

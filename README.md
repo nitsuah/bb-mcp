@@ -184,6 +184,7 @@ Copy `.env.example` to `.env` and set:
 | `PORT` | — | HTTP port (default `3100`) |
 | `LOG_LEVEL` | — | `info` or `debug` (default `info`) |
 | `PUBLIC_BASE_URL` | — | Publicly reachable base URL of this server (e.g. `https://mcp.example.com`); used in manifest generation and as the OAuth redirect base; defaults to `http://localhost:<PORT>` |
+| `MCP_API_KEY` | Strongly recommended beyond localhost | Shared secret required as `Authorization: Bearer <MCP_API_KEY>` on every `/mcp` request. Without it, anyone who can reach the port can call any tool with any `caller_identity` — see [Identity & access control](#identity--access-control). The server logs a startup warning when unset. |
 | `METRICS_PUSH_URL` | — | Prometheus push gateway URL (optional) |
 | `RESTRICTED_TOOLS` | — | Comma-separated tool names requiring FERPA auth (default: `get_at_risk_students,get_grade_distribution,get_submission_status,get_grades,list_users,get_user,list_enrollments,list_audit_logs`) |
 | `RATE_LIMIT_STUDENT_PER_MINUTE` | — | Max tool calls per minute for student role (default `60`) |
@@ -315,14 +316,17 @@ All require admin role. This is subscription *registration* only — receiving i
 
 ## Identity & access control
 
-The auth layer enforces four things before any Blackboard API call is made:
+**Transport gate (`MCP_API_KEY`)** — the `/mcp` endpoint itself has no other credential check, so without `MCP_API_KEY` configured, anyone who can reach the port can call any tool asserting any `caller_identity`. Set it in production; the server warns on startup if it's unset. See [Configuration](#configuration).
 
-1. **`caller_identity` is required** on every tool call — the client asserts who is asking
+Once past the transport gate, the auth layer enforces the following before any Blackboard API call is made:
+
+1. **`caller_identity` is required** on every tool call — the client asserts who is asking. This identity is trusted at face value (bb-mcp does not itself verify end-user identity); `MCP_API_KEY` establishes that the *client* is one the operator issued a key to, not that the claimed `userId`/`role` is truthful — the calling application (e.g. agent-board) is responsible for that.
 2. **Rate gate** — per-role, per-minute call limits prevent bulk data extraction; 429 responses include a retry-after interval
 3. **Role gate** — instructor-only tools reject `role: "student"` callers
 4. **FERPA gate** — tools that access protected student data require `ferpa_authorized: true`; this covers the instructor at-risk/grade/submission tools and the full admin directory surface (`list_users`, `get_user`, `list_enrollments`, `list_audit_logs`)
+5. **Course entitlement gate** — the grade write-back tools (`create_assignment`, `create_grade_column`, `update_grade`, `delete_grade`, `exempt_grade`, `get_grade_column`) additionally verify the caller is enrolled in the target `courseId` as Instructor, TeachingAssistant, or CourseBuilder — role=instructor alone does not authorize writing grades in an arbitrary course. `role: "admin"` bypasses this course-scoped check (already trusted org-wide).
 
-Every access attempt (granted or denied) is written to stdout as structured JSON, and kept in a bounded in-memory ring buffer that's also queryable directly through the `list_audit_logs` admin tool. User identifiers are SHA-256 hashed before emission or storage; raw user IDs are never written to logs or returned from `list_audit_logs`.
+Every access attempt (granted or denied) is written to stdout as structured JSON, and kept in a bounded in-memory ring buffer — bb-mcp's own **local audit trail**. User identifiers in this local trail are SHA-256 hashed before emission or storage; raw user IDs are never written to bb-mcp's own logs or returned in the `localAuditTrail` portion of `list_audit_logs`'s response. This hashing does *not* apply to the separate `logs` field in that same response, which passes through the Blackboard instance's own `/audit/logs` entries (when available) unmodified, including whatever raw user identifiers Blackboard itself records — the same identifiers an admin caller can already resolve directly via `get_user`/`list_users` under the same role+FERPA gate, so this is consistent with, not a bypass of, that authorization boundary.
 
 On top of the audit-log scrubbing above, every tool response is separately scrubbed before it reaches the MCP client — `src/output-scrub.ts` strips email addresses (by field name and by pattern) out of the actual `get_my_grades` / `list_roster` / `list_users` / etc. payloads, applied centrally via `withMetrics()` so no individual tool can skip it.
 

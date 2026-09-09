@@ -6,7 +6,11 @@
 import { z } from "zod";
 import { bbClient } from "../bb-client.js";
 import type { BbAttemptUpdatePayload } from "../bb-client.js";
-import { checkAuthorization, parseIdentity } from "../auth.js";
+import {
+  checkAuthorization,
+  checkCourseEntitlement,
+  parseIdentity,
+} from "../auth.js";
 import { withMetrics } from "../metrics.js";
 import type { BbAttempt } from "../types.js";
 
@@ -47,7 +51,10 @@ export const CreateAssignmentInput = z.object({
   title: z.string().min(1).max(255),
   instructions: z.string().optional(),
   pointsPossible: z.number().int().min(0).default(100),
-  dueDate: z.string().optional().describe("ISO 8601 due date/time (optional)"),
+  dueDate: z.iso
+    .datetime({ offset: true })
+    .optional()
+    .describe("ISO 8601 due date/time (optional)"),
   parentContentId: z
     .string()
     .optional()
@@ -61,11 +68,13 @@ export const createAssignmentHandler = withMetrics(
   "create_assignment",
   async (args: z.infer<typeof CreateAssignmentInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "create_assignment",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    await checkCourseEntitlement(authCtx, bbClient);
 
     const contentBase = `/courses/${encodeURIComponent(args.courseId)}/contents`;
     const contentUrl = args.parentContentId
@@ -104,7 +113,7 @@ export const createAssignmentHandler = withMetrics(
         `Assignment content item "${args.title}" (contentId=${contentRes.data.id}) was created, ` +
           `but creating its linked grade column failed: ${message}. ` +
           "The content item exists in Blackboard without a grade column — " +
-          "retry with create_grade_column, passing contentId manually if the API supports it, or delete the orphaned content item.",
+          `retry with create_grade_column, passing contentId="${contentRes.data.id}" to link it to this content item instead of creating a standalone column, or delete the orphaned content item.`,
         { cause: error },
       );
     }
@@ -181,17 +190,25 @@ export const CreateGradeColumnInput = z.object({
   name: z.string(),
   description: z.string().optional(),
   pointsPossible: z.number().int().min(0).default(100),
+  contentId: z
+    .string()
+    .optional()
+    .describe(
+      "Links this column to an existing content item instead of creating a standalone one. Pass the contentId reported by create_assignment when its own grade-column step failed, to recover without orphaning the content item.",
+    ),
 });
 
 export const createGradeColumnHandler = withMetrics(
   "create_grade_column",
   async (args: z.infer<typeof CreateGradeColumnInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "create_grade_column",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    await checkCourseEntitlement(authCtx, bbClient);
 
     const res = await bbClient.post<BbGradeColumn>(
       `/courses/${encodeURIComponent(args.courseId)}/gradebook/columns`,
@@ -200,6 +217,7 @@ export const createGradeColumnHandler = withMetrics(
         description: args.description,
         pointsPossible: args.pointsPossible,
         gradingType: "POINT",
+        ...(args.contentId ? { contentId: args.contentId } : {}),
       },
     );
 
@@ -217,6 +235,7 @@ export const createGradeColumnHandler = withMetrics(
                 pointsPossible: res.data.pointsPossible,
                 weight: res.data.weight,
                 gradingType: res.data.gradingType,
+                contentId: res.data.contentId ?? args.contentId ?? null,
               },
             },
             null,
@@ -248,6 +267,11 @@ export const createGradeColumnSchema = {
         default: 100,
         min: 0,
       },
+      contentId: {
+        type: "string",
+        description:
+          "Links this column to an existing content item instead of creating a standalone one. Pass the contentId reported by create_assignment when its own grade-column step failed, to recover without orphaning the content item.",
+      },
     },
     required: ["caller_identity", "courseId", "name"],
   },
@@ -271,11 +295,13 @@ export const updateGradeHandler = withMetrics(
   "update_grade",
   async (args: z.infer<typeof UpdateGradeInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "update_grade",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    await checkCourseEntitlement(authCtx, bbClient);
 
     // First, check if there's an existing attempt for this user and column.
     // Lookup failures are propagated rather than swallowed: falling through
@@ -385,11 +411,13 @@ export const deleteGradeHandler = withMetrics(
   "delete_grade",
   async (args: z.infer<typeof DeleteGradeInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "delete_grade",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    await checkCourseEntitlement(authCtx, bbClient);
 
     // Resolve the attempt ID for this user/column before deleting — a
     // Blackboard user ID is not an attempt ID, and deleteAttempt requires
@@ -454,11 +482,13 @@ export const exemptGradeHandler = withMetrics(
   "exempt_grade",
   async (args: z.infer<typeof ExemptGradeInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "exempt_grade",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    await checkCourseEntitlement(authCtx, bbClient);
 
     // Resolve the attempt ID for this user/column before exempting — a
     // Blackboard user ID is not an attempt ID, and updateAttempt requires
@@ -524,11 +554,13 @@ export const getGradeColumnHandler = withMetrics(
   "get_grade_column",
   async (args: z.infer<typeof GetGradeColumnInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "get_grade_column",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    await checkCourseEntitlement(authCtx, bbClient);
 
     // Get all grade columns and find the specific one
     const columns = await bbClient.getAssignments(args.courseId);

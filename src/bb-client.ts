@@ -239,6 +239,35 @@ export class BlackboardClient {
     return res.data;
   }
 
+  /**
+   * Single-record course-membership lookup, used to verify a caller claiming
+   * role=instructor is actually entitled in a specific course before any
+   * grade-writeback call (see auth.ts's checkCourseEntitlement) — distinct
+   * from getEnrolledUsers, which pages the whole roster and is unsuited to a
+   * per-request authorization check. Returns null (not enrolled) rather than
+   * throwing on a 404, since "not a member of this course" is an expected,
+   * non-exceptional outcome here.
+   */
+  async getCourseMembership(
+    courseId: string,
+    userId: string,
+  ): Promise<{ userId: string; courseRoleId: string } | null> {
+    try {
+      const res = await this.http.get<{
+        userId: string;
+        courseRoleId: string;
+      }>(`/courses/${courseId}/users/${userId}`, {
+        params: { fields: "userId,courseRoleId" },
+      });
+      return res.data;
+    } catch (error) {
+      if (error instanceof BbApiError && error.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
   // ── Discussion Boards ────────────────────────────────────────────────────
 
   async getDiscussionPosts(

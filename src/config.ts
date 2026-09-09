@@ -37,21 +37,40 @@ export const config = {
     pushUrl: process.env.METRICS_PUSH_URL ?? null,
   },
   security: {
-    restrictedTools: (
-      process.env.RESTRICTED_TOOLS ??
-      // Any tool that returns another person's PII (names, IDs, emails,
-      // grades) requires an explicit ferpa_authorized=true assertion from
-      // the calling client, on top of the role check. The admin-surface
-      // tools below were previously gated on role=admin alone, which meant
-      // a compromised or misconfigured admin-role client could pull the
-      // full user/enrollment/audit directory with no FERPA gate at all —
-      // closed as part of the 2026-09 audit logging hardening pass.
-      "get_at_risk_students,get_grade_distribution,get_submission_status,get_grades," +
-        "list_users,get_user,list_enrollments,list_audit_logs"
-    )
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean),
+    // Shared secret required on the /mcp transport (Authorization: Bearer
+    // <key>) before any session is created. Without this, the entire
+    // caller_identity model (role, ferpa_authorized) is only as trustworthy
+    // as "whatever the HTTP request claims" — anyone who can reach the port
+    // can assert any role/identity, since bb-mcp's own auth model
+    // deliberately delegates end-user verification to the calling client
+    // (see auth.ts's module docstring). Optional (null when unset) rather
+    // than required so existing local/dev deployments aren't broken by this
+    // gate's introduction, but strongly recommended for anything reachable
+    // beyond localhost — startHttpServer logs a warning when it's unset.
+    mcpApiKey: process.env.MCP_API_KEY ?? null,
+    // Any tool that returns another person's PII (names, IDs, emails,
+    // grades) requires an explicit ferpa_authorized=true assertion from the
+    // calling client, on top of the role check. This set is mandatory and
+    // non-overridable: RESTRICTED_TOOLS only ever *adds* to it. Letting an
+    // env override fully replace this list would let a misconfigured
+    // deployment silently drop the FERPA gate from any tool omitted here —
+    // closed as part of the 2026-09 audit logging hardening pass.
+    restrictedTools: Array.from(
+      new Set([
+        "get_at_risk_students",
+        "get_grade_distribution",
+        "get_submission_status",
+        "get_grades",
+        "list_users",
+        "get_user",
+        "list_enrollments",
+        "list_audit_logs",
+        ...(process.env.RESTRICTED_TOOLS ?? "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ]),
+    ),
     rateLimitPerMinute: {
       student: parseInt(process.env.RATE_LIMIT_STUDENT_PER_MINUTE ?? "60", 10),
       instructor: parseInt(
