@@ -16,11 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tool-output PII scrubbing (`src/output-scrub.ts`): every MCP tool response is scrubbed of email addresses (by field name and embedded pattern) before it leaves the server, applied centrally via `withMetrics()`.
 - Local access-audit trail (`src/auth.ts`): bounded in-memory ring buffer of `access.granted`/`access.denied` events, queryable via the `list_audit_logs` admin tool as `localAuditTrail` — independent of whether the upstream Blackboard instance has its own audit endpoint enabled.
 - `.gitattributes` pinning text files to LF line endings.
+- Per-request lifecycle tracing (`src/trace.ts`): every tool call now emits a structured trace entry (request ID, latency, upstream Blackboard call count, error flag) to stdout and a local 1000-entry ring buffer, wired centrally through `withMetrics()`.
 
 ### Changed
 
 - `RESTRICTED_TOOLS` (FERPA gate) now includes `list_users`, `get_user`, `list_enrollments`, and `list_audit_logs` by default, on top of the existing instructor tools — these admin-surface tools previously required only role=admin.
 - `.github/dependabot.yml`: group minor/patch npm updates and GitHub Actions updates instead of opening one PR per bump.
+- `src/bb-client.ts`: Blackboard REST failures are now categorized (`BbApiError.category`) and prefixed with a clear, actionable message instead of surfacing Blackboard's often-bare error body as-is.
 
 ### Deprecated
 

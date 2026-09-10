@@ -10,6 +10,7 @@
 
 import axios, { AxiosInstance, AxiosError } from "axios";
 import { config } from "./config.js";
+import { noteUpstreamCall } from "./trace.js";
 import type {
   BbCourse,
   BbAssignment,
@@ -29,11 +30,75 @@ export interface BbAttemptUpdatePayload {
   status?: string;
 }
 
-class BbApiError extends Error {
+/**
+ * Coarse-grained classification of a Blackboard REST failure, derived from
+ * the HTTP status code. Lets callers (and tests) branch on failure kind
+ * without parsing the mapped message string.
+ */
+export type BbErrorCategory =
+  | "invalid_request"
+  | "authentication"
+  | "forbidden"
+  | "not_found"
+  | "conflict"
+  | "rate_limited"
+  | "server_error"
+  | "network_error"
+  | "unknown";
+
+function categorizeBbStatus(status: number): BbErrorCategory {
+  if (status === 0) return "network_error";
+  if (status === 400 || status === 422) return "invalid_request";
+  if (status === 401) return "authentication";
+  if (status === 403) return "forbidden";
+  if (status === 404) return "not_found";
+  if (status === 409) return "conflict";
+  if (status === 429) return "rate_limited";
+  if (status >= 500) return "server_error";
+  return "unknown";
+}
+
+const BB_ERROR_CATEGORY_PREFIX: Record<BbErrorCategory, string> = {
+  invalid_request: "Blackboard rejected this request as invalid",
+  authentication:
+    "Blackboard authentication failed — check BB_CLIENT_ID/BB_CLIENT_SECRET or that the cached OAuth token hasn't been revoked",
+  forbidden: "Blackboard denied this request",
+  not_found: "Blackboard could not find the requested resource",
+  conflict:
+    "Blackboard rejected this request due to a conflict with existing data",
+  rate_limited:
+    "Blackboard rate-limited this request — retry after a short delay",
+  server_error: "Blackboard is experiencing a server-side error",
+  network_error:
+    "Could not reach Blackboard (network error, DNS failure, or timeout)",
+  unknown: "Blackboard API error",
+};
+
+/**
+ * Builds a clear, categorized message on top of whatever raw detail
+ * Blackboard (or axios, for a transport-level failure) supplied — raw
+ * Blackboard REST errors are often a bare `{ message: "..." }` with no
+ * indication of what kind of failure occurred or whether retrying makes
+ * sense. The original detail is preserved (not replaced) so nothing useful
+ * is lost, just given context.
+ */
+function mapBbErrorMessage(
+  status: number,
+  category: BbErrorCategory,
+  rawDetail: string,
+): string {
+  const prefix = BB_ERROR_CATEGORY_PREFIX[category];
+  return status > 0
+    ? `${prefix} (HTTP ${status}): ${rawDetail}`
+    : `${prefix}: ${rawDetail}`;
+}
+
+export class BbApiError extends Error {
   constructor(
     message: string,
     public status: number,
     public data?: unknown,
+    public category: BbErrorCategory = "unknown",
   ) {
     super(message);
     this.name = "BbApiError";
@@ -51,24 +116,34 @@ export class BlackboardClient {
       headers: { "Content-Type": "application/json" },
     });
 
-    // Inject auth token on every request
+    // Inject auth token on every request, and count it against the current
+    // tool call's trace (see trace.ts) for per-request lifecycle tracing —
+    // a no-op outside an active traced tool call.
     this.http.interceptors.request.use(async (req) => {
       const token = await this.getAccessToken();
       req.headers.Authorization = `Bearer ${token}`;
+      noteUpstreamCall();
       return req;
     });
 
-    // Map Blackboard API errors to BbApiError
+    // Map Blackboard API errors to BbApiError with a clear, categorized
+    // message — see mapBbErrorMessage above.
     this.http.interceptors.response.use(
       (r) => r,
       (err: AxiosError) => {
         const status = err.response?.status ?? 0;
         const data = err.response?.data;
-        const msg =
+        const rawDetail =
           (data as Record<string, string> | undefined)?.message ??
           err.message ??
           "Blackboard API error";
-        throw new BbApiError(msg, status, data);
+        const category = categorizeBbStatus(status);
+        throw new BbApiError(
+          mapBbErrorMessage(status, category, rawDetail),
+          status,
+          data,
+          category,
+        );
       },
     );
   }

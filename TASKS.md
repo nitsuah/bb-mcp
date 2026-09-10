@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-09-09
+Last Updated: 2026-09-10
 
 ## Done
 
@@ -53,6 +53,16 @@ Last Updated: 2026-09-09
   - `list_users`, `get_user`, `list_enrollments`, and `list_audit_logs` now require `ferpa_authorized: true` by default (`src/config.ts` `RESTRICTED_TOOLS`) — previously only role=admin gated these, meaning the full user/enrollment/audit directory was reachable without the FERPA assertion required of every other PII-bearing tool.
   - Tests in `tests/auth-privacy.test.ts` (local trail recording, filtering, bounded growth, FERPA gate coverage) and `tests/tools-admin.test.ts` (local trail surfaced through `list_audit_logs`).
 
+- [x] **Improve Blackboard error mapping** (2026-09-10).
+  - `src/bb-client.ts` now categorizes every Blackboard REST failure (`categorizeBbStatus`) into one of `invalid_request` / `authentication` / `forbidden` / `not_found` / `conflict` / `rate_limited` / `server_error` / `network_error` / `unknown`, and prefixes the original raw error detail with a clear, actionable message per category (`mapBbErrorMessage`) instead of surfacing Blackboard's often-bare `{ message: "..." }` as-is. `BbApiError` now exposes `category` so callers/tests can branch on failure kind without parsing the message string, and is exported for that purpose.
+  - Tests in `tests/bb-client.test.ts` cover each category's classification and message prefix.
+
+- [x] **Add per-request lifecycle tracing** (2026-09-10).
+  - New `src/trace.ts`: `withTrace()` wraps a tool call in an `AsyncLocalStorage` scope, recording a structured trace entry (request ID, ISO timestamp, latency, upstream Blackboard call count, error flag) to stdout as JSON on settle, plus a bounded (1000-entry) in-memory ring buffer readable via `getLocalTraceEntries()`.
+  - Wired into `withMetrics()` (`src/metrics.ts`) — the same central choke point already used for aggregate metrics and PII output-scrubbing — so every tool handler in `src/tools/*.ts` gets tracing automatically with no per-tool-file changes.
+  - `src/bb-client.ts`'s request interceptor calls `noteUpstreamCall()` on every outgoing Blackboard HTTP call, so each trace entry's `upstreamCalls` reflects how many upstream calls that tool invocation actually made; a no-op outside an active traced scope (server startup, CLI `--probe`/`--doctor`).
+  - Tests in `tests/trace.test.ts` cover success/error paths, concurrent-scope isolation (`AsyncLocalStorage` correctness), the no-op-outside-scope case, and ring-buffer capping.
+
 ## In Progress
 
 - [/] Pass MCP Inspector with stdio transport.
@@ -72,16 +82,6 @@ Last Updated: 2026-09-09
   - Acceptance Criteria: a request's `caller_identity` claims are checked against some server-verifiable proof of the actual end user, not accepted as-is from the request body.
 
 - [ ] Add JSON schemas for all shipped tool inputs.
-
-- [ ] Improve Blackboard error mapping.
-  - Priority: P2
-  - Context: raw Blackboard REST errors are not yet translated into usable user messages.
-  - Acceptance Criteria: common REST failures map to clear server responses.
-
-- [ ] Add per-request lifecycle tracing.
-  - Priority: P2
-  - Context: Prometheus tool-call metrics exist but per-request lifecycle tracing (request ID, latency breakdown, upstream call count) is missing.
-  - Acceptance Criteria: each tool call emits a structured trace entry; latency breakdown is visible.
 
 ### P3 - Exploratory
 

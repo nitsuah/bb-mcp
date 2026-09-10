@@ -114,11 +114,76 @@ describe('BlackboardClient', () => {
       });
       throw new Error('Expected interceptor to throw');
     } catch (err) {
-      const e = err as { name: string; message: string; status: number; data: unknown };
+      const e = err as {
+        name: string;
+        message: string;
+        status: number;
+        data: unknown;
+        category: string;
+      };
       expect(e.name).toBe('BbApiError');
       expect(e.message).toContain('Forbidden by Blackboard policy');
+      expect(e.message).toContain('Blackboard denied this request');
       expect(e.status).toBe(403);
+      expect(e.category).toBe('forbidden');
       expect(e.data).toEqual({ message: 'Forbidden by Blackboard policy' });
+    }
+  });
+
+  it('categorizes Blackboard errors by status code with a clear message prefix', async () => {
+    const { BlackboardClient } = await import('../src/bb-client.js');
+    new BlackboardClient();
+
+    const cases: Array<{
+      status: number;
+      expectedCategory: string;
+      expectedPrefix: string;
+    }> = [
+      { status: 400, expectedCategory: 'invalid_request', expectedPrefix: 'rejected this request as invalid' },
+      { status: 401, expectedCategory: 'authentication', expectedPrefix: 'authentication failed' },
+      { status: 403, expectedCategory: 'forbidden', expectedPrefix: 'denied this request' },
+      { status: 404, expectedCategory: 'not_found', expectedPrefix: 'could not find the requested resource' },
+      { status: 409, expectedCategory: 'conflict', expectedPrefix: 'conflict with existing data' },
+      { status: 422, expectedCategory: 'invalid_request', expectedPrefix: 'rejected this request as invalid' },
+      { status: 429, expectedCategory: 'rate_limited', expectedPrefix: 'rate-limited this request' },
+      { status: 500, expectedCategory: 'server_error', expectedPrefix: 'server-side error' },
+      { status: 503, expectedCategory: 'server_error', expectedPrefix: 'server-side error' },
+    ];
+
+    for (const { status, expectedCategory, expectedPrefix } of cases) {
+      try {
+        responseRejectedInterceptor?.({
+          response: { status, data: { message: `detail-${status}` } },
+          message: `Request failed with status code ${status}`,
+        });
+        throw new Error('Expected interceptor to throw');
+      } catch (err) {
+        const e = err as { message: string; status: number; category: string };
+        expect(e.status).toBe(status);
+        expect(e.category).toBe(expectedCategory);
+        expect(e.message).toContain(expectedPrefix);
+        expect(e.message).toContain(`detail-${status}`);
+        expect(e.message).toContain(`HTTP ${status}`);
+      }
+    }
+  });
+
+  it('categorizes network/timeout failures (no response) without an HTTP status', async () => {
+    const { BlackboardClient } = await import('../src/bb-client.js');
+    new BlackboardClient();
+
+    try {
+      responseRejectedInterceptor?.({
+        message: 'timeout of 15000ms exceeded',
+      });
+      throw new Error('Expected interceptor to throw');
+    } catch (err) {
+      const e = err as { message: string; status: number; category: string };
+      expect(e.status).toBe(0);
+      expect(e.category).toBe('network_error');
+      expect(e.message).toContain('Could not reach Blackboard');
+      expect(e.message).toContain('timeout of 15000ms exceeded');
+      expect(e.message).not.toContain('HTTP');
     }
   });
 
