@@ -204,6 +204,45 @@ describe("student tools", () => {
     expect(parsed.studentComments).toBe("My draft");
   });
 
+  it("get_assignment_feedback scrubs an email accidentally embedded in free-text fields", async () => {
+    const { getAssignmentFeedbackHandler } = await import(
+      "../src/tools/student.js"
+    );
+
+    bbClientMock.getGrades.mockResolvedValue([
+      {
+        columnId: "col1",
+        score: 92,
+        status: "GRADED",
+        feedback: "Nice work, reach out at ta.jordan@example.edu if stuck",
+        instructor_notes: "cc dept.chair@example.edu",
+        attempt: {
+          studentComments: "My draft",
+          feedback: "email me at prof@example.edu",
+        },
+      },
+    ]);
+
+    const result = await getAssignmentFeedbackHandler({
+      caller_identity: { userId: "u1", role: "student" },
+      courseId: "course-a",
+      columnId: "col1",
+    });
+
+    // Whole-payload check: no raw email survives anywhere in the response.
+    expect(result.content[0].text).not.toMatch(/[\w.-]+@example\.edu/);
+
+    const parsed = parseToolText(result);
+    expect(parsed.feedback).toBe(
+      "Nice work, reach out at [redacted-email] if stuck",
+    );
+    expect(parsed.instructorNotes).toBe("cc [redacted-email]");
+    expect(parsed.attemptFeedback).toBe("email me at [redacted-email]");
+    // The score itself — the actual purpose of the tool — is untouched.
+    expect(parsed.score).toBe(92);
+    expect(parsed.studentComments).toBe("My draft");
+  });
+
   it("get_announcements maps creator username fallback", async () => {
     const { getAnnouncementsHandler } = await import("../src/tools/student.js");
 

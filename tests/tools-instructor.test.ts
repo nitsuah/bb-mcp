@@ -61,6 +61,60 @@ describe("instructor tools", () => {
     expect(parsed.users[1].name).toBeNull();
   });
 
+  it("list_roster scrubs raw email addresses out of the response payload", async () => {
+    const { listRosterHandler } = await import("../src/tools/instructor.js");
+
+    bbClientMock.getEnrolledUsers.mockResolvedValue([
+      {
+        id: "u1",
+        userName: "alice",
+        name: { given: "Alice", family: "Doe" },
+        emailAddress: "alice@example.edu",
+      },
+    ]);
+
+    const result = await listRosterHandler({
+      caller_identity: { userId: "inst-1", role: "instructor" },
+      courseId: "course-a",
+    });
+
+    // Asserts the actual serialized payload the MCP client receives — not
+    // just that some scrubber function was invoked.
+    expect(result.content[0].text).not.toContain("alice@example.edu");
+    const parsed = parseToolText(result);
+    expect(parsed.users[0].emailAddress).toBe("[redacted-email]");
+    // Names remain — RBAC + FERPA already gated this response to an
+    // authorized instructor, and the roster tool is useless without them.
+    expect(parsed.users[0].name).toBe("Alice Doe");
+  });
+
+  it("get_assignment_feedback-style free text (feedback/instructorNotes) has embedded PII scrubbed", async () => {
+    const { getGradesHandler } = await import("../src/tools/instructor.js");
+
+    bbClientMock.getEnrolledUsers.mockResolvedValue([
+      { id: "u1", userName: "alice", name: { given: "Alice", family: "Doe" } },
+    ]);
+    bbClientMock.getColumnGrades.mockResolvedValue([
+      {
+        userId: "u1",
+        score: 88,
+        feedback: "Great work — email me at prof.smith@example.edu with questions",
+      },
+    ]);
+
+    const result = await getGradesHandler({
+      caller_identity: { userId: "inst-1", role: "instructor" },
+      courseId: "course-a",
+      columnId: "col1",
+    });
+
+    expect(result.content[0].text).not.toContain("prof.smith@example.edu");
+    const parsed = parseToolText(result);
+    expect(parsed.grades[0].feedback).toContain("[redacted-email]");
+    // The actual grade — the point of the tool — is untouched.
+    expect(parsed.grades[0].score).toBe(88);
+  });
+
   it("get_grades supports column-only query path", async () => {
     const { getGradesHandler } = await import("../src/tools/instructor.js");
 

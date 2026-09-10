@@ -15,7 +15,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "crypto";
+import { readFileSync } from "fs";
 import http from "http";
+import https from "https";
 import { getMetricsText, getMetricsSummary, pushMetrics } from "./metrics.js";
 import { buildProviderManifest } from "./manifest.js";
 import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
@@ -34,6 +36,11 @@ import {
   getOAuthSession,
   startAuthorizationCodeFlow,
 } from "./oauth.js";
+import {
+  assertSafeMcpAuthConfig,
+  isAuthorizedMcpRequest,
+  resolveListenHost,
+} from "./mcp-auth.js";
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -140,6 +147,9 @@ import {
 } from "./tools/parent.js";
 
 import {
+  CreateAssignmentInput,
+  createAssignmentHandler,
+  createAssignmentSchema,
   CreateGradeColumnInput,
   createGradeColumnHandler,
   createGradeColumnSchema,
@@ -440,6 +450,15 @@ const TOOL_REGISTRATIONS: ToolRegistration[] = [
 
   // Grade write-back tools
   {
+    name: createAssignmentSchema.name,
+    description: createAssignmentSchema.description,
+    inputSchema: CreateAssignmentInput.shape,
+    handler: (args: unknown) =>
+      createAssignmentHandler(
+        args as Parameters<typeof createAssignmentHandler>[0],
+      ),
+  },
+  {
     name: createGradeColumnSchema.name,
     description: createGradeColumnSchema.description,
     inputSchema: CreateGradeColumnInput.shape,
@@ -606,10 +625,57 @@ function isTruthy(value: string | null): boolean {
 async function startHttpServer(): Promise<void> {
   const { config } = await import("./config.js");
 
+  const tlsConfigured = Boolean(
+    config.server.tls.certPath && config.server.tls.keyPath,
+  );
+
+  // TRUST_PROXY_TLS isn't just an assertion — it forces the actual listen
+  // host to loopback, since a configured HOST would otherwise remain a
+  // second, unprotected path straight to this plain-HTTP listener. Only a
+  // proxy sharing this process's network namespace can reach a loopback
+  // bind, which is what makes the "trust" meaningful.
+  const listenHost = resolveListenHost(
+    config.server.host,
+    config.server.trustProxyTls,
+  );
+  if (config.server.trustProxyTls && listenHost !== config.server.host) {
+    console.warn(
+      `TRUST_PROXY_TLS=true overrides HOST ("${config.server.host}") — ` +
+        `this server will bind to loopback ("${listenHost}") instead, so ` +
+        "only a reverse proxy sharing this process's network namespace " +
+        "(same container, Docker's network_mode: service:<name>, a " +
+        "Kubernetes sidecar, etc.) can reach it.",
+    );
+  }
+
+  // Fail closed: refuses to start rather than silently serving an
+  // unauthenticated /mcp endpoint, or serving a real MCP_API_KEY over
+  // plain HTTP, on a network-reachable host (CWE-306, CWE-319). Only a
+  // server actually listening on loopback may skip both — nothing outside
+  // the machine (or outside a trusted proxy's shared network namespace,
+  // once TRUST_PROXY_TLS has forced the bind above) can reach it there.
+  assertSafeMcpAuthConfig({
+    host: listenHost,
+    mcpApiKey: config.security.mcpApiKey,
+    tlsConfigured,
+  });
+
+  if (!config.security.mcpApiKey) {
+    console.warn(
+      "WARNING: MCP_API_KEY is not set. This is only safe because this " +
+        `server is listening on loopback ("${listenHost}"); on any other ` +
+        "host this server refuses to start without a key. The /mcp " +
+        "endpoint accepts requests from anyone who can reach this port " +
+        "with no credential check, and every tool call trusts whatever " +
+        "caller_identity (userId, role, ferpa_authorized) the request " +
+        "supplies.",
+    );
+  }
+
   // Per-session transports (stateful SSE / streamable HTTP)
   const transports = new Map<string, StreamableHTTPServerTransport>();
 
-  const httpServer = http.createServer(async (req, res) => {
+  const requestHandler: http.RequestListener = async (req, res) => {
     const url = new URL(
       req.url ?? "/",
       `http://localhost:${config.server.port}`,
@@ -728,6 +794,21 @@ async function startHttpServer(): Promise<void> {
       req.method === "GET" &&
       url.pathname === "/sse/search-course-materials"
     ) {
+      // Same gate as /mcp — this route builds caller_identity straight from
+      // query parameters with no other verification, so without this check
+      // it would accept forged identity claims from anyone who can reach it.
+      if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: "unauthorized",
+            message:
+              "Missing or invalid Authorization: Bearer <MCP_API_KEY> header.",
+          }),
+        );
+        return;
+      }
+
       const query = url.searchParams.get("query")?.trim();
       if (!query) {
         res.writeHead(400, { "Content-Type": "application/json" });
@@ -810,6 +891,18 @@ async function startHttpServer(): Promise<void> {
 
     // ── MCP endpoint ──
     if (url.pathname === "/mcp") {
+      if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: "unauthorized",
+            message:
+              "Missing or invalid Authorization: Bearer <MCP_API_KEY> header.",
+          }),
+        );
+        return;
+      }
+
       // GET → SSE stream for existing session
       if (req.method === "GET") {
         const sessionId = url.searchParams.get("sessionId");
@@ -873,21 +966,34 @@ async function startHttpServer(): Promise<void> {
 
     res.writeHead(404);
     res.end("Not Found");
-  });
+  };
 
-  httpServer.listen(config.server.port, () => {
+  const httpServer = tlsConfigured
+    ? https.createServer(
+        {
+          cert: readFileSync(config.server.tls.certPath!),
+          key: readFileSync(config.server.tls.keyPath!),
+        },
+        requestHandler,
+      )
+    : http.createServer(requestHandler);
+
+  const scheme = tlsConfigured ? "https" : "http";
+  httpServer.listen(config.server.port, listenHost, () => {
     console.log(
-      `blackboard-learn-mcp HTTP server listening on port ${config.server.port}`,
+      `blackboard-learn-mcp ${scheme.toUpperCase()} server listening on ${listenHost}:${config.server.port}`,
     );
-    console.log(`  MCP endpoint : http://localhost:${config.server.port}/mcp`);
     console.log(
-      `  Health       : http://localhost:${config.server.port}/health`,
+      `  MCP endpoint : ${scheme}://localhost:${config.server.port}/mcp`,
     );
     console.log(
-      `  Metrics      : http://localhost:${config.server.port}/metrics`,
+      `  Health       : ${scheme}://localhost:${config.server.port}/health`,
     );
     console.log(
-      `  Manifest     : http://localhost:${config.server.port}/manifest`,
+      `  Metrics      : ${scheme}://localhost:${config.server.port}/metrics`,
+    );
+    console.log(
+      `  Manifest     : ${scheme}://localhost:${config.server.port}/manifest`,
     );
   });
 

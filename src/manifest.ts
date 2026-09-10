@@ -52,6 +52,7 @@ import {
 
 // Grade write-back tools
 import {
+  createAssignmentSchema,
   createGradeColumnSchema,
   updateGradeSchema,
   deleteGradeSchema,
@@ -109,6 +110,7 @@ const RAW_TOOL_SCHEMAS = [
   getChildrenAnnouncementsSchema,
 
   // Grade write-back tools
+  createAssignmentSchema,
   createGradeColumnSchema,
   updateGradeSchema,
   deleteGradeSchema,

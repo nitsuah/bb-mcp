@@ -9,15 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Admin tools** (`src/tools/admin.ts`): `list_users`, `get_user`, `list_enrollments`, `create_enrollment`, `update_enrollment`, `delete_enrollment`, `list_audit_logs`.
+- **Parent tools** (`src/tools/parent.ts`, guardian-scoped read-only): `get_my_children`, `get_children_courses`, `get_children_grades`, `get_children_upcoming_assignments`, `get_children_announcements`.
+- **Grade write-back tools** (`src/tools/grade-writeback.ts`): `create_grade_column`, `update_grade`, `delete_grade`, `exempt_grade`, `get_grade_column`, and `create_assignment` (creates the student-visible content item and its linked grade column in one call).
+- **Webhook subscription tools** (`src/tools/webhook-tools.ts`, admin only): `list_webhook_subscriptions`, `get_webhook_subscription`, `create_webhook_subscription`, `update_webhook_subscription`, `delete_webhook_subscription`.
+- Tool-output PII scrubbing (`src/output-scrub.ts`): every MCP tool response is scrubbed of email addresses (by field name and embedded pattern) before it leaves the server, applied centrally via `withMetrics()`.
+- Local access-audit trail (`src/auth.ts`): bounded in-memory ring buffer of `access.granted`/`access.denied` events, queryable via the `list_audit_logs` admin tool as `localAuditTrail` — independent of whether the upstream Blackboard instance has its own audit endpoint enabled.
+- `.gitattributes` pinning text files to LF line endings.
+- Per-request lifecycle tracing (`src/trace.ts`): every tool call now emits a structured trace entry (request ID, latency, upstream Blackboard call count, error flag) to stdout and a local 1000-entry ring buffer, wired centrally through `withMetrics()`.
+
 ### Changed
+
+- `RESTRICTED_TOOLS` (FERPA gate) now includes `list_users`, `get_user`, `list_enrollments`, and `list_audit_logs` by default, on top of the existing instructor tools — these admin-surface tools previously required only role=admin.
+- `.github/dependabot.yml`: group minor/patch npm updates and GitHub Actions updates instead of opening one PR per bump.
+- `src/bb-client.ts`: Blackboard REST failures are now categorized (`BbApiError.category`) and prefixed with a clear, actionable message instead of surfacing Blackboard's often-bare error body as-is.
 
 ### Deprecated
 
 ### Removed
 
+- Archived stale planning/handoff docs (`docs/blackboard-learn-mcp-plan.md`, `docs/blackboard-mcp-full-plan.md`, `docs/HANDOFF-mcp-provider-contract-20260403.md`) to `docs/archive/`.
+
 ### Fixed
 
+- ROADMAP.md/TASKS.md incorrectly described PR #109 (admin/parent/grade-write-back/webhook tools) as open with failing CI and a `CHANGES_REQUESTED` review; it merged 2026-08-29. Corrected.
+
 ### Security
+
+- Extended the FERPA gate to cover the admin directory/enrollment/audit-log tool surface (see Changed above) — these previously exposed full institutional user PII with only a role check.
+- Tool-output PII scrubbing (see Added above) closes a gap flagged across the 2026-08-22 and 2026-08-28 audits: student/instructor/admin/parent tool *responses* were unscrubbed even though audit-log emission already was.
 
 ## [0.1.0] - 2026-06-08
 

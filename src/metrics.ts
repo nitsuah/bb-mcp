@@ -7,6 +7,8 @@
  */
 
 import { config } from "./config.js";
+import { scrubMcpToolResult } from "./output-scrub.js";
+import { withTrace } from "./trace.js";
 
 interface ToolStats {
   calls: number;
@@ -98,7 +100,16 @@ export async function pushMetrics(): Promise<void> {
   }
 }
 
-/** Wrap an async tool handler with automatic metric recording */
+/**
+ * Wrap an async tool handler with automatic metric recording, per-request
+ * lifecycle tracing, and tool-output PII scrubbing. Every MCP tool handler
+ * in `src/tools/*.ts` is wrapped with this, so this is the single choke
+ * point through which all tool calls pass — aggregate metrics
+ * (recordToolCall), a structured per-call trace entry (withTrace, see
+ * trace.ts — request ID, latency, upstream Blackboard call count), and
+ * output scrubbing all happen here so no individual tool handler can forget
+ * any of them.
+ */
 export function withMetrics<T extends unknown[], R>(
   toolName: string,
   fn: (...args: T) => Promise<R>,
@@ -107,7 +118,8 @@ export function withMetrics<T extends unknown[], R>(
     const start = Date.now();
     let error = false;
     try {
-      return await fn(...args);
+      const result = await withTrace(toolName, () => fn(...args));
+      return scrubMcpToolResult(result);
     } catch (err) {
       error = true;
       throw err;

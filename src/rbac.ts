@@ -36,6 +36,7 @@ export const TOOL_ROLE_RULES: Readonly<Record<string, readonly Role[]>> = {
   get_children_upcoming_assignments: ["parent"],
   get_children_announcements: ["parent"],
   // Grade write-back tools
+  create_assignment: ["instructor", "admin"],
   create_grade_column: ["instructor", "admin"],
   update_grade: ["instructor", "admin"],
   delete_grade: ["instructor", "admin"],

@@ -3,8 +3,8 @@
 <!-- Deployment Status -->
 [![Deploy Status](https://github.com/nitsuah/bb-mcp/actions/workflows/deploy.yml/badge.svg)](https://github.com/nitsuah/bb-mcp/actions)
 [![CI](https://github.com/nitsuah/bb-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/nitsuah/bb-mcp/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-91.86%25-brightgreen)](METRICS.md)
-[![High/Critical Vulns](https://img.shields.io/badge/high%2Fcritical%20vulns-0-brightgreen)](METRICS.md)
+[![Coverage](https://img.shields.io/badge/coverage-93.7%25-brightgreen)](METRICS.md)
+[![High/Critical Vulns](https://img.shields.io/badge/high%2Fcritical%20vulns-1%20high%20(transitive)-yellow)](METRICS.md)
 [![Lint](https://img.shields.io/badge/lint-0%20errors%20%7C%200%20warnings-brightgreen)](METRICS.md)
 
 A standalone [Model Context Protocol](https://modelcontextprotocol.io) server wrapping the Blackboard Learn REST API. Point any MCP-compatible client at it — Claude Desktop, Cursor, agent-board, or anything else — and get structured access to courses, grades, assignments, announcements, and more.
@@ -31,7 +31,9 @@ The integration logic lives here, not in the client. Tools like agent-board, Cla
 │                                                  │
 │   Auth layer       → OAuth2, role gate, FERPA,   │
 │                      rate limiting, PII scrub     │
-│   Tools (17)       → student + instructor tools  │
+│   Tools (40)       → student, instructor, admin, │
+│                      parent, grade write-back,   │
+│                      webhook-subscription tools  │
 │   Metrics          → Prometheus /metrics         │
 │   Audit log        → structured JSON → stdout    │
 └──────────────────────┬──────────────────────────┘
@@ -55,7 +57,7 @@ docker compose -f config/docker-compose.yml up -d
 All checks run via Docker — no local Node.js required.
 
 ```bash
-# Run all tests (79 tests, TypeScript)
+# Run all tests (151 tests, TypeScript)
 docker compose -f config/docker-compose.yml --profile test run --rm test
 
 # Full quality gate: lint + coverage + audit + complexity
@@ -180,13 +182,18 @@ Copy `.env.example` to `.env` and set:
 | `BB_OAUTH_AUTHORIZATION_PATH` | — | Override Blackboard authorization endpoint path |
 | `BB_OAUTH_TOKEN_PATH` | — | Override Blackboard token endpoint path |
 | `PORT` | — | HTTP port (default `3100`) |
+| `HOST` | — | Bind address (default `0.0.0.0`, all interfaces — unchanged from before `MCP_API_KEY` existed, so `docker compose`'s `-p 3100:3100` port publishing keeps working). Set to `127.0.0.1` for a genuinely local-only deployment; see `MCP_API_KEY` below. |
 | `LOG_LEVEL` | — | `info` or `debug` (default `info`) |
 | `PUBLIC_BASE_URL` | — | Publicly reachable base URL of this server (e.g. `https://mcp.example.com`); used in manifest generation and as the OAuth redirect base; defaults to `http://localhost:<PORT>` |
+| `MCP_API_KEY` | Required unless `HOST` is loopback | Shared secret required as `Authorization: Bearer <MCP_API_KEY>` on every `/mcp` request. **The server refuses to start without it on any non-loopback `HOST`** (fails closed — see [Identity & access control](#identity--access-control)); only `HOST=127.0.0.1`/`localhost`/`::1` may skip it, since nothing outside the machine can reach a loopback bind. |
+| `TLS_CERT_PATH`, `TLS_KEY_PATH` | — | Paths to a PEM cert chain and matching private key. Set both to serve HTTPS directly instead of plain HTTP. |
+| `TRUST_PROXY_TLS` | Alternative to `TLS_CERT_PATH`/`TLS_KEY_PATH` | Set to `true` when a trusted TLS-terminating reverse proxy (nginx, Traefik, Caddy, etc.) shares this process's network namespace. **This overrides `HOST` and forces the server to actually bind to loopback** rather than merely asserting a proxy exists — a configured `HOST` would otherwise remain a second, unprotected path straight to this plain-HTTP listener. Only a proxy in the same namespace (same container, Docker's `network_mode: service:<name>`, a Kubernetes sidecar, etc.) can then reach it; nothing routes to it from outside that boundary. Without this or `TLS_CERT_PATH`/`TLS_KEY_PATH`, the server refuses to start on a non-loopback `HOST`. |
 | `METRICS_PUSH_URL` | — | Prometheus push gateway URL (optional) |
-| `RESTRICTED_TOOLS` | — | Comma-separated tool names requiring FERPA auth (default: `get_at_risk_students,get_grade_distribution,get_submission_status,get_grades`) |
+| `RESTRICTED_TOOLS` | — | Comma-separated tool names requiring FERPA auth (default: `get_at_risk_students,get_grade_distribution,get_submission_status,get_grades,list_users,get_user,list_enrollments,list_audit_logs`) |
 | `RATE_LIMIT_STUDENT_PER_MINUTE` | — | Max tool calls per minute for student role (default `60`) |
 | `RATE_LIMIT_INSTRUCTOR_PER_MINUTE` | — | Max tool calls per minute for instructor role (default `120`) |
 | `RATE_LIMIT_ADMIN_PER_MINUTE` | — | Max tool calls per minute for admin role (default `180`) |
+| `RATE_LIMIT_PARENT_PER_MINUTE` | — | Max tool calls per minute for parent role (default `60`) |
 
 **Getting Blackboard credentials:**  
 Register a REST API application at [developer.blackboard.com](https://developer.blackboard.com/portal/applications). Use the free developer sandbox for testing — no live Blackboard instance required.
@@ -245,6 +252,57 @@ For FERPA-restricted tools, add `"ferpa_authorized": true` — the calling appli
 | `get_at_risk_students` | Students with low grades or many missing submissions | ✅ |
 | `draft_announcement` | AI-assisted announcement draft, optionally posted | — |
 
+### Grade write-back tools
+
+| Tool | Description | FERPA required |
+|---|---|---|
+| `create_assignment` | Creates a student-visible content item + linked grade column in one call | — |
+| `create_grade_column` | Creates a gradebook column only (no content item) | — |
+| `update_grade` | Updates (or creates) a student's grade attempt for a column | — |
+| `delete_grade` | Deletes a student's grade attempt for a column | — |
+| `exempt_grade` | Marks a student's grade as exempt for a column | — |
+| `get_grade_column` | Returns details of a specific grade column | — |
+
+All require instructor or admin role.
+
+### Admin tools
+
+| Tool | Description | FERPA required |
+|---|---|---|
+| `list_users` | Paginated user directory with optional search | ✅ |
+| `get_user` | Single user record by ID | ✅ |
+| `list_enrollments` | Enrollments filtered by course, user, or both | ✅ |
+| `create_enrollment` | Enrolls a user in a course | — |
+| `update_enrollment` | Updates an enrollment's role/availability | — |
+| `delete_enrollment` | Removes an enrollment | — |
+| `list_audit_logs` | Institutional audit logs — Blackboard's own (when available) plus bb-mcp's local access-audit trail | ✅ |
+
+All require admin role.
+
+### Parent tools (guardian-scoped, read-only)
+
+| Tool | Description |
+|---|---|
+| `get_my_children` | Students the caller is a registered guardian/observer for |
+| `get_children_courses` | Course enrollments for one or all children |
+| `get_children_grades` | Grade summaries for one or all children |
+| `get_children_upcoming_assignments` | Upcoming assignments across children |
+| `get_children_announcements` | Course announcements relevant to children |
+
+All require parent role.
+
+### Webhook subscription tools
+
+| Tool | Description |
+|---|---|
+| `list_webhook_subscriptions` | Lists registered Blackboard webhook subscriptions |
+| `get_webhook_subscription` | Returns a single webhook subscription |
+| `create_webhook_subscription` | Registers a new webhook subscription |
+| `update_webhook_subscription` | Updates an existing subscription |
+| `delete_webhook_subscription` | Removes a subscription |
+
+All require admin role. This is subscription *registration* only — receiving inbound webhook calls and bridging them to the MCP SSE transport is tracked in `ROADMAP.md`'s 2027 section.
+
 ### Shared tools
 
 | Tool | Description |
@@ -261,14 +319,19 @@ For FERPA-restricted tools, add `"ferpa_authorized": true` — the calling appli
 
 ## Identity & access control
 
-The auth layer enforces four things before any Blackboard API call is made:
+**Transport gate (`MCP_API_KEY`)** — the `/mcp` endpoint itself has no other credential check, so without `MCP_API_KEY` configured, anyone who can reach the port can call any tool asserting any `caller_identity`. The server fails closed on whatever host it actually ends up listening on (`127.0.0.1`/`localhost`/`::1` is the only one that may skip it): it refuses to start without a key, **and** it refuses to start without `TLS_CERT_PATH`/`TLS_KEY_PATH` configured (serve HTTPS directly) — this server speaks plain HTTP on its own, and a bearer token sent that way can be captured and replayed by an on-path attacker. `TRUST_PROXY_TLS=true` is the other option, but it isn't a separate escape hatch from that requirement: it overrides `HOST` and forces an actual loopback bind, so the fail-closed check sees a loopback host either way — see [Configuration](#configuration).
 
-1. **`caller_identity` is required** on every tool call — the client asserts who is asking
+Once past the transport gate, the auth layer enforces the following before any Blackboard API call is made:
+
+1. **`caller_identity` is required** on every tool call — the client asserts who is asking. This identity is trusted at face value (bb-mcp does not itself verify end-user identity); `MCP_API_KEY` establishes that the *client* is one the operator issued a key to, not that the claimed `userId`/`role` is truthful — the calling application (e.g. agent-board) is responsible for that.
 2. **Rate gate** — per-role, per-minute call limits prevent bulk data extraction; 429 responses include a retry-after interval
 3. **Role gate** — instructor-only tools reject `role: "student"` callers
-4. **FERPA gate** — tools that access protected student data require `ferpa_authorized: true`
+4. **FERPA gate** — tools that access protected student data require `ferpa_authorized: true`; this covers the instructor at-risk/grade/submission tools and the full admin directory surface (`list_users`, `get_user`, `list_enrollments`, `list_audit_logs`)
+5. **Course entitlement gate** — the grade write-back tools (`create_assignment`, `create_grade_column`, `update_grade`, `delete_grade`, `exempt_grade`, `get_grade_column`) additionally verify the caller is enrolled in the target `courseId` as Instructor, TeachingAssistant, or CourseBuilder — role=instructor alone does not authorize writing grades in an arbitrary course. `role: "admin"` bypasses this course-scoped check (already trusted org-wide).
 
-Every access attempt (granted or denied) is written to stdout as structured JSON. User identifiers are SHA-256 hashed before emission; raw user IDs are never written to logs.
+Every access attempt (granted or denied) is written to stdout as structured JSON, and kept in a bounded in-memory ring buffer — bb-mcp's own **local audit trail**. User identifiers in this local trail are SHA-256 hashed before emission or storage; raw user IDs are never written to bb-mcp's own logs or returned in the `localAuditTrail` portion of `list_audit_logs`'s response. This hashing does *not* apply to the separate `logs` field in that same response, which passes through the Blackboard instance's own `/audit/logs` entries (when available) unmodified, including whatever raw user identifiers Blackboard itself records — the same identifiers an admin caller can already resolve directly via `get_user`/`list_users` under the same role+FERPA gate, so this is consistent with, not a bypass of, that authorization boundary.
+
+On top of the audit-log scrubbing above, every tool response is separately scrubbed before it reaches the MCP client — `src/output-scrub.ts` strips email addresses (by field name and by pattern) out of the actual `get_my_grades` / `list_roster` / `list_users` / etc. payloads, applied centrally via `withMetrics()` so no individual tool can skip it.
 
 ```json
 {
@@ -337,15 +400,21 @@ bb-mcp/
 │   ├── oauth.ts          PKCE authorization code flow + session store
 │   ├── manifest.ts       Provider manifest builder (GET /manifest)
 │   ├── metrics.ts        Prometheus metrics + withMetrics() wrapper
-│   ├── privacy.ts        PII scrubbing and audit subject hashing
+│   │                     (also applies output-scrub to every tool result)
+│   ├── privacy.ts        PII scrubbing (audit logs) and subject hashing
+│   ├── output-scrub.ts   PII scrubbing (tool-call responses to the client)
 │   ├── schemas.ts        Shared Zod schemas
 │   ├── cli.ts            CLI subcommands (--doctor, --probe, --tools, etc.)
 │   ├── constants.ts      SERVER_NAME, SERVER_VERSION
 │   ├── types.ts          Domain types (BbCourse, BbGrade, etc.)
 │   └── tools/
-│       ├── student.ts    Student-facing tools (9 tools incl. aliases)
-│       ├── instructor.ts Instructor-facing tools (7 tools)
-│       └── shared.ts     search_course_materials
+│       ├── student.ts         Student-facing tools (9 incl. aliases)
+│       ├── instructor.ts      Instructor-facing tools (7)
+│       ├── grade-writeback.ts Grade write-back + create_assignment (6)
+│       ├── admin.ts           Admin directory/enrollment/audit tools (7)
+│       ├── parent.ts          Guardian-scoped read-only tools (5)
+│       ├── webhook-tools.ts   Webhook subscription CRUD (5)
+│       └── shared.ts          search_course_materials (1)
 ├── config/
 │   ├── docker-compose.yml  Standalone stack (port 3100)
 │   ├── vitest.config.ts    Test runner config
