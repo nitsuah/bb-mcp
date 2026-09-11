@@ -58,4 +58,4 @@ docker-tools:
 # transport/protocol/schema layer this target checks.
 docker-inspect:
 	docker build --target test -t bb-mcp:test .
-	docker run --rm bb-mcp:test npx -y @modelcontextprotocol/inspector --cli --config config/mcp-inspector.config.example.json --server bb-mcp --method tools/list --strict
+	docker run --rm bb-mcp:test npx --no-install @modelcontextprotocol/inspector --cli --config config/mcp-inspector.config.example.json --server bb-mcp --method tools/list --strict

@@ -37,7 +37,7 @@ Last Updated: 2026-09-02
 
 ### Foundation Completion
 
-- [x] **Pass MCP Inspector with stdio transport** (2026-09-11): `node dist/index.js --stdio` passes the official MCP Inspector CLI (`tools/list`, `tools/call`) with 0 errors across all 40 tools; see `TASKS.md` for evidence and `npm run inspect` / `make docker-inspect` for the repeatable check.
+- [x] **Pass MCP Inspector with stdio transport** (2026-09-11): `node dist/index.js --stdio` passes the official MCP Inspector CLI's `tools/list` with 0 errors across all 40 tools; `tools/call` was spot-checked end-to-end against one tool (`list_courses`), not run against all 40. See `TASKS.md` for evidence and `npm run inspect` / `make docker-inspect` for the repeatable `tools/list` check.
 - [ ] Add JSON schemas for all shipped tool inputs.
 
 ## 2026 Q3 - Enterprise Follow-On
