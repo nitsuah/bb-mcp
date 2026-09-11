@@ -37,9 +37,7 @@ Last Updated: 2026-09-02
 
 ### Foundation Completion
 
-> Note: Implementation is complete; MCP Inspector validation ([/]) remains in-progress.
-
-- [/] Pass MCP Inspector with stdio transport.
+- [x] **Pass MCP Inspector with stdio transport** (2026-09-11): `node dist/index.js --stdio` passes the official MCP Inspector CLI (`tools/list`, `tools/call`) with 0 errors across all 40 tools; see `TASKS.md` for evidence and `npm run inspect` / `make docker-inspect` for the repeatable check.
 - [ ] Add JSON schemas for all shipped tool inputs.
 
 ## 2026 Q3 - Enterprise Follow-On
