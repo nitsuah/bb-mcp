@@ -57,6 +57,10 @@ Last Updated: 2026-09-10
   - `src/bb-client.ts` now categorizes every Blackboard REST failure (`categorizeBbStatus`) into one of `invalid_request` / `authentication` / `forbidden` / `not_found` / `conflict` / `rate_limited` / `server_error` / `network_error` / `unknown`, and prefixes the original raw error detail with a clear, actionable message per category (`mapBbErrorMessage`) instead of surfacing Blackboard's often-bare `{ message: "..." }` as-is. `BbApiError` now exposes `category` so callers/tests can branch on failure kind without parsing the message string, and is exported for that purpose.
   - Tests in `tests/bb-client.test.ts` cover each category's classification and message prefix.
 
+- [x] **Pass MCP Inspector with stdio transport** (2026-09-11).
+  - Validated `node dist/index.js --stdio` against the official `@modelcontextprotocol/inspector` CLI (`tools/list` over a real stdio handshake): **0 errors** across all 40 tools (40 schema-portability warnings, all the same `caller_identity: {}` empty-schema issue — tracked separately below under "Add JSON schemas for all shipped tool inputs", not a transport/protocol problem). Also spot-checked `tools/call` end-to-end (`list_courses`), which correctly executed through RBAC/rate-limiting and returned a proper MCP tool error when the upstream Blackboard call 404'd against placeholder credentials — confirming the full stdio request/response path, not just the handshake.
+  - Root cause of "not formally validated": no documented, repeatable way to run Inspector against this server existed. Inspector spawns the child process with a **sanitized environment that does not inherit the shell or `.env`** (a "wrong transport config / undocumented setup" gap, not a code bug) — `BB_CLIENT_ID`/`BB_CLIENT_SECRET` must be supplied via Inspector's own `-e` flags or a config file's `env` block. Fixed by adding a checked-in `config/mcp-inspector.config.example.json` (placeholder credentials — no live Blackboard connection needed to validate transport/protocol/schema) plus `npm run inspect` and `make docker-inspect` so this is now a one-command, CI-repeatable check. Documented in README under "Validating with MCP Inspector".
+
 - [x] **Add per-request lifecycle tracing** (2026-09-10).
   - New `src/trace.ts`: `withTrace()` wraps a tool call in an `AsyncLocalStorage` scope, recording a structured trace entry (request ID, ISO timestamp, latency, upstream Blackboard call count, error flag) to stdout as JSON on settle, plus a bounded (1000-entry) in-memory ring buffer readable via `getLocalTraceEntries()`.
   - Wired into `withMetrics()` (`src/metrics.ts`) — the same central choke point already used for aggregate metrics and PII output-scrubbing — so every tool handler in `src/tools/*.ts` gets tracing automatically with no per-tool-file changes.
@@ -64,11 +68,6 @@ Last Updated: 2026-09-10
   - Tests in `tests/trace.test.ts` cover success/error paths, concurrent-scope isolation (`AsyncLocalStorage` correctness), the no-op-outside-scope case, and ring-buffer capping.
 
 ## In Progress
-
-- [/] Pass MCP Inspector with stdio transport.
-  - Priority: P2
-  - Context: stdio transport implementation exists but MCP Inspector compliance has not been formally validated.
-  - Acceptance Criteria: `node dist/index.js --stdio` passes MCP Inspector without errors.
 
 ## Todo
 

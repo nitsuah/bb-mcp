@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "bb-mcp": {
+      "command": "node",
+      "args": ["dist/index.js", "--stdio"],
+      "env": {
+        "BB_CLIENT_ID": "inspector_placeholder_client_id",
+        "BB_CLIENT_SECRET": "inspector_placeholder_client_secret"
+      }
+    }
+  }
+}

@@ -25,7 +25,8 @@
     "test:coverage": "vitest run --config config/vitest.config.ts --coverage",
     "test:watch": "vitest --config config/vitest.config.ts",
     "lint": "eslint src --ext .ts --config config/eslint.config.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "inspect": "npm run build && npx --no-install @modelcontextprotocol/inspector --cli --config config/mcp-inspector.config.example.json --server bb-mcp --method tools/list --strict"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -35,6 +36,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@modelcontextprotocol/inspector": "^2.6.0",
     "@types/node": "^26.5.0",
     "@vitest/coverage-v8": "^5.0.0",
     "eslint": "^10.10.0",

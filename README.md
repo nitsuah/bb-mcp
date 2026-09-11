@@ -153,6 +153,16 @@ node dist/index.js --doctor
 node dist/index.js --probe
 ```
 
+### Validating with MCP Inspector
+
+```bash
+npm run inspect
+# or, via Docker (matches CI's build):
+make docker-inspect
+```
+
+Both run the official [MCP Inspector](https://github.com/modelcontextprotocol/inspector) CLI's `tools/list` method over a real stdio handshake against `node dist/index.js --stdio`, using `config/mcp-inspector.config.example.json` (checked-in, placeholder credentials — Inspector spawns the server with a **sanitized environment that does not inherit your shell or `.env`**, so `BB_CLIENT_ID`/`BB_CLIENT_SECRET` must come from the config file's `env` block or repeated `-e KEY=value` flags; any non-empty values work here since this only validates the transport/protocol/schema layer, not a live Blackboard connection — see `--probe` above for that). Currently passes with **0 errors** (40 schema-portability warnings, all `caller_identity: {}` accepting any value — tracked separately in `TASKS.md` under "Add JSON schemas for all shipped tool inputs").
+
 Claude Desktop config (`claude_desktop_config.json`):
 
 ```json
