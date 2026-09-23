@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local access-audit trail (`src/auth.ts`): bounded in-memory ring buffer of `access.granted`/`access.denied` events, queryable via the `list_audit_logs` admin tool as `localAuditTrail` — independent of whether the upstream Blackboard instance has its own audit endpoint enabled.
 - `.gitattributes` pinning text files to LF line endings.
 - Per-request lifecycle tracing (`src/trace.ts`): every tool call now emits a structured trace entry (request ID, latency, upstream Blackboard call count, error flag) to stdout and a local 1000-entry ring buffer, wired centrally through `withMetrics()`.
+- Validated `node dist/index.js --stdio` against the official `@modelcontextprotocol/inspector` CLI: 0 errors across all 40 tools' `tools/list`, plus an end-to-end `tools/call` spot-check. Added a checked-in `config/mcp-inspector.config.example.json` and `npm run inspect` / `make docker-inspect` so this is a repeatable, one-command check (documented in README under "Validating with MCP Inspector").
 
 ### Changed
 
