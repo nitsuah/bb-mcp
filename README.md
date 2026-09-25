@@ -445,6 +445,7 @@ No live Blackboard instance needed. Register a free developer account at [develo
 ---
 
 <!-- docs-index:start -->
+
 ## Docs Index
 
 Every tracked doc in this repo, so nothing is orphaned (also used by the Obsidian vault mirror).
@@ -461,6 +462,7 @@ Every tracked doc in this repo, so nothing is orphaned (also used by the Obsidia
 - [Archived docs](./docs/archive/README.md) — `docs/archive/README.md`
 - [Blackboard Learn — MCP Server & Agent-Board Integration](./docs/archive/blackboard-learn-mcp-plan.md) — `docs/archive/blackboard-learn-mcp-plan.md`
 - [Project: blackboard-learn-mcp + agent-board Edtech Integration](./docs/archive/blackboard-mcp-full-plan.md) — `docs/archive/blackboard-mcp-full-plan.md`
+
 <!-- docs-index:end -->
 
 ## License
