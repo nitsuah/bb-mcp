@@ -1,5 +1,7 @@
 # blackboard-learn-mcp
 
+> 🧭 **bb-mcp** · [Features](./docs/FEATURES.md) · [Roadmap](./docs/ROADMAP.md) · [Tasks](./docs/TASKS.md) · [Changelog](./docs/CHANGELOG.md) · [Metrics](./docs/METRICS.md) <!-- nav -->
+
 <!-- Deployment Status -->
 [![Deploy Status](https://github.com/nitsuah/bb-mcp/actions/workflows/deploy.yml/badge.svg)](https://github.com/nitsuah/bb-mcp/actions)
 [![CI](https://github.com/nitsuah/bb-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/nitsuah/bb-mcp/actions/workflows/ci.yml)
@@ -442,6 +444,18 @@ bb-mcp/
 No live Blackboard instance needed. Register a free developer account at [developer.blackboard.com](https://developer.blackboard.com), create a REST API application, and use the provided sandbox URL as `BB_BASE_URL`. The sandbox exposes the full API surface with pre-populated test data.
 
 ---
+
+<!-- docs-index:start -->
+## Docs Index
+
+Every tracked doc in this repo, so nothing is orphaned (also used by the Obsidian vault mirror).
+
+- [Changelog](./docs/CHANGELOG.md) — `docs/CHANGELOG.md`
+- [Features](./docs/FEATURES.md) — `docs/FEATURES.md`
+- [Metrics](./docs/METRICS.md) — `docs/METRICS.md`
+- [ROADMAP](./docs/ROADMAP.md) — `docs/ROADMAP.md`
+- [TASKS](./docs/TASKS.md) — `docs/TASKS.md`
+<!-- docs-index:end -->
 
 ## License
 

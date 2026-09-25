@@ -1,5 +1,7 @@
 # Changelog
 
+> 🧭 [bb-mcp](../README.md) · [Features](./FEATURES.md) · [Roadmap](./ROADMAP.md) · [Tasks](./TASKS.md) · **Changelog** · [Metrics](./METRICS.md) <!-- nav -->
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -16,12 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tool-output PII scrubbing (`src/output-scrub.ts`): every MCP tool response is scrubbed of email addresses (by field name and embedded pattern) before it leaves the server, applied centrally via `withMetrics()`.
 - Local access-audit trail (`src/auth.ts`): bounded in-memory ring buffer of `access.granted`/`access.denied` events, queryable via the `list_audit_logs` admin tool as `localAuditTrail` — independent of whether the upstream Blackboard instance has its own audit endpoint enabled.
 - `.gitattributes` pinning text files to LF line endings.
+- **`MCP_API_KEY` transport gate** (#115): bearer-token check on `/mcp`; the server fails closed (refuses to start) on any non-loopback `HOST` without a key and without TLS.
 - Per-request lifecycle tracing (`src/trace.ts`): every tool call now emits a structured trace entry (request ID, latency, upstream Blackboard call count, error flag) to stdout and a local 1000-entry ring buffer, wired centrally through `withMetrics()`.
 - Validated `node dist/index.js --stdio` against the official `@modelcontextprotocol/inspector` CLI: 0 errors across all 40 tools' `tools/list`, plus an end-to-end `tools/call` spot-check. Added a checked-in `config/mcp-inspector.config.example.json` and `npm run inspect` / `make docker-inspect` so this is a repeatable, one-command check (documented in README under "Validating with MCP Inspector").
 
 ### Changed
 
 - `RESTRICTED_TOOLS` (FERPA gate) now includes `list_users`, `get_user`, `list_enrollments`, and `list_audit_logs` by default, on top of the existing instructor tools — these admin-surface tools previously required only role=admin.
+- Dependency bumps: vitest 5.0 (#118), dotenv 18 (#127), plus grouped minor/patch updates (#122, #124, #128).
+- Planning docs reset for 2027 (`pmo-ff`): completed 2026 roadmap items removed (already in FEATURES/CHANGELOG), open items carried into 2027 Q1, breadcrumb navigation + README docs index added.
 - `.github/dependabot.yml`: group minor/patch npm updates and GitHub Actions updates instead of opening one PR per bump.
 - `src/bb-client.ts`: Blackboard REST failures are now categorized (`BbApiError.category`) and prefixed with a clear, actionable message instead of surfacing Blackboard's often-bare error body as-is.
 
