@@ -42,5 +42,5 @@ AGENT INSTRUCTIONS:
 2. Use short milestones, not narrative blocks.
 3. Keep detailed task mechanics in TASKS.md.
 4. When an item ships, remove it here and condense it into FEATURES.md / CHANGELOG.md.
-5. Before writing "open/blocked/CI failing" about a PR, verify against git log — a prior audit cycle documented PR #109 as open for a full week after it had actually merged.
+5. Before writing "open/blocked/CI failing" about a PR, verify against current PR metadata and checks (`gh pr view <n> --json state,statusCheckRollup,reviewDecision`); use git log only for merge history — a prior audit cycle documented PR #109 as open for a full week after it had actually merged.
 -->

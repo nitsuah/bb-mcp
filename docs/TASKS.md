@@ -6,7 +6,7 @@ Last Updated: 2026-09-24
 
 ## Done
 
-_All foundation, 2026 Q2, and 2026 Q3 work is shipped and condensed into
+_All completed foundation, 2026 Q2, and 2026 Q3 work is shipped and condensed into
 `docs/FEATURES.md` (shipped tool/capability catalog) and `docs/CHANGELOG.md`
 (change-by-change history)._
 
@@ -55,5 +55,5 @@ AGENT INSTRUCTIONS:
    narrative in Done — condense the outcome into `docs/ROADMAP.md` (milestone),
    `docs/FEATURES.md` (shipped capability), or `CHANGELOG.md` (Unreleased),
    extending an existing entry there if one already covers that area.
-4. Before describing a PR's CI/review state, check `git log` — don't trust the last audit's snapshot without re-verifying.
+4. Before describing a PR's CI/review state, check current PR metadata and checks (`gh pr view <n> --json state,statusCheckRollup,reviewDecision`) — don't trust the last audit's snapshot without re-verifying.
 -->
