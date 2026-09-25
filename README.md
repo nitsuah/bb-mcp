@@ -448,7 +448,7 @@ No live Blackboard instance needed. Register a free developer account at [develo
 
 ## Docs Index
 
-Every doc at the repo root and under `docs/` (the files mirrored into the Obsidian vault), so none of them is orphaned.
+Every doc at the repo root (other than this README) and under `docs/` (the files mirrored into the Obsidian vault), so none of them is orphaned.
 
 - [Changelog](./docs/CHANGELOG.md) — `docs/CHANGELOG.md`
 - [Features](./docs/FEATURES.md) — `docs/FEATURES.md`
