@@ -5,7 +5,7 @@
 <!-- Deployment Status -->
 [![CI](https://github.com/nitsuah/bb-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/nitsuah/bb-mcp/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-93.7%25-brightgreen)](./docs/METRICS.md)
-[![High/Critical Vulns](https://img.shields.io/badge/high%2Fcritical%20vulns-1%20high%20(transitive)-yellow)](METRICS.md)
+[![High/Critical Vulns](https://img.shields.io/badge/high%2Fcritical%20vulns-1%20high%20(transitive)-yellow)](./docs/METRICS.md)
 [![Lint](https://img.shields.io/badge/lint-0%20errors%20%7C%200%20warnings-brightgreen)](./docs/METRICS.md)
 
 A standalone [Model Context Protocol](https://modelcontextprotocol.io) server wrapping the Blackboard Learn REST API. Point any MCP-compatible client at it — Claude Desktop, Cursor, agent-board, or anything else — and get structured access to courses, grades, assignments, announcements, and more.
