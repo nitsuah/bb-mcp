@@ -1,5 +1,7 @@
 # Features
 
+> 🧭 [bb-mcp](../README.md) · **Features** · [Roadmap](./ROADMAP.md) · [Tasks](./TASKS.md) · [Changelog](./CHANGELOG.md) · [Metrics](./METRICS.md) <!-- nav -->
+
 ## Core Functionality
 - **MCP Protocol Implementation** - Full support for the Model Context Protocol (MCP) to bridge LLMs with Blackboard Learn.
 - **Course Metadata Retrieval** - Specialized tools for LLMs to fetch course descriptions, IDs, and enrollment status.
@@ -97,11 +99,14 @@
 - **FERPA Gate on the Admin Tool Surface** - `list_users`, `get_user`, `list_enrollments`, and `list_audit_logs` require `ferpa_authorized: true` by default, not just role=admin
 - **Local Audit Trail on the Admin Tool Surface** - `src/auth.ts` keeps a bounded in-memory access-audit trail (hashed subject only); `list_audit_logs` surfaces it directly, independent of whether the upstream Blackboard instance has its own audit endpoint enabled
 - **Per-Role Rate Limiting** - In-memory per-role per-minute call limits via `src/auth.ts`; configurable via `RATE_LIMIT_*_PER_MINUTE` env vars; 429 responses include retry-after guidance
+- **Fail-Closed Transport Gate (`MCP_API_KEY`)** - Every `/mcp` request requires `Authorization: Bearer <MCP_API_KEY>`; the server refuses to start on any non-loopback `HOST` without a key and without TLS (`TLS_CERT_PATH`/`TLS_KEY_PATH`, or `TRUST_PROXY_TLS=true` which forces a loopback bind)
 - **PKCE OAuth2 Flow** - `src/oauth.ts` implements PKCE-backed authorization URL generation, state validation, code exchange, and refresh-aware in-memory session storage
 
 ## CLI & Operations
 
 - **CLI Inspection Tool** - `--help`, `--version`, `--manifest`, `--tools`, `--doctor` subcommands validate the server environment without requiring Blackboard credentials
+- **MCP Inspector Validation** - `npm run inspect` / `make docker-inspect` run the official `@modelcontextprotocol/inspector` CLI against `node dist/index.js --stdio` (0 `tools/list` errors across all 40 tools); config template in `config/mcp-inspector.config.example.json`
+- **Per-Request Lifecycle Tracing** - `src/trace.ts` emits a structured trace (request ID, latency, upstream call count, error flag) per tool call to stdout and a 1000-entry ring buffer
 - **Blackboard Probe Command** - `--probe` validates credential readiness and exercises a minimal Blackboard API call for standalone operator checks
 - **Standalone Docker Compose** - Hardened runtime with read-only filesystem, dropped capabilities, and `no-new-privileges`; `Makefile` targets for `docker-up`, `docker-down`, `docker-logs`, `docker-doctor`, `docker-probe`, `docker-manifest`, `docker-tools`
 

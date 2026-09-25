@@ -1,11 +1,12 @@
 # blackboard-learn-mcp
 
+> 🧭 **bb-mcp** · [Features](./docs/FEATURES.md) · [Roadmap](./docs/ROADMAP.md) · [Tasks](./docs/TASKS.md) · [Changelog](./docs/CHANGELOG.md) · [Metrics](./docs/METRICS.md) <!-- nav -->
+
 <!-- Deployment Status -->
-[![Deploy Status](https://github.com/nitsuah/bb-mcp/actions/workflows/deploy.yml/badge.svg)](https://github.com/nitsuah/bb-mcp/actions)
 [![CI](https://github.com/nitsuah/bb-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/nitsuah/bb-mcp/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-93.7%25-brightgreen)](METRICS.md)
-[![High/Critical Vulns](https://img.shields.io/badge/high%2Fcritical%20vulns-1%20high%20(transitive)-yellow)](METRICS.md)
-[![Lint](https://img.shields.io/badge/lint-0%20errors%20%7C%200%20warnings-brightgreen)](METRICS.md)
+[![Coverage](https://img.shields.io/badge/coverage-93.7%25-brightgreen)](./docs/METRICS.md)
+[![High/Critical Vulns](https://img.shields.io/badge/high%2Fcritical%20vulns-1%20high%20(transitive)-yellow)](./docs/METRICS.md)
+[![Lint](https://img.shields.io/badge/lint-0%20errors%20%7C%200%20warnings-brightgreen)](./docs/METRICS.md)
 
 A standalone [Model Context Protocol](https://modelcontextprotocol.io) server wrapping the Blackboard Learn REST API. Point any MCP-compatible client at it — Claude Desktop, Cursor, agent-board, or anything else — and get structured access to courses, grades, assignments, announcements, and more.
 
@@ -442,6 +443,27 @@ bb-mcp/
 No live Blackboard instance needed. Register a free developer account at [developer.blackboard.com](https://developer.blackboard.com), create a REST API application, and use the provided sandbox URL as `BB_BASE_URL`. The sandbox exposes the full API surface with pre-populated test data.
 
 ---
+
+<!-- docs-index:start -->
+
+## Docs Index
+
+Every doc at the repo root and under `docs/` (the files mirrored into the Obsidian vault), so none of them is orphaned.
+
+- [Changelog](./docs/CHANGELOG.md) — `docs/CHANGELOG.md`
+- [Features](./docs/FEATURES.md) — `docs/FEATURES.md`
+- [Metrics](./docs/METRICS.md) — `docs/METRICS.md`
+- [ROADMAP](./docs/ROADMAP.md) — `docs/ROADMAP.md`
+- [TASKS](./docs/TASKS.md) — `docs/TASKS.md`
+
+**`docs/archive/`**
+
+- [Delivery Pipeline Handoff](./docs/archive/HANDOFF-mcp-provider-contract-20260403.md) — `docs/archive/HANDOFF-mcp-provider-contract-20260403.md`
+- [Archived docs](./docs/archive/README.md) — `docs/archive/README.md`
+- [Blackboard Learn — MCP Server & Agent-Board Integration](./docs/archive/blackboard-learn-mcp-plan.md) — `docs/archive/blackboard-learn-mcp-plan.md`
+- [Project: blackboard-learn-mcp + agent-board Edtech Integration](./docs/archive/blackboard-mcp-full-plan.md) — `docs/archive/blackboard-mcp-full-plan.md`
+
+<!-- docs-index:end -->
 
 ## License
 

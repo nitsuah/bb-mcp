@@ -1,5 +1,7 @@
 # Blackboard Learn — MCP Server & Agent-Board Integration
 
+> 🧭 [bb-mcp](../../README.md) · [Features](../FEATURES.md) · [Roadmap](../ROADMAP.md) · [Tasks](../TASKS.md) · [Changelog](../CHANGELOG.md) · [Metrics](../METRICS.md) <!-- nav -->
+>
 > Build an MCP server wrapping the Blackboard Learn REST API, then surface it as a
 > "Blackboard Learn" experience tab inside agent-board. Two deliverables, one story.
 

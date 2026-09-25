@@ -1,5 +1,7 @@
 # Metrics
 
+> 🧭 [bb-mcp](../README.md) · [Features](./FEATURES.md) · [Roadmap](./ROADMAP.md) · [Tasks](./TASKS.md) · [Changelog](./CHANGELOG.md) · **Metrics** <!-- nav -->
+
 This document tracks the key performance indicators (KPIs), code quality standards, and health metrics for the `bb-mcp` project.
 
 ## Project Health & Quality Metrics

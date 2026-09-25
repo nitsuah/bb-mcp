@@ -1,5 +1,7 @@
 # Archived docs
 
+> 🧭 [bb-mcp](../../README.md) · [Features](../FEATURES.md) · [Roadmap](../ROADMAP.md) · [Tasks](../TASKS.md) · [Changelog](../CHANGELOG.md) · [Metrics](../METRICS.md) <!-- nav -->
+
 Historical documents kept for reference but superseded by the current
 top-level docs (`README.md`, `ROADMAP.md`, `TASKS.md`, `FEATURES.md`,
 `METRICS.md`, `CHANGELOG.md`). Archived 2026-09-02 as part of a docs-audit
