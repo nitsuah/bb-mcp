@@ -3,7 +3,6 @@
 > 🧭 **bb-mcp** · [Features](./docs/FEATURES.md) · [Roadmap](./docs/ROADMAP.md) · [Tasks](./docs/TASKS.md) · [Changelog](./docs/CHANGELOG.md) · [Metrics](./docs/METRICS.md) <!-- nav -->
 
 <!-- Deployment Status -->
-[![Deploy Status](https://github.com/nitsuah/bb-mcp/actions/workflows/deploy.yml/badge.svg)](https://github.com/nitsuah/bb-mcp/actions)
 [![CI](https://github.com/nitsuah/bb-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/nitsuah/bb-mcp/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-93.7%25-brightgreen)](./docs/METRICS.md)
 [![High/Critical Vulns](https://img.shields.io/badge/high%2Fcritical%20vulns-1%20high%20(transitive)-yellow)](METRICS.md)
