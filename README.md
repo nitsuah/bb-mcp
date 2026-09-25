@@ -454,6 +454,13 @@ Every tracked doc in this repo, so nothing is orphaned (also used by the Obsidia
 - [Metrics](./docs/METRICS.md) — `docs/METRICS.md`
 - [ROADMAP](./docs/ROADMAP.md) — `docs/ROADMAP.md`
 - [TASKS](./docs/TASKS.md) — `docs/TASKS.md`
+
+**`docs/archive/`**
+
+- [Delivery Pipeline Handoff](./docs/archive/HANDOFF-mcp-provider-contract-20260403.md) — `docs/archive/HANDOFF-mcp-provider-contract-20260403.md`
+- [Archived docs](./docs/archive/README.md) — `docs/archive/README.md`
+- [Blackboard Learn — MCP Server & Agent-Board Integration](./docs/archive/blackboard-learn-mcp-plan.md) — `docs/archive/blackboard-learn-mcp-plan.md`
+- [Project: blackboard-learn-mcp + agent-board Edtech Integration](./docs/archive/blackboard-mcp-full-plan.md) — `docs/archive/blackboard-mcp-full-plan.md`
 <!-- docs-index:end -->
 
 ## License
