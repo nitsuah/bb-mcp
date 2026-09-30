@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Docs: closed the "JSON schemas for all shipped tool inputs" task, which the 2027-Q1 planning reset (#129) had carried forward although every tool already defines an `inputSchema`.
 - `RESTRICTED_TOOLS` (FERPA gate) now includes `list_users`, `get_user`, `list_enrollments`, and `list_audit_logs` by default, on top of the existing instructor tools — these admin-surface tools previously required only role=admin.
 - Dependency bumps: vitest 5.0 (#118), dotenv 18 (#127), plus grouped minor/patch updates (#122, #124, #128).
 - Planning docs reset for 2027 (`pmo-ff`): completed 2026 roadmap items removed (already in FEATURES/CHANGELOG), open items carried into 2027 Q1, breadcrumb navigation + README docs index added.
