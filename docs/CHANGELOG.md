@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Agent instructions (`.github/copilot-instructions.md`) now require closing tracked work in the same PR: update `docs/TASKS.md`, `docs/ROADMAP.md` and this changelog before the last push, and confirm `git diff origin/main...HEAD --stat` includes them before merge; added `.github/pull_request_template.md` with a "Closes TASKS item(s)" checklist.
 - Docs: closed the "JSON schemas for all shipped tool inputs" task, which the 2027-Q1 planning reset (#129) had carried forward although every tool already defines an `inputSchema`.
 - `RESTRICTED_TOOLS` (FERPA gate) now includes `list_users`, `get_user`, `list_enrollments`, and `list_audit_logs` by default, on top of the existing instructor tools — these admin-surface tools previously required only role=admin.
 - Dependency bumps: vitest 5.0 (#118), dotenv 18 (#127), plus grouped minor/patch updates (#122, #124, #128).
