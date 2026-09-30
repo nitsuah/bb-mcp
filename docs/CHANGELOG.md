@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Extended the FERPA gate to cover the admin directory/enrollment/audit-log tool surface (see Changed above) — these previously exposed full institutional user PII with only a role check.
 - Tool-output PII scrubbing (see Added above) closes a gap flagged across the 2026-08-22 and 2026-08-28 audits: student/instructor/admin/parent tool *responses* were unscrubbed even though audit-log emission already was.
+- Lockfile-only `npm audit fix` for new transitive advisories that broke the CI audit gate: `brace-expansion` 5.0.9 → 5.0.12 (high, DoS), `ip-address` 10.4.0 → 10.7.2 (moderate, SSRF/subnet-check bypass, via `@modelcontextprotocol/sdk` → `express-rate-limit`), `fast-uri` 3.1.7 → 3.1.8 (moderate).
 
 ## [0.1.0] - 2026-06-08
 
