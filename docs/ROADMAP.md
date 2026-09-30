@@ -14,7 +14,7 @@ Last Updated: 2026-09-24
 ### Committed
 
 - [ ] **Bind `caller_identity` to verified end-user auth** — `MCP_API_KEY` proves the *client* is trusted, not that its claimed `userId`/`role`/`ferpa_authorized` is truthful; require a server-verifiable identity proof (e.g. forwarded Blackboard/SSO token) per request. Security gate for any further write-back work.
-- [ ] **JSON schemas for all shipped tool inputs** *(carried from 2026 Q2 Foundation Completion)*.
+- [x] **JSON schemas for all shipped tool inputs** *(carried from 2026 Q2 Foundation Completion)*. Already done (confirmed 2026-09-30): all 41 tools in `src/manifest.ts` define a JSON Schema `inputSchema`, served by `tools/list` and `GET /manifest`.
 - [ ] **Blackboard activity ingestion — event schema** *(carried from 2026 Q2; subscription CRUD already shipped in PR #109)*: normalized schema for grade posts, submissions, login activity, and course changes, shared by the webhook bridge and any future consumer.
 
 ### Needs scoping (subsystem-sized — carried from 2026 Q2/Q3)
