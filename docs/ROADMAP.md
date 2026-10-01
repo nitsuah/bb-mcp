@@ -2,7 +2,7 @@
 
 > 🧭 [bb-mcp](../README.md) · [Features](./FEATURES.md) · **Roadmap** · [Tasks](./TASKS.md) · [Changelog](./CHANGELOG.md) · [Metrics](./METRICS.md) <!-- nav -->
 
-Last Updated: 2026-09-24
+Last Updated: 2026-10-01
 
 > 2027 planning reset (2026-09-24): the 2025–2026 foundation, 2026 Q2 read/write workflows, and 2026 Q3
 > enterprise follow-on are shipped. Completed items were removed and are condensed in [FEATURES](./FEATURES.md) /
@@ -14,7 +14,6 @@ Last Updated: 2026-09-24
 ### Committed
 
 - [ ] **Bind `caller_identity` to verified end-user auth** — `MCP_API_KEY` proves the *client* is trusted, not that its claimed `userId`/`role`/`ferpa_authorized` is truthful; require a server-verifiable identity proof (e.g. forwarded Blackboard/SSO token) per request. Security gate for any further write-back work.
-- [x] **JSON schemas for all shipped tool inputs** *(carried from 2026 Q2 Foundation Completion)*. Already done (confirmed 2026-09-30): all 41 tools in `src/manifest.ts` define a JSON Schema `inputSchema`, served by `tools/list` and `GET /manifest`.
 - [ ] **Blackboard activity ingestion — event schema** *(carried from 2026 Q2; subscription CRUD already shipped in PR #109)*: normalized schema for grade posts, submissions, login activity, and course changes, shared by the webhook bridge and any future consumer.
 
 ### Needs scoping (subsystem-sized — carried from 2026 Q2/Q3)
