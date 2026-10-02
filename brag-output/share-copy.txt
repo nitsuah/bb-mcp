@@ -1,0 +1,3 @@
+bb-mcp: the MCP server Blackboard's own team uses. 40 tools, 5 personas, zero PII leaks.
+
+github.com/nitsuah/bb-mcp

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bb-mcp — MCP Server for Blackboard Learn</title>
+  <meta name="description" content="bb-mcp: the MCP server Blackboard's own team uses. 40 tools, 5 personas, zero PII leaks.">
+  <meta property="og:title" content="bb-mcp — MCP Server for Blackboard Learn">
+  <meta property="og:description" content="bb-mcp: the MCP server Blackboard's own team uses. 40 tools, 5 personas, zero PII leaks.">
+  <meta property="og:type" content="website">
+  <meta property="og:video" content="brag.mp4">
+  <meta property="og:video:type" content="video/mp4">
+  <meta property="og:video:width" content="1920">
+  <meta property="og:video:height" content="1080">
+  <meta property="og:image" content="brag.jpg">
+  <meta name="twitter:card" content="player">
+  <meta name="twitter:title" content="bb-mcp — MCP Server for Blackboard Learn">
+  <meta name="twitter:description" content="bb-mcp: the MCP server Blackboard's own team uses. 40 tools, 5 personas, zero PII leaks.">
+  <meta name="twitter:player" content="brag.mp4">
+  <meta name="twitter:player:width" content="1920">
+  <meta name="twitter:player:height" content="1080">
+  <meta name="twitter:image" content="brag.jpg">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #1a1a2e;
+      --accent: #00d4ff;
+      --text: #f5f5f5;
+      --muted: #6b7280;
+      --card: rgba(255,255,255,0.03);
+      --border: rgba(0,212,255,0.2);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f8fafc;
+        --text: #1e293b;
+        --muted: #64748b;
+        --card: rgba(255,255,255,0.8);
+        --border: rgba(0,212,255,0.4);
+      }
+    }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+    header { text-align: center; margin-bottom: 48px; }
+    .logo { width: 80px; height: 92px; background: var(--bg); border: 3px solid var(--accent); clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 24px; }
+    .logo::before { content: 'bb'; font-size: 32px; font-weight: 700; color: var(--accent); letter-spacing: -0.05em; }
+    h1 { font-size: clamp(32px, 5vw, 48px); font-weight: 700; letter-spacing: -0.02em; background: linear-gradient(90deg, var(--text) 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 16px; }
+    .tagline { font-size: clamp(16px, 2.5vw, 20px); color: var(--muted); max-width: 600px; margin: 0 auto 32px; }
+    .video-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 16px; overflow: hidden; background: #0d0d1a; border: 1px solid var(--border); margin-bottom: 48px; }
+    video { width: 100%; height: 100%; object-fit: cover; }
+    .video-poster { position: absolute; inset: 0; background: url('brag.jpg') center/cover; opacity: 0.3; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 48px; }
+    .feature { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: transform 0.2s, box-shadow 0.2s; }
+    .feature:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,212,255,0.15); }
+    .feature-icon { width: 40px; height: 40px; stroke: var(--accent); margin-bottom: 16px; }
+    .feature h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .feature p { font-size: 14px; color: var(--muted); }
+    .install { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; text-align: center; margin-bottom: 32px; }
+    .install h2 { font-size: 24px; margin-bottom: 16px; }
+    .install-code { font-family: 'JetBrains Mono', monospace; font-size: 16px; color: var(--accent); background: rgba(0,212,255,0.1); border: 1px solid var(--border); padding: 12px 24px; border-radius: 8px; display: inline-block; }
+    .links { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 8px; font-weight: 500; text-decoration: none; transition: all 0.2s; }
+    .btn-primary { background: var(--accent); color: var(--bg); }
+    .btn-primary:hover { box-shadow: 0 4px 20px rgba(0,212,255,0.4); }
+    .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--card); }
+    footer { text-align: center; color: var(--muted); font-size: 14px; padding-top: 32px; border-top: 1px solid var(--border); }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .loading { animation: pulse 1.5s infinite; }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo" aria-hidden="true"></div>
+      <h1>bb-mcp</h1>
+      <p class="tagline">The MCP server Blackboard's own team uses. 40 tools, 5 personas, zero PII leaks.</p>
+    </header>
+
+    <div class="video-wrapper">
+      <div class="video-poster" aria-hidden="true"></div>
+      <video
+        id="bragVideo"
+        poster="brag.jpg"
+        playsinline
+        muted
+        loop
+        preload="metadata"
+      >
+        <source src="brag.mp4" type="video/mp4">
+      </video>
+    </div>
+
+    <div class="features">
+      <article class="feature">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <path d="M8 21h8M12 17v4"/>
+        </svg>
+        <h3>Student Tools (9)</h3>
+        <p>Upcoming assignments, grades, announcements, course content, submission status — all in one call.</p>
+      </article>
+      <article class="feature">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <h3>Instructor Tools (7)</h3>
+        <p>Roster, grade distribution, at-risk students, discussion summaries, AI-assisted announcements.</p>
+      </article>
+      <article class="feature">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <h3>Grade Write-Back (6)</h3>
+        <p>Create assignments, grade columns, update/delete/exempt grades — FERPA-gated, course-entitled.</p>
+      </article>
+      <article class="feature">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <h3>Admin Tools (7)</h3>
+        <p>User directory, enrollments, audit logs — all with local access-audit trail.</p>
+      </article>
+      <article class="feature">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        </svg>
+        <h3>Parent Tools (5)</h3>
+        <p>Guardian-scoped read-only: children's courses, grades, upcoming work, announcements.</p>
+      </article>
+      <article class="feature">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        <h3>Security First</h3>
+        <p>MCP_API_KEY gate, per-role rate limits, FERPA gate, PII scrubbing, audit logging.</p>
+      </article>
+    </div>
+
+    <div class="install">
+      <h2>Get Started</h2>
+      <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
+        <code class="install-code">docker run -d -p 3100:3100 --env-file .env bb-mcp</code>
+        <code class="install-code">npx bb-mcp --stdio</code>
+      </div>
+      <p style="color: var(--muted); font-size: 14px;">Free Blackboard developer sandbox at <a href="https://developer.blackboard.com" target="_blank" style="color: var(--accent);">developer.blackboard.com</a></p>
+    </div>
+
+    <div class="links">
+      <a href="https://github.com/nitsuah/bb-mcp" class="btn btn-primary" target="_blank">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <a href="https://github.com/nitsuah/bb-mcp/blob/main/README.md" class="btn btn-secondary" target="_blank">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Docs
+      </a>
+      <a href="https://developer.blackboard.com" class="btn btn-secondary" target="_blank">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Sandbox
+      </a>
+    </div>
+
+    <footer>
+      <p>Built for the Anthology AI Product Engineer portfolio · <a href="https://github.com/nitsuah/bb-mcp" style="color: var(--accent);" target="_blank">View source</a></p>
+    </footer>
+  </div>
+
+  <script>
+    // Auto-play video when visible
+    const video = document.getElementById('bragVideo');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      });
+    }, { threshold: 0.5 });
+    observer.observe(video);
+  </script>
+</body>
+</html>
