@@ -12,16 +12,16 @@ A standalone MCP server wrapping the Blackboard Learn REST API — point any MCP
 
 ## What sets it apart?
 - **40+ tools, 5 personas** — student, instructor, grade-writeback, admin, parent — all from one server.
-- **Security first** — `MCP_API_KEY` fail-closed transport gate, per-role rate limits, FERPA gate on sensitive tools, PII scrubbing on every response, local audit trail.
+- **Security first** — `MCP_API_KEY` fail-closed transport gate (when configured), per-role rate limits, FERPA gate on sensitive tools, email scrubbing on successful registered tool responses, local audit trail.
 - **Docker-first** — hardened multi-stage build, read-only fs, dropped caps, `no-new-privileges`, Makefile targets for dev/prod.
 - **Zero-credential dev loop** — free Blackboard developer sandbox; `npm run inspect` validates the MCP contract without any live API keys.
 - **Production observability** — Prometheus `/metrics`, structured JSON access logs, per-request tracing, `--doctor`/ `--probe` CLI for operators.
 
 ## Most impressive/funny claim?
-"Blackboard's own team points internal tooling at this server without touching frontend code." — the LMS vendor dogfoods the wrapper.
+"Blackboard's own team points internal tooling at this server without touching frontend code." — the LMS vendor dogfoods the wrapper. (Self-reported; not independently verified.)
 
 ## Visual hook?
-The **architecture diagram** from the README — client on left, bb-mcp in middle, Blackboard on right — animated: a tool call flows left→center→right, response scrubs PII, emits metrics, returns clean JSON. One frame = the whole value prop.
+The **architecture diagram** from the README — client on left, bb-mcp in middle, Blackboard on right — animated: a tool call flows left→center→right, response emits metrics, scrubs emails on successful tool responses, returns clean JSON. One frame = the whole value prop.
 
 ## Real UI/flow to show?
 1. **Student asks**: "What's due?" → `get_upcoming_assignments` → clean list with due dates.
