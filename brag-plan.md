@@ -32,7 +32,9 @@ The **architecture diagram** from the README — client on left, bb-mcp in middl
 `polished` — serious, elegant, restrained. This is infra for institutions; it earns trust by being boring in the right ways.
 
 ## One-line share caption
-**bb-mcp: the MCP server Blackboard's own team uses. 40 tools, 5 personas, zero PII leaks.**
+**bb-mcp: one MCP server for Blackboard Learn. 40 tools, 5 personas, emails scrubbed from tool responses.**
+
+(The Blackboard-team usage claim above is self-reported and unverified, so it stays out of the caption.)
 
 ---
 
