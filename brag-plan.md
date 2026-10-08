@@ -11,7 +11,7 @@ A standalone MCP server wrapping the Blackboard Learn REST API — point any MCP
 - **AI builders** — Drop-in MCP server; build an agent once, it works everywhere.
 
 ## What sets it apart?
-- **40+ tools, 5 personas** — student, instructor, grade-writeback, admin, parent — all from one server.
+- **40 tools, 4 personas** — student, instructor (including grade write-back), admin, parent — all from one server.
 - **Security first** — `MCP_API_KEY` fail-closed transport gate (when configured), per-role rate limits, FERPA gate on sensitive tools, email scrubbing on successful registered tool responses, local audit trail.
 - **Docker-first** — hardened multi-stage build, read-only fs, dropped caps, `no-new-privileges`, Makefile targets for dev/prod.
 - **Zero-credential dev loop** — free Blackboard developer sandbox; `npm run inspect` validates the MCP contract without any live API keys.
@@ -32,7 +32,7 @@ The **architecture diagram** from the README — client on left, bb-mcp in middl
 `polished` — serious, elegant, restrained. This is infra for institutions; it earns trust by being boring in the right ways.
 
 ## One-line share caption
-**bb-mcp: one MCP server for Blackboard Learn. 40 tools, 5 personas, emails scrubbed from tool responses.**
+**bb-mcp: one MCP server for Blackboard Learn. 40 tools, 4 personas, emails scrubbed from successful tool responses.**
 
 (The Blackboard-team usage claim above is self-reported and unverified, so it stays out of the caption.)
 
