@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Visual showcase ([standard](https://github.com/nitsuah/.github/blob/main/showcase/STANDARD.md)): `promo/spots.json` maps every FEATURES.md entry to its screenshots and videos and records the existing launch video(s); the Pages site loads the shared expand kit (click-to-expand images, fullscreen button on videos). Open Graph/Twitter media tags now use absolute URLs so link previews unfurl.
 - **Admin tools** (`src/tools/admin.ts`): `list_users`, `get_user`, `list_enrollments`, `create_enrollment`, `update_enrollment`, `delete_enrollment`, `list_audit_logs`.
 - **Parent tools** (`src/tools/parent.ts`, guardian-scoped read-only): `get_my_children`, `get_children_courses`, `get_children_grades`, `get_children_upcoming_assignments`, `get_children_announcements`.
 - **Grade write-back tools** (`src/tools/grade-writeback.ts`): `create_grade_column`, `update_grade`, `delete_grade`, `exempt_grade`, `get_grade_column`, and `create_assignment` (creates the student-visible content item and its linked grade column in one call).

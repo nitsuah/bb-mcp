@@ -1,0 +1,565 @@
+{
+  "product": "bb-mcp",
+  "live": null,
+  "page": "https://nitsuah.github.io/bb-mcp/",
+  "pagesDir": "docs/brag",
+  "features": [
+    {
+      "id": "mcp-protocol-implementation",
+      "title": "MCP Protocol Implementation",
+      "category": "Core Functionality",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "course-metadata-retrieval",
+      "title": "Course Metadata Retrieval",
+      "category": "Core Functionality",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "announcement-management",
+      "title": "Announcement Management",
+      "category": "Core Functionality",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "content-tree-navigation",
+      "title": "Content Tree Navigation",
+      "category": "Core Functionality",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "assignment-assessment-discovery",
+      "title": "Assignment & Assessment Discovery",
+      "category": "Core Functionality",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "gradebook-integration",
+      "title": "Gradebook Integration",
+      "category": "Core Functionality",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "user-directory-access",
+      "title": "User Directory Access",
+      "category": "Core Functionality",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "blackboard-learn-rest-api-bridge",
+      "title": "Blackboard Learn REST API Bridge",
+      "category": "Integrations",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "stdio-transport-support",
+      "title": "Stdio Transport Support",
+      "category": "Integrations",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "http-sse-transport-support",
+      "title": "HTTP/SSE Transport Support",
+      "category": "Integrations",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "standardized-tool-schema",
+      "title": "Standardized Tool Schema",
+      "category": "Integrations",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "rbac-middleware",
+      "title": "RBAC Middleware",
+      "category": "Security",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "oauth2-authentication",
+      "title": "OAuth2 Authentication",
+      "category": "Security",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "secure-proxy-layer",
+      "title": "Secure Proxy Layer",
+      "category": "Security",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "credential-isolation",
+      "title": "Credential Isolation",
+      "category": "Security",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getmycourses",
+      "title": "get_my_courses",
+      "category": "Student tools (9)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "listcourses",
+      "title": "list_courses",
+      "category": "Student tools (9)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getupcomingassignments",
+      "title": "get_upcoming_assignments",
+      "category": "Student tools (9)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getmygrades",
+      "title": "get_my_grades",
+      "category": "Student tools (9)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getcoursecontent",
+      "title": "get_course_content",
+      "category": "Student tools (9)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getcoursecontents",
+      "title": "get_course_contents",
+      "category": "Student tools (9)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getassignmentfeedback",
+      "title": "get_assignment_feedback",
+      "category": "Student tools (9)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getannouncements",
+      "title": "get_announcements",
+      "category": "Student tools (9)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "createassignmentsubmission",
+      "title": "create_assignment_submission",
+      "category": "Student tools (9)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "listroster",
+      "title": "list_roster",
+      "category": "Instructor tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getgrades",
+      "title": "get_grades",
+      "category": "Instructor tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getsubmissionstatus",
+      "title": "get_submission_status",
+      "category": "Instructor tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getgradedistribution",
+      "title": "get_grade_distribution",
+      "category": "Instructor tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getdiscussionsummary",
+      "title": "get_discussion_summary",
+      "category": "Instructor tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getatriskstudents",
+      "title": "get_at_risk_students",
+      "category": "Instructor tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "draftannouncement",
+      "title": "draft_announcement",
+      "category": "Instructor tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "createassignment",
+      "title": "create_assignment",
+      "category": "Grade write-back tools (6)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "creategradecolumn",
+      "title": "create_grade_column",
+      "category": "Grade write-back tools (6)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "updategrade",
+      "title": "update_grade",
+      "category": "Grade write-back tools (6)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "deletegrade",
+      "title": "delete_grade",
+      "category": "Grade write-back tools (6)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "exemptgrade",
+      "title": "exempt_grade",
+      "category": "Grade write-back tools (6)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getgradecolumn",
+      "title": "get_grade_column",
+      "category": "Grade write-back tools (6)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "listusers",
+      "title": "list_users",
+      "category": "Admin tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getuser",
+      "title": "get_user",
+      "category": "Admin tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "listenrollments",
+      "title": "list_enrollments",
+      "category": "Admin tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "createenrollment",
+      "title": "create_enrollment",
+      "category": "Admin tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "updateenrollment",
+      "title": "update_enrollment",
+      "category": "Admin tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "deleteenrollment",
+      "title": "delete_enrollment",
+      "category": "Admin tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "listauditlogs",
+      "title": "list_audit_logs",
+      "category": "Admin tools (7)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getmychildren",
+      "title": "get_my_children",
+      "category": "Parent tools (5, guardian-scoped read-only)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getchildrencourses",
+      "title": "get_children_courses",
+      "category": "Parent tools (5, guardian-scoped read-only)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getchildrengrades",
+      "title": "get_children_grades",
+      "category": "Parent tools (5, guardian-scoped read-only)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getchildrenupcomingassignments",
+      "title": "get_children_upcoming_assignments",
+      "category": "Parent tools (5, guardian-scoped read-only)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getchildrenannouncements",
+      "title": "get_children_announcements",
+      "category": "Parent tools (5, guardian-scoped read-only)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "listwebhooksubscriptions",
+      "title": "list_webhook_subscriptions",
+      "category": "Webhook subscription tools (5, admin only)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "getwebhooksubscription",
+      "title": "get_webhook_subscription",
+      "category": "Webhook subscription tools (5, admin only)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "createwebhooksubscription",
+      "title": "create_webhook_subscription",
+      "category": "Webhook subscription tools (5, admin only)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "updatewebhooksubscription",
+      "title": "update_webhook_subscription",
+      "category": "Webhook subscription tools (5, admin only)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "deletewebhooksubscription",
+      "title": "delete_webhook_subscription",
+      "category": "Webhook subscription tools (5, admin only)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "searchcoursematerials",
+      "title": "search_course_materials",
+      "category": "Shared tools (1)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "course-courseid",
+      "title": "course://{courseId}",
+      "category": "MCP Resources (1)",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "pii-scrubbing-audit-logs",
+      "title": "PII Scrubbing — Audit Logs",
+      "category": "Security & Compliance",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "pii-scrubbing-tool-outputs",
+      "title": "PII Scrubbing — Tool Outputs",
+      "category": "Security & Compliance",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "ferpa-gate-on-the-admin-tool-surface",
+      "title": "FERPA Gate on the Admin Tool Surface",
+      "category": "Security & Compliance",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "local-audit-trail-on-the-admin-tool-surface",
+      "title": "Local Audit Trail on the Admin Tool Surface",
+      "category": "Security & Compliance",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "per-role-rate-limiting",
+      "title": "Per-Role Rate Limiting",
+      "category": "Security & Compliance",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "fail-closed-transport-gate-mcpapikey",
+      "title": "Fail-Closed Transport Gate (`MCP_API_KEY`)",
+      "category": "Security & Compliance",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "pkce-oauth2-flow",
+      "title": "PKCE OAuth2 Flow",
+      "category": "Security & Compliance",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "cli-inspection-tool",
+      "title": "CLI Inspection Tool",
+      "category": "CLI & Operations",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "mcp-inspector-validation",
+      "title": "MCP Inspector Validation",
+      "category": "CLI & Operations",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "per-request-lifecycle-tracing",
+      "title": "Per-Request Lifecycle Tracing",
+      "category": "CLI & Operations",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "blackboard-probe-command",
+      "title": "Blackboard Probe Command",
+      "category": "CLI & Operations",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "standalone-docker-compose",
+      "title": "Standalone Docker Compose",
+      "category": "CLI & Operations",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "typescript-type-safety",
+      "title": "TypeScript Type Safety",
+      "category": "Developer Experience",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "auto-generated-tool-definitions",
+      "title": "Auto-generated Tool Definitions",
+      "category": "Developer Experience",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "structured-debug-logging",
+      "title": "Structured Debug Logging",
+      "category": "Developer Experience",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "environment-configuration",
+      "title": "Environment Configuration",
+      "category": "Developer Experience",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "node-js-optimized",
+      "title": "Node.js Optimized",
+      "category": "DevOps & Infrastructure",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "docker-ready",
+      "title": "Docker Ready",
+      "category": "DevOps & Infrastructure",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "rate-limit-handling",
+      "title": "Rate Limit Handling",
+      "category": "DevOps & Infrastructure",
+      "screenshots": [],
+      "spots": []
+    },
+    {
+      "id": "error-mapping",
+      "title": "Error Mapping",
+      "category": "DevOps & Infrastructure",
+      "screenshots": [],
+      "spots": []
+    }
+  ],
+  "spots": [
+    {
+      "id": "brag-21s",
+      "seconds": 21,
+      "format": "landscape",
+      "tool": "brag (plan in brag-plan.md)",
+      "features": [],
+      "published": "docs/brag/brag.mp4",
+      "rendered": "2026-10-02"
+    }
+  ],
+  "reels": [
+    {
+      "id": "hero",
+      "spots": [
+        "brag-21s"
+      ],
+      "published": "docs/brag/brag.mp4"
+    }
+  ],
+  "brand": {
+    "source": null,
+    "derived": [],
+    "manual": []
+  }
+}
