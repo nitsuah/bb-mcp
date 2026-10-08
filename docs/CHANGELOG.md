@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- Root `brag-output/` folder: its video and poster were byte-identical copies of `docs/brag/` (the Pages copies); the share copy moved to `promo/brag-21s/share-copy.txt`.
+
 ### Added
 
 - Visual showcase ([standard](https://github.com/nitsuah/.github/blob/main/showcase/STANDARD.md)): `promo/spots.json` lists every shipped FEATURES.md entry and records the existing launch video(s); feature-to-video and screenshot links are still empty and get filled in on the next `/promo` run; the Pages site loads the shared expand kit (click-to-expand images, fullscreen button on videos). Open Graph/Twitter media tags now use absolute URLs so link previews unfurl, and the Twitter card is `summary_large_image` with the poster (a player card needs an HTML player page, not a raw MP4).

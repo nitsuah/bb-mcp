@@ -66,4 +66,4 @@ The **architecture diagram** from the README — client on left, bb-mcp in middl
 - Wait for fonts/images before capture
 - Check mid-transition frames for overflow/collision
 - Poster frame = Scene 2 settled (architecture diagram fully resolved)
-- Output: `brag-output/brag.mp4`, `brag.jpg`, `share-copy.txt`
+- Output: `docs/brag/brag.mp4` + `brag.jpg` (Pages), share copy in `promo/brag-21s/share-copy.txt`
