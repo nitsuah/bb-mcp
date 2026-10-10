@@ -15,8 +15,9 @@
   #glow { position:absolute; inset:0; background:radial-gradient(1200px 700px at 78% 18%, #003d4d88, transparent 70%),
           radial-gradient(900px 600px at 10% 100%, #003d3066, transparent 70%); }
   #mark { position:absolute; left:96px; top:72px; font:700 34px Inter; display:flex; align-items:center; gap:16px; z-index:5; }
-  #mark .hex { width:40px; height:46px; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); background:var(--bg); border:3px solid var(--accent); display:flex; align-items:center; justify-content:center; }
-  #mark .hex::before { content:'bb'; font-size:18px; font-weight:700; color:var(--accent); letter-spacing:-0.05em; }
+  #mark .hex { width:40px; height:46px; display:flex; align-items:center; justify-content:center; }
+  #mark .hex svg { width:40px; height:46px; }
+  #mark .hex .bb-text { font-size:18px; font-weight:700; fill:var(--accent); letter-spacing:-0.05em; }
   #mark .sub { color:var(--muted); font-weight:600; }
   .scene { position:absolute; inset:0; opacity:0; }
   .eyebrow { font:600 26px 'JetBrains Mono'; color:var(--accent); letter-spacing:.02em; }
@@ -30,9 +31,9 @@
   .c-o { background:#3a2519; color:var(--warn); }
 
   /* hook - morphing logo */
-  #hook { display:flex; align-items:center; justify-content:center; }
-  #hook .hex-large { width:200px; height:230px; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); background:var(--bg); border:6px solid var(--accent); display:flex; align-items:center; justify-content:center; position:relative; }
-  #hook .hex-large::before { content:'bb'; font-size:80px; font-weight:700; color:var(--accent); letter-spacing:-0.05em; }
+  #hook { display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  #hook .hex-large { width:200px; height:230px; display:flex; align-items:center; justify-content:center; position:relative; }
+  #hook .hex-large svg { width:200px; height:230px; }
   #hook .lockup { position:absolute; bottom:-120px; left:50%; transform:translateX(-50%); white-space:nowrap; font:700 48px Inter; color:var(--text); opacity:0; transform:translateX(-50%) translateY(20px); transition:opacity 0.3s, transform 0.3s; }
   #hook .lockup.visible { opacity:1; transform:translateX(-50%) translateY(0); }
 
@@ -102,7 +103,11 @@
 
 <!-- 0. Hook: Blackboard logo morphs to bb-mcp hexagon -->
 <section class="scene" id="hook">
-  <div class="hex-large" id="hookHex"></div>
+  <div class="hex-large" id="hookHex">
+    <svg viewBox="0 0 200 230" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M100 0L200 57.5L200 172.5L100 230L0 172.5L0 57.5L100 0Z" stroke="var(--accent)" stroke-width="6" fill="var(--bg)"/>
+    </svg>
+  </div>
   <div class="lockup" id="hookLockup">bb-mcp</div>
 </section>
 

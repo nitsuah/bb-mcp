@@ -29,7 +29,9 @@ done
 docker info >/dev/null 2>&1 || { echo "Docker Desktop isn't running."; exit 1; }
 docker build -q -f promo/Dockerfile -t bb-mcp-promo . >/dev/null
 mkdir -p "promo/out/$SPOT"
-run() { MSYS_NO_PATHCONV=1 docker run --rm -v "$REPO:/repo:ro" -v "$REPO/promo/out:/out" bb-mcp-promo "$@"; }
+# Mount only the promo directory, preserving the output mount.
+# The render.cjs is copied into the image at /repo/render.cjs
+run() { MSYS_NO_PATHCONV=1 docker run --rm -v "$REPO/promo:/repo/promo:ro" -v "$REPO/promo/out:/out" bb-mcp-promo "$@"; }
 
 W="/out/$SPOT"; D="/repo/promo/$SPOT"
 if [ "$MODE" = stills ]; then
@@ -63,7 +65,7 @@ cp "$D/share-copy.txt" "$W/share-copy.txt"
 echo "done → promo/out/$SPOT/$SPOT.mp4"
 
 if [ "$PUBLISH" = 1 ]; then
-  cp "promo/out/$SPOT/$SPOT-web.mp4" "pages/assets/$SPOT.mp4"
-  cp "promo/out/$SPOT/$SPOT.jpg" "pages/assets/$SPOT.jpg"
-  echo "published → pages/assets/$SPOT.mp4, $SPOT.jpg"
+  cp "promo/out/$SPOT/$SPOT-web.mp4" "docs/brag/$SPOT.mp4"
+  cp "promo/out/$SPOT/$SPOT.jpg" "docs/brag/$SPOT.jpg"
+  echo "published → docs/brag/$SPOT.mp4, $SPOT.jpg"
 fi

@@ -28,7 +28,7 @@ FROM base AS promo
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm install playwright && npx playwright install-deps chromium && npx playwright install chromium
 
-COPY promo/render.cjs ./render.cjs
-COPY promo/ ./promo/
+COPY promo/render.cjs /repo/render.cjs
+COPY promo/ /repo/promo/
 
 ENTRYPOINT ["node", "/repo/render.cjs"]
