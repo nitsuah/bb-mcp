@@ -1,0 +1,15 @@
+{
+  "title": "bb-mcp — 21s spot",
+  "duration": 21,
+  "fps": 30,
+  "poster": 5.5,
+  "scenes": [
+    ["hook", 0, 2.5],
+    ["reveal", 2.5, 5.5],
+    ["student", 5.5, 9],
+    ["instructor", 9, 12.5],
+    ["security", 12.5, 15.5],
+    ["docker", 15.5, 18],
+    ["outro", 18, 21]
+  ]
+}

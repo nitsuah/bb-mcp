@@ -5,3 +5,4 @@ dist/
 *.log
 coverage/
 .DS_Store
+promo/out/

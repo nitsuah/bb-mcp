@@ -9,105 +9,120 @@
       "title": "MCP Protocol Implementation",
       "category": "Core Functionality",
       "screenshots": [],
-      "spots": []
+      "spots": ["bb-mcp-21s"],
+      "visual": "none"
     },
     {
       "id": "course-metadata-retrieval",
       "title": "Course Metadata Retrieval",
       "category": "Core Functionality",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "announcement-management",
       "title": "Announcement Management",
       "category": "Core Functionality",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "content-tree-navigation",
       "title": "Content Tree Navigation",
       "category": "Core Functionality",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "assignment-assessment-discovery",
       "title": "Assignment & Assessment Discovery",
       "category": "Core Functionality",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "gradebook-integration",
       "title": "Gradebook Integration",
       "category": "Core Functionality",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "user-directory-access",
       "title": "User Directory Access",
       "category": "Core Functionality",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "blackboard-learn-rest-api-bridge",
       "title": "Blackboard Learn REST API Bridge",
       "category": "Integrations",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "stdio-transport-support",
       "title": "Stdio Transport Support",
       "category": "Integrations",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "http-sse-transport-support",
       "title": "HTTP/SSE Transport Support",
       "category": "Integrations",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "standardized-tool-schema",
       "title": "Standardized Tool Schema",
       "category": "Integrations",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "rbac-middleware",
       "title": "RBAC Middleware",
       "category": "Security",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "oauth2-authentication",
       "title": "OAuth2 Authentication",
       "category": "Security",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "secure-proxy-layer",
       "title": "Secure Proxy Layer",
       "category": "Security",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "credential-isolation",
       "title": "Credential Isolation",
       "category": "Security",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "getmycourses",
@@ -121,7 +136,8 @@
       "title": "list_courses",
       "category": "Student tools (9)",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "getupcomingassignments",
@@ -149,7 +165,8 @@
       "title": "get_course_contents",
       "category": "Student tools (9)",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "getassignmentfeedback",
@@ -401,143 +418,183 @@
       "title": "PII Scrubbing — Audit Logs",
       "category": "Security & Compliance",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "pii-scrubbing-tool-outputs",
       "title": "PII Scrubbing — Tool Outputs",
       "category": "Security & Compliance",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "ferpa-gate-on-the-admin-tool-surface",
       "title": "FERPA Gate on the Admin Tool Surface",
       "category": "Security & Compliance",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "local-audit-trail-on-the-admin-tool-surface",
       "title": "Local Audit Trail on the Admin Tool Surface",
       "category": "Security & Compliance",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "per-role-rate-limiting",
       "title": "Per-Role Rate Limiting",
       "category": "Security & Compliance",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "fail-closed-transport-gate-mcpapikey",
       "title": "Fail-Closed Transport Gate (`MCP_API_KEY`)",
       "category": "Security & Compliance",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "pkce-oauth2-flow",
       "title": "PKCE OAuth2 Flow",
       "category": "Security & Compliance",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "cli-inspection-tool",
       "title": "CLI Inspection Tool",
       "category": "CLI & Operations",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "mcp-inspector-validation",
       "title": "MCP Inspector Validation",
       "category": "CLI & Operations",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "per-request-lifecycle-tracing",
       "title": "Per-Request Lifecycle Tracing",
       "category": "CLI & Operations",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "blackboard-probe-command",
       "title": "Blackboard Probe Command",
       "category": "CLI & Operations",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "standalone-docker-compose",
       "title": "Standalone Docker Compose",
       "category": "CLI & Operations",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "typescript-type-safety",
       "title": "TypeScript Type Safety",
       "category": "Developer Experience",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "auto-generated-tool-definitions",
       "title": "Auto-generated Tool Definitions",
       "category": "Developer Experience",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "structured-debug-logging",
       "title": "Structured Debug Logging",
       "category": "Developer Experience",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "environment-configuration",
       "title": "Environment Configuration",
       "category": "Developer Experience",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "node-js-optimized",
       "title": "Node.js Optimized",
       "category": "DevOps & Infrastructure",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "docker-ready",
       "title": "Docker Ready",
       "category": "DevOps & Infrastructure",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "rate-limit-handling",
       "title": "Rate Limit Handling",
       "category": "DevOps & Infrastructure",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     },
     {
       "id": "error-mapping",
       "title": "Error Mapping",
       "category": "DevOps & Infrastructure",
       "screenshots": [],
-      "spots": []
+      "spots": [],
+      "visual": "none"
     }
   ],
   "spots": [
+    {
+      "id": "bb-mcp-21s",
+      "seconds": 21,
+      "format": "landscape",
+      "tool": "compose (promo/bb-mcp-21s)",
+      "features": [
+        "mcp-protocol-implementation",
+        "getupcomingassignments",
+        "getatriskstudents",
+        "fail-closed-transport-gate-mcpapikey",
+        "per-role-rate-limiting",
+        "ferpa-gate-on-the-admin-tool-surface",
+        "pii-scrubbing-tool-outputs",
+        "local-audit-trail-on-the-admin-tool-surface",
+        "standalone-docker-compose",
+        "mcp-inspector-validation"
+      ],
+      "published": "docs/brag/bb-mcp-21s.mp4",
+      "rendered": "2026-10-10"
+    },
     {
       "id": "brag-21s",
       "seconds": 21,
@@ -552,6 +609,7 @@
     {
       "id": "hero",
       "spots": [
+        "bb-mcp-21s",
         "brag-21s"
       ],
       "published": "docs/brag/brag.mp4"

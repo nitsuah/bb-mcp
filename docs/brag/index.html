@@ -8,7 +8,7 @@
   <meta property="og:title" content="bb-mcp — MCP Server for Blackboard Learn">
   <meta property="og:description" content="bb-mcp: MCP server for Blackboard Learn. 40 tools, 5 personas, email scrubbing on successful tool responses.">
   <meta property="og:type" content="website">
-  <meta property="og:video" content="https://nitsuah.github.io/bb-mcp/brag.mp4">
+  <meta property="og:video" content="https://nitsuah.github.io/bb-mcp/bb-mcp-21s.mp4">
   <meta property="og:video:type" content="video/mp4">
   <meta property="og:video:width" content="1920">
   <meta property="og:video:height" content="1080">
@@ -17,6 +17,11 @@
   <meta name="twitter:title" content="bb-mcp — MCP Server for Blackboard Learn">
   <meta name="twitter:description" content="bb-mcp: MCP server for Blackboard Learn. 40 tools, 5 personas, email scrubbing on successful tool responses.">
   <meta name="twitter:image" content="https://nitsuah.github.io/bb-mcp/brag.jpg">
+  <link rel="icon" type="image/svg+xml" href="/brand/logo.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/brand/favicon-16.png">
+  <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
+  <link rel="manifest" href="/brand/manifest.json">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -66,6 +71,7 @@
     .btn-primary:hover { box-shadow: 0 4px 20px rgba(0,212,255,0.4); }
     .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
     .btn-secondary:hover { background: var(--card); }
+    .disclaimer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
     footer { text-align: center; color: var(--muted); font-size: 14px; padding-top: 32px; border-top: 1px solid var(--border); }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     .loading { animation: pulse 1.5s infinite; }
@@ -85,14 +91,14 @@
     <div class="video-wrapper">
       <video
         id="bragVideo"
-        poster="brag.jpg"
+        poster="bb-mcp-21s.jpg"
         playsinline
         muted
         loop
         preload="metadata"
         controls
       >
-        <source src="brag.mp4" type="video/mp4">
+        <source src="bb-mcp-21s.mp4" type="video/mp4">
       </video>
     </div>
 
@@ -171,6 +177,10 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         Sandbox
       </a>
+    </div>
+
+    <div class="disclaimer">
+      <p>bb-mcp is an independent open-source project. It is not affiliated with, endorsed by, or sponsored by Anthology Inc. or Blackboard Inc. All trademarks are the property of their respective owners. Blackboard® and Blackboard Learn® are registered trademarks of Anthology Inc.</p>
     </div>
 
     <footer>
