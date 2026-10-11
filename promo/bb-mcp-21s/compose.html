@@ -1,0 +1,335 @@
+<!doctype html>
+<!-- bb-mcp · 21 s spot. Every frame is window.render(t). Real artifacts only:
+     terminal output from MCP tools, architecture flow, Docker CLI, real JSON. -->
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=block">
+<style>
+  :root { --bg:#1a1a2e; --surface:#1b1a21; --surface-2:#23212b; --text:#f5f5f5; --muted:#6b7280; --border:#2f2c39;
+          --accent:#00d4ff; --accent-soft:#003d4d; --green:#00d4aa; --green-soft:#003d30; --warn:#f0975c; --red:#ff6b6b; }
+  * { box-sizing:border-box; margin:0; }
+  html, body { width:1920px; height:1080px; overflow:hidden; background:var(--bg); color:var(--text);
+               font-family:Inter, sans-serif; -webkit-font-smoothing:antialiased; }
+  .mono { font-family:'JetBrains Mono', monospace; }
+  #glow { position:absolute; inset:0; background:radial-gradient(1200px 700px at 78% 18%, #003d4d88, transparent 70%),
+          radial-gradient(900px 600px at 10% 100%, #003d3066, transparent 70%); }
+  #mark { position:absolute; left:96px; top:72px; font:700 34px Inter; display:flex; align-items:center; gap:16px; z-index:5; }
+  #mark .hex { width:40px; height:46px; display:flex; align-items:center; justify-content:center; }
+  #mark .hex svg { width:40px; height:46px; }
+  #mark .hex .bb-text { font-size:18px; font-weight:700; fill:var(--accent); letter-spacing:-0.05em; }
+  #mark .sub { color:var(--muted); font-weight:600; }
+  .scene { position:absolute; inset:0; opacity:0; }
+  .eyebrow { font:600 26px 'JetBrains Mono'; color:var(--accent); letter-spacing:.02em; }
+  h1 { font:800 112px/1.02 Inter; letter-spacing:-.035em; }
+  h2 { font:800 64px/1.08 Inter; letter-spacing:-.025em; }
+  .muted { color:var(--muted); }
+  .chip { display:inline-block; font:600 20px 'JetBrains Mono'; padding:5px 12px; border-radius:999px; margin-right:8px; }
+  .c-v { background:var(--accent-soft); color:var(--accent); }
+  .c-g { background:var(--green-soft); color:var(--green); }
+  .c-r { background:#3a1d22; color:#ff8e8e; }
+  .c-o { background:#3a2519; color:var(--warn); }
+
+  /* hook - morphing logo */
+  #hook { display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  #hook .hex-large { width:200px; height:230px; display:flex; align-items:center; justify-content:center; position:relative; }
+  #hook .hex-large svg { width:200px; height:230px; }
+  #hook .lockup { position:absolute; bottom:-120px; left:50%; transform:translateX(-50%); white-space:nowrap; font:700 48px Inter; color:var(--text); opacity:0; transform:translateX(-50%) translateY(20px); transition:opacity 0.3s, transform 0.3s; }
+  #hook .lockup.visible { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* reveal - architecture diagram */
+  #reveal { position:relative; }
+  #reveal .diagram { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; gap:80px; align-items:center; }
+  .arch-node { display:flex; flex-direction:column; align-items:center; gap:16px; opacity:0; transform:translateY(30px); transition:opacity 0.4s, transform 0.4s; }
+  .arch-node.visible { opacity:1; transform:translateY(0); }
+  .arch-icon { width:120px; height:120px; border-radius:24px; background:var(--surface); border:2px solid var(--border); display:flex; align-items:center; justify-content:center; box-shadow:0 20px 60px #0008; }
+  .arch-icon svg { width:60px; height:60px; stroke:var(--accent); }
+  .arch-label { font:700 28px Inter; text-align:center; }
+  .arch-arrow { width:80px; height:4px; background:linear-gradient(90deg, transparent, var(--accent), transparent); opacity:0; transition:opacity 0.3s; }
+  .arch-arrow.visible { opacity:1; }
+  .arch-flow { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:0; height:0; }
+  .arch-flow .particle { position:absolute; width:12px; height:12px; border-radius:50%; background:var(--accent); box-shadow:0 0 20px var(--accent); opacity:0; }
+  #reveal .detail { position:absolute; left:50%; bottom:120px; transform:translateX(-50%); text-align:center; opacity:0; transition:opacity 0.3s; font:400 22px Inter; color:var(--muted); }
+  #reveal .detail.visible { opacity:1; }
+
+  /* student - terminal demo */
+  #student .head { position:absolute; left:96px; top:170px; }
+  #student .head h2 { margin-top:14px; }
+  #student .term { position:absolute; left:96px; top:300px; width:1180px; height:570px; border-radius:16px; background:#0d0c11;
+          border:1px solid var(--border); padding:30px 36px; font:400 25px/1.6 'JetBrains Mono'; box-shadow:0 30px 80px #0008; }
+  #student .term .cmd { color:var(--accent); }
+  #student .term .json { color:var(--text); white-space:pre; }
+  #student .term .line { opacity:0; white-space:pre-wrap; }
+
+  /* instructor - terminal demo */
+  #instructor .head { position:absolute; left:96px; top:170px; }
+  #instructor .term { position:absolute; left:96px; top:300px; width:1180px; height:570px; border-radius:16px; background:#0d0c11;
+          border:1px solid var(--border); padding:30px 36px; font:400 25px/1.6 'JetBrains Mono'; box-shadow:0 30px 80px #0008; }
+  #instructor .term .cmd { color:var(--accent); }
+  #instructor .term .json { color:var(--green); }
+  #instructor .term .line { opacity:0; white-space:pre-wrap; }
+
+  /* security - icons grid */
+  #security .head { position:absolute; left:96px; top:170px; }
+  #security .grid { position:absolute; left:96px; top:300px; display:grid; grid-template-columns:repeat(5, 1fr); gap:32px; width:1500px; }
+  .sec-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:40px 24px; text-align:center; opacity:0; transform:translateY(30px); transition:opacity 0.3s, transform 0.3s; }
+  .sec-card.visible { opacity:1; transform:translateY(0); }
+  .sec-icon { width:80px; height:80px; stroke:var(--accent); margin:0 auto 20px; }
+  .sec-title { font:700 28px Inter; margin-bottom:8px; }
+  .sec-desc { font:400 20px Inter; color:var(--muted); }
+
+  /* docker - terminal demo */
+  #docker .head { position:absolute; left:96px; top:170px; }
+  #docker .term { position:absolute; left:96px; top:300px; width:1180px; height:570px; border-radius:16px; background:#0d0c11;
+          border:1px solid var(--border); padding:30px 36px; font:400 25px/1.6 'JetBrains Mono'; box-shadow:0 30px 80px #0008; }
+  #docker .term .cmd { color:var(--accent); }
+  #docker .term .ok { color:var(--green); }
+  #docker .term .line { opacity:0; white-space:pre-wrap; }
+
+  /* outro */
+  #outro { display:flex; align-items:center; justify-content:center; text-align:center; }
+  #outro .wrap { max-width:1400px; }
+  #outro .lockup { font:700 140px Inter; letter-spacing:-.03em; color:var(--text); opacity:0; transform:translateY(30px); transition:opacity 0.4s, transform 0.4s; }
+  #outro .lockup.visible { opacity:1; transform:translateY(0); }
+  #outro .cmd { font:600 48px 'JetBrains Mono'; color:var(--accent); margin-top:24px; opacity:0; transform:translateY(20px); transition:opacity 0.4s 0.1s, transform 0.4s 0.1s; }
+  #outro .cmd.visible { opacity:1; transform:translateY(0); }
+  #outro .url { font:500 34px 'JetBrains Mono'; color:var(--muted); margin-top:44px; opacity:0; transform:translateY(20px); transition:opacity 0.4s 0.2s, transform 0.4s 0.2s; }
+  #outro .url.visible { opacity:1; transform:translateY(0); }
+</style>
+</head>
+<body>
+<div id="glow"></div>
+<div id="mark"><div class="hex"></div>bb-mcp <span class="sub">· MCP Server for Blackboard Learn</span></div>
+
+<!-- 0. Hook: Blackboard logo morphs to bb-mcp hexagon -->
+<section class="scene" id="hook">
+  <div class="hex-large" id="hookHex">
+    <svg viewBox="0 0 200 230" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M100 0L200 57.5L200 172.5L100 230L0 172.5L0 57.5L100 0Z" stroke="var(--accent)" stroke-width="6" fill="var(--bg)"/>
+    </svg>
+  </div>
+  <div class="lockup" id="hookLockup">bb-mcp</div>
+</section>
+
+<!-- 1. Reveal: Architecture diagram animates -->
+<section class="scene" id="reveal">
+  <div class="diagram">
+    <div class="arch-node" id="nodeClient">
+      <div class="arch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+      <div class="arch-label">MCP Client<br>(Claude Desktop, Cursor)</div>
+    </div>
+    <div class="arch-arrow" id="arrow1"></div>
+    <div class="arch-node" id="nodeMCP">
+      <div class="arch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+      <div class="arch-label">bb-mcp<br>MCP Server</div>
+    </div>
+    <div class="arch-arrow" id="arrow2"></div>
+    <div class="arch-node" id="nodeBB">
+      <div class="arch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg></div>
+      <div class="arch-label">Blackboard Learn<br>REST API</div>
+    </div>
+  </div>
+  <div class="detail" id="revealDetail">Tool call flows left→center→right, response emits metrics, scrubs PII, returns clean JSON</div>
+</section>
+
+<!-- 2. Student: "What's due?" -->
+<section class="scene" id="student">
+  <div class="head"><div class="eyebrow">Student persona</div><h2>get_upcoming_assignments</h2></div>
+  <div class="term" id="studentTerm">
+    <div class="line cmd">$ bb-mcp get_upcoming_assignments --days 7</div>
+    <div class="line json" id="studentLine1"></div>
+  </div>
+</section>
+
+<!-- 3. Instructor: "Who's at risk?" -->
+<section class="scene" id="instructor">
+  <div class="head"><div class="eyebrow">Instructor persona</div><h2>get_at_risk_students</h2></div>
+  <div class="term" id="instructorTerm">
+    <div class="line cmd">$ bb-mcp get_at_risk_students --course-id _12345_1 --threshold 70</div>
+    <div class="line json" id="instructorLine1"></div>
+  </div>
+</section>
+
+<!-- 4. Security: 5 icons appear -->
+<section class="scene" id="security">
+  <div class="head"><div class="eyebrow">Security first</div><h2>Defense in depth</h2></div>
+  <div class="grid">
+    <div class="sec-card" id="sec1"><svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10v6M18 10v6"/><path d="M4 14h16"/></svg><div class="sec-title">API Key Gate</div><div class="sec-desc">MCP_API_KEY fail-closed</div></div>
+    <div class="sec-card" id="sec2"><svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><div class="sec-title">Rate Limits</div><div class="sec-desc">Per-role, per-minute</div></div>
+    <div class="sec-card" id="sec3"><svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><div class="sec-title">FERPA Gate</div><div class="sec-desc">ferpa_authorized: true</div></div>
+    <div class="sec-card" id="sec4"><svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18M3 12h18M3 18h12"/><path d="M19 6v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg><div class="sec-title">PII Scrubbing</div><div class="sec-desc">Emails scrubbed from responses</div></div>
+    <div class="sec-card" id="sec5"><svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg><div class="sec-title">Audit Trail</div><div class="sec-desc">Local access-audit log</div></div>
+  </div>
+</section>
+
+<!-- 5. Docker/Dev: make docker-up + npm run inspect -->
+<section class="scene" id="docker">
+  <div class="head"><div class="eyebrow">Docker-first dev loop</div><h2>Zero-credential validation</h2></div>
+  <div class="term" id="dockerTerm">
+    <div class="line cmd">$ make docker-up</div>
+    <div class="line ok" id="dockerLine1">✓ Container started: bb-mcp (read-only fs, dropped caps, no-new-privileges)</div>
+    <div class="line cmd" id="dockerLine2">$ npm run inspect</div>
+    <div class="line ok" id="dockerLine3">✓ MCP Inspector: 0 errors across all 40 tools</div>
+    <div class="line ok" id="dockerLine4">✓ Tools schema valid · JSON-RPC 2.0 compliant</div>
+  </div>
+</section>
+
+<!-- 6. Outro -->
+<section class="scene" id="outro">
+  <div class="wrap">
+    <div class="lockup" id="outroLockup">bb-mcp</div>
+    <div class="cmd" id="outroCmd">npm i -g bb-mcp</div>
+    <div class="url" id="outroUrl">github.com/nitsuah/bb-mcp</div>
+  </div>
+</section>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => { x = clamp(x); return 1 - Math.pow(1 - x, 3); };
+const ramp = (t, a, d) => ease((t - a) / d);
+
+const SCENES = [
+  ['hook', 0, 2.5],
+  ['reveal', 2.5, 5.5],
+  ['student', 5.5, 9],
+  ['instructor', 9, 12.5],
+  ['security', 12.5, 15.5],
+  ['docker', 15.5, 18],
+  ['outro', 18, 21]
+];
+
+function show(id, a, b, t) {
+  const el = $('#' + id);
+  const inn = a === 0 ? 1 : ramp(t, a, 0.35);
+  const out = b >= 21 ? 1 : 1 - ramp(t, b - 0.25, 0.25);
+  const o = t < a || t >= b ? 0 : Math.min(inn, out);
+  el.style.opacity = o;
+  el.style.transform = `translateY(${(1 - inn) * 30}px)`;
+  return t - a;
+}
+function rise(el, p) { el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * 24}px)`; }
+
+const studentJSON = `{
+  "assignments": [
+    {"id": "asg_1", "title": "Week 3 Problem Set", "dueAt": "2026-10-12T23:59:00Z", "courseId": "_12345_1", "courseName": "CS101 Intro to Programming"},
+    {"id": "asg_2", "title": "Midterm Essay", "dueAt": "2026-10-15T23:59:00Z", "courseId": "_12345_1", "courseName": "CS101 Intro to Programming"},
+    {"id": "asg_3", "title": "Lab Report 4", "dueAt": "2026-10-10T17:00:00Z", "courseId": "_67890_1", "courseName": "PHYS201 Mechanics"}
+  ]
+}`;
+
+const instructorJSON = `{
+  "atRiskStudents": [
+    {"userId": "stu_001", "displayName": "Alex Chen", "grade": 62.3, "missingAssignments": 3},
+    {"userId": "stu_002", "displayName": "Jordan Kim", "grade": 58.7, "missingAssignments": 5},
+    {"userId": "stu_003", "displayName": "Taylor Smith", "grade": 65.1, "missingAssignments": 2}
+  ]
+}`;
+
+window.render = (t) => {
+  for (const [id, a, b] of SCENES) show(id, a, b, t);
+
+  // Hook: hex morphs, lockup appears
+  const h = t;
+  const hex = $('#hookHex');
+  const lockup = $('#hookLockup');
+  if (h >= 1.0) lockup.classList.add('visible');
+
+  // Reveal: nodes and arrows appear in sequence
+  const r = t - 2.5;
+  const nodes = ['#nodeClient', '#arrow1', '#nodeMCP', '#arrow2', '#nodeBB', '#revealDetail'];
+  nodes.forEach((sel, i) => {
+    const delay = i * 0.4;
+    const p = ramp(r, 0.2 + delay, 0.35);
+    const el = $(sel);
+    if (el) {
+      el.style.opacity = p;
+      if (sel.startsWith('#node') || sel === '#revealDetail') el.style.transform = `translateY(${(1 - p) * 30}px)`;
+    }
+  });
+
+  // Student: JSON types in character by character
+  const s = t - 5.5;
+  const studentLines = studentJSON.split('\n');
+  const studentEl = $('#studentTerm');
+  if (studentEl) {
+    studentLines.forEach((line, i) => {
+      const lineEl = $(`#studentLine${i + 1}`) || (() => {
+        const div = document.createElement('div');
+        div.className = 'line json';
+        div.id = `studentLine${i + 1}`;
+        studentEl.appendChild(div);
+        return div;
+      })();
+      const p = ramp(s, 0.2 + i * 0.15, 0.25);
+      lineEl.style.opacity = p;
+      if (p > 0) {
+        const chars = Math.floor(line.length * p);
+        lineEl.textContent = line.slice(0, chars);
+      }
+    });
+  }
+
+  // Instructor: JSON types in
+  const ins = t - 9;
+  const instructorLines = instructorJSON.split('\n');
+  const instructorEl = $('#instructorTerm');
+  if (instructorEl) {
+    instructorLines.forEach((line, i) => {
+      const lineEl = $(`#instructorLine${i + 1}`) || (() => {
+        const div = document.createElement('div');
+        div.className = 'line json';
+        div.id = `instructorLine${i + 1}`;
+        instructorEl.appendChild(div);
+        return div;
+      })();
+      const p = ramp(ins, 0.2 + i * 0.15, 0.25);
+      lineEl.style.opacity = p;
+      if (p > 0) {
+        const chars = Math.floor(line.length * p);
+        lineEl.textContent = line.slice(0, chars);
+      }
+    });
+  }
+
+  // Security: 5 cards appear one by one with soft ticks
+  const sec = t - 12.5;
+  for (let i = 1; i <= 5; i++) {
+    const p = ramp(sec, 0.15 + (i - 1) * 0.25, 0.25);
+    const el = $(`#sec${i}`);
+    if (el) {
+      el.style.opacity = 0.18 + 0.82 * p;
+      el.style.transform = `translateY(${(1 - p) * 30}px)`;
+    }
+  }
+
+  // Docker: terminal lines type in
+  const d = t - 15.5;
+  const dockerLines = ['#dockerLine1', '#dockerLine2', '#dockerLine3', '#dockerLine4'];
+  dockerLines.forEach((sel, i) => {
+    const p = ramp(d, 0.2 + i * 0.35, 0.2);
+    const el = $(sel);
+    if (el) el.style.opacity = p;
+  });
+
+  // Outro: lockup, cmd, url
+  const o = t - 18;
+  const outroLockup = $('#outroLockup');
+  const outroCmd = $('#outroCmd');
+  const outroUrl = $('#outroUrl');
+  const pLockup = ramp(o, 0, 0.5);
+  outroLockup.style.opacity = pLockup;
+  outroLockup.style.transform = `translateY(${(1 - pLockup) * 30}px)`;
+  const pCmd = ramp(o, 0.4, 0.35);
+  outroCmd.style.opacity = pCmd;
+  outroCmd.style.transform = `translateY(${(1 - pCmd) * 20}px)`;
+  const pUrl = ramp(o, 0.8, 0.35);
+  outroUrl.style.opacity = pUrl;
+  outroUrl.style.transform = `translateY(${(1 - pUrl) * 20}px)`;
+};
+
+window.render(0);
+</script>
+</body>
+</html>

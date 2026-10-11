@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Hexagon background -->
+  <polygon points="64,4 118,26 118,78 64,100 10,78 10,26" fill="url(#grad)" stroke="#00d4ff" stroke-width="2"/>
+  <!-- "bb" negative space - two circles forming 'bb' -->
+  <circle cx="50" cy="56" r="22" fill="#1a1a2e"/>
+  <circle cx="78" cy="56" r="22" fill="#1a1a2e"/>
+  <!-- Connector between circles -->
+  <rect x="50" y="40" width="28" height="32" fill="#1a1a2e"/>
+  <!-- Inner cutouts for 'b' shapes -->
+  <circle cx="50" cy="56" r="10" fill="url(#grad)"/>
+  <circle cx="78" cy="56" r="10" fill="url(#grad)"/>
+</svg>
