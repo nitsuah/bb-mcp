@@ -17,7 +17,7 @@
   #mark { position:absolute; left:192px; top:144px; font:700 68px Inter; display:flex; align-items:center; gap:32px; z-index:5; }
   #mark .hex { width:80px; height:92px; display:flex; align-items:center; justify-content:center; }
   #mark .hex svg { width:80px; height:92px; }
-  #mark .hex .bb-text { font-size:36px; font-weight:700; fill:var(--accent); letter-spacing:-0.05em; }
+  #mark .hex .bb-text, #hookHex .bb-text { font-size:36px; font-weight:700; fill:var(--accent); letter-spacing:-0.05em; }
   #mark .sub { color:var(--muted); font-weight:600; font-size:28px; }
   .scene { position:absolute; inset:0; opacity:0; }
   .eyebrow { font:600 52px 'JetBrains Mono'; color:var(--accent); letter-spacing:.02em; }
@@ -166,9 +166,9 @@
   </div>
 </section>
 
-<!-- 4. Infographic: 5 personas, 40 tools -->
+<!-- 4. Infographic: 5 personas, 34 tools -->
 <section class="scene" id="infographic">
-  <div class="head"><div class="eyebrow">What bb-mcp exposes</div><h2>5 Personas · 40 Tools · One Server</h2></div>
+  <div class="head"><div class="eyebrow">What bb-mcp exposes</div><h2>5 Personas · 34 Tools · One Server</h2></div>
   <div class="matrix">
     <div class="persona-card" id="personaStudent">
       <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
@@ -299,7 +299,7 @@ const studentJSON = `{
   "assignments": [
     {"id": "asg_1", "title": "Week 3 Problem Set", "dueAt": "2026-10-12T23:59:00Z", "courseId": "_12345_1", "courseName": "CS101 Intro to Programming"},
     {"id": "asg_2", "title": "Midterm Essay", "dueAt": "2026-10-15T23:59:00Z", "courseId": "_12345_1", "courseName": "CS101 Intro to Programming"},
-    {"id": "asg_3", "title": "Lab Report 4", "dueAt": "2026-10-10T17:00:00Z", "courseId": "_67890_1", "courseName": "PHYS201 Mechanics"}
+    {"id": "asg_3", "title": "Lab Report 4", "dueAt": "2026-10-16T17:00:00Z", "courseId": "_67890_1", "courseName": "PHYS201 Mechanics"}
   ]
 }`;
 
@@ -426,10 +426,10 @@ window.render = (t) => {
   const pLockup = ramp(o, 0, 0.5);
   outroLockup.style.opacity = pLockup;
   outroLockup.style.transform = `translateY(${(1 - pLockup) * 30}px)`;
-  const pCmd = ramp(o, 0.3, 0.35);
+  const pCmd = ramp(o, 0.15, 0.35);
   outroCmd.style.opacity = pCmd;
   outroCmd.style.transform = `translateY(${(1 - pCmd) * 20}px)`;
-  const pUrl = ramp(o, 0.7, 0.35);
+  const pUrl = ramp(o, 0.4, 0.35);
   outroUrl.style.opacity = pUrl;
   outroUrl.style.transform = `translateY(${(1 - pUrl) * 20}px)`;
 };

@@ -1,1 +1,1 @@
-bb-mcp: one MCP server for Blackboard Learn. 40 tools, 4 personas, emails scrubbed from successful tool responses.
+bb-mcp: one MCP server for Blackboard Learn. 34 tools, 5 personas, emails scrubbed from successful tool responses.
