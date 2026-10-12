@@ -31,4 +31,4 @@ RUN npm ci --omit=dev && npm install playwright && npx playwright install-deps c
 COPY promo/render.cjs /repo/render.cjs
 COPY promo/ /repo/promo/
 
-ENTRYPOINT ["node", "/repo/render.cjs"]
+CMD ["node", "/repo/render.cjs"]

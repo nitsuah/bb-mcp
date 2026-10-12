@@ -6,10 +6,11 @@
   "scenes": [
     ["hook", 0, 2.5],
     ["reveal", 2.5, 5.5],
-    ["student", 5.5, 9],
-    ["instructor", 9, 12.5],
-    ["security", 12.5, 15.5],
-    ["docker", 15.5, 18],
-    ["outro", 18, 21]
+    ["student", 5.5, 8.5],
+    ["instructor", 8.5, 11.5],
+    ["infographic", 11.5, 15.5],
+    ["security", 15.5, 18.5],
+    ["docker", 18.5, 20.5],
+    ["outro", 20.5, 21]
   ]
 }

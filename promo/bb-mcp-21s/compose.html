@@ -9,22 +9,23 @@
   :root { --bg:#1a1a2e; --surface:#1b1a21; --surface-2:#23212b; --text:#f5f5f5; --muted:#6b7280; --border:#2f2c39;
           --accent:#00d4ff; --accent-soft:#003d4d; --green:#00d4aa; --green-soft:#003d30; --warn:#f0975c; --red:#ff6b6b; }
   * { box-sizing:border-box; margin:0; }
-  html, body { width:1920px; height:1080px; overflow:hidden; background:var(--bg); color:var(--text);
+  html, body { width:3840px; height:2160px; overflow:hidden; background:var(--bg); color:var(--text);
                font-family:Inter, sans-serif; -webkit-font-smoothing:antialiased; }
   .mono { font-family:'JetBrains Mono', monospace; }
-  #glow { position:absolute; inset:0; background:radial-gradient(1200px 700px at 78% 18%, #003d4d88, transparent 70%),
-          radial-gradient(900px 600px at 10% 100%, #003d3066, transparent 70%); }
-  #mark { position:absolute; left:96px; top:72px; font:700 34px Inter; display:flex; align-items:center; gap:16px; z-index:5; }
-  #mark .hex { width:40px; height:46px; display:flex; align-items:center; justify-content:center; }
-  #mark .hex svg { width:40px; height:46px; }
-  #mark .hex .bb-text { font-size:18px; font-weight:700; fill:var(--accent); letter-spacing:-0.05em; }
-  #mark .sub { color:var(--muted); font-weight:600; }
+  #glow { position:absolute; inset:0; background:radial-gradient(2400px 1400px at 78% 18%, #003d4d88, transparent 70%),
+          radial-gradient(1800px 1200px at 10% 100%, #003d3066, transparent 70%); }
+  #mark { position:absolute; left:192px; top:144px; font:700 68px Inter; display:flex; align-items:center; gap:32px; z-index:5; }
+  #mark .hex { width:80px; height:92px; display:flex; align-items:center; justify-content:center; }
+  #mark .hex svg { width:80px; height:92px; }
+  #mark .hex .bb-text { font-size:36px; font-weight:700; fill:var(--accent); letter-spacing:-0.05em; }
+  #mark .sub { color:var(--muted); font-weight:600; font-size:28px; }
   .scene { position:absolute; inset:0; opacity:0; }
-  .eyebrow { font:600 26px 'JetBrains Mono'; color:var(--accent); letter-spacing:.02em; }
-  h1 { font:800 112px/1.02 Inter; letter-spacing:-.035em; }
-  h2 { font:800 64px/1.08 Inter; letter-spacing:-.025em; }
+  .eyebrow { font:600 52px 'JetBrains Mono'; color:var(--accent); letter-spacing:.02em; }
+  h1 { font:800 224px/1.02 Inter; letter-spacing:-.035em; }
+  h2 { font:800 128px/1.08 Inter; letter-spacing:-.025em; }
+  h3 { font:700 64px/1.1 Inter; letter-spacing:-.02em; }
   .muted { color:var(--muted); }
-  .chip { display:inline-block; font:600 20px 'JetBrains Mono'; padding:5px 12px; border-radius:999px; margin-right:8px; }
+  .chip { display:inline-block; font:600 40px 'JetBrains Mono'; padding:10px 24px; border-radius:999px; margin-right:16px; }
   .c-v { background:var(--accent-soft); color:var(--accent); }
   .c-g { background:var(--green-soft); color:var(--green); }
   .c-r { background:#3a1d22; color:#ff8e8e; }
@@ -32,80 +33,95 @@
 
   /* hook - morphing logo */
   #hook { display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  #hook .hex-large { width:200px; height:230px; display:flex; align-items:center; justify-content:center; position:relative; }
-  #hook .hex-large svg { width:200px; height:230px; }
-  #hook .lockup { position:absolute; bottom:-120px; left:50%; transform:translateX(-50%); white-space:nowrap; font:700 48px Inter; color:var(--text); opacity:0; transform:translateX(-50%) translateY(20px); transition:opacity 0.3s, transform 0.3s; }
+  #hook .hex-large { width:400px; height:460px; display:flex; align-items:center; justify-content:center; position:relative; }
+  #hook .hex-large svg { width:400px; height:460px; }
+  #hook .lockup { position:absolute; bottom:-240px; left:50%; transform:translateX(-50%); white-space:nowrap; font:700 96px Inter; color:var(--text); opacity:0; transform:translateX(-50%) translateY(40px); transition:opacity 0.4s, transform 0.4s; }
   #hook .lockup.visible { opacity:1; transform:translateX(-50%) translateY(0); }
 
   /* reveal - architecture diagram */
   #reveal { position:relative; }
-  #reveal .diagram { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; gap:80px; align-items:center; }
-  .arch-node { display:flex; flex-direction:column; align-items:center; gap:16px; opacity:0; transform:translateY(30px); transition:opacity 0.4s, transform 0.4s; }
+  #reveal .diagram { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; gap:160px; align-items:center; }
+  .arch-node { display:flex; flex-direction:column; align-items:center; gap:32px; opacity:0; transform:translateY(60px); transition:opacity 0.5s, transform 0.5s; }
   .arch-node.visible { opacity:1; transform:translateY(0); }
-  .arch-icon { width:120px; height:120px; border-radius:24px; background:var(--surface); border:2px solid var(--border); display:flex; align-items:center; justify-content:center; box-shadow:0 20px 60px #0008; }
-  .arch-icon svg { width:60px; height:60px; stroke:var(--accent); }
-  .arch-label { font:700 28px Inter; text-align:center; }
-  .arch-arrow { width:80px; height:4px; background:linear-gradient(90deg, transparent, var(--accent), transparent); opacity:0; transition:opacity 0.3s; }
+  .arch-icon { width:240px; height:240px; border-radius:48px; background:var(--surface); border:4px solid var(--border); display:flex; align-items:center; justify-content:center; box-shadow:0 40px 120px #0008; }
+  .arch-icon svg { width:120px; height:120px; stroke:var(--accent); stroke-width:3; }
+  .arch-label { font:700 56px Inter; text-align:center; line-height:1.2; }
+  .arch-arrow { width:160px; height:8px; background:linear-gradient(90deg, transparent, var(--accent), transparent); opacity:0; transition:opacity 0.4s; }
   .arch-arrow.visible { opacity:1; }
   .arch-flow { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:0; height:0; }
-  .arch-flow .particle { position:absolute; width:12px; height:12px; border-radius:50%; background:var(--accent); box-shadow:0 0 20px var(--accent); opacity:0; }
-  #reveal .detail { position:absolute; left:50%; bottom:120px; transform:translateX(-50%); text-align:center; opacity:0; transition:opacity 0.3s; font:400 22px Inter; color:var(--muted); }
+  .arch-flow .particle { position:absolute; width:24px; height:24px; border-radius:50%; background:var(--accent); box-shadow:0 0 40px var(--accent); opacity:0; }
+  #reveal .detail { position:absolute; left:50%; bottom:240px; transform:translateX(-50%); text-align:center; opacity:0; transition:opacity 0.4s; font:400 44px Inter; color:var(--muted); max-width:2400px; }
   #reveal .detail.visible { opacity:1; }
 
   /* student - terminal demo */
-  #student .head { position:absolute; left:96px; top:170px; }
-  #student .head h2 { margin-top:14px; }
-  #student .term { position:absolute; left:96px; top:300px; width:1180px; height:570px; border-radius:16px; background:#0d0c11;
-          border:1px solid var(--border); padding:30px 36px; font:400 25px/1.6 'JetBrains Mono'; box-shadow:0 30px 80px #0008; }
+  #student .head { position:absolute; left:192px; top:340px; }
+  #student .head h2 { margin-top:28px; }
+  #student .term { position:absolute; left:192px; top:600px; width:2360px; height:1140px; border-radius:32px; background:#0d0c11;
+          border:2px solid var(--border); padding:60px 72px; font:400 50px/1.6 'JetBrains Mono'; box-shadow:0 60px 160px #0008; }
   #student .term .cmd { color:var(--accent); }
   #student .term .json { color:var(--text); white-space:pre; }
   #student .term .line { opacity:0; white-space:pre-wrap; }
 
   /* instructor - terminal demo */
-  #instructor .head { position:absolute; left:96px; top:170px; }
-  #instructor .term { position:absolute; left:96px; top:300px; width:1180px; height:570px; border-radius:16px; background:#0d0c11;
-          border:1px solid var(--border); padding:30px 36px; font:400 25px/1.6 'JetBrains Mono'; box-shadow:0 30px 80px #0008; }
+  #instructor .head { position:absolute; left:192px; top:340px; }
+  #instructor .term { position:absolute; left:192px; top:600px; width:2360px; height:1140px; border-radius:32px; background:#0d0c11;
+          border:2px solid var(--border); padding:60px 72px; font:400 50px/1.6 'JetBrains Mono'; box-shadow:0 60px 160px #0008; }
   #instructor .term .cmd { color:var(--accent); }
   #instructor .term .json { color:var(--green); }
   #instructor .term .line { opacity:0; white-space:pre-wrap; }
 
+  /* infographic - personas matrix */
+  #infographic { position:relative; }
+  #infographic .head { position:absolute; left:192px; top:144px; text-align:center; width:3456px; }
+  #infographic .matrix { position:absolute; left:50%; top:54%; transform:translate(-50%,-50%); display:grid; grid-template-columns:repeat(5, 1fr); gap:48px; width:3456px; }
+  .persona-card { background:var(--surface); border:2px solid var(--border); border-radius:32px; padding:48px 32px; text-align:center; opacity:0; transform:translateY(60px) scale(0.9); transition:opacity 0.5s, transform 0.5s; }
+  .persona-card.visible { opacity:1; transform:translateY(0) scale(1); }
+  .persona-icon { width:160px; height:160px; stroke:var(--accent); margin:0 auto 32px; }
+  .persona-title { font:700 56px Inter; margin-bottom:16px; }
+  .persona-count { font:800 48px 'JetBrains Mono'; color:var(--accent); margin-bottom:24px; }
+  .persona-tools { display:flex; flex-direction:column; gap:12px; text-align:left; font:400 36px Inter; color:var(--muted); }
+  .persona-tools .tool { display:flex; align-items:center; gap:16px; opacity:0; transform:translateX(-20px); transition:opacity 0.3s, transform 0.3s; }
+  .persona-tools .tool.visible { opacity:1; transform:translateX(0); }
+  .tool-dot { width:12px; height:12px; border-radius:50%; background:var(--accent); flex-shrink:0; }
+
   /* security - icons grid */
-  #security .head { position:absolute; left:96px; top:170px; }
-  #security .grid { position:absolute; left:96px; top:300px; display:grid; grid-template-columns:repeat(5, 1fr); gap:32px; width:1500px; }
-  .sec-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:40px 24px; text-align:center; opacity:0; transform:translateY(30px); transition:opacity 0.3s, transform 0.3s; }
+  #security .head { position:absolute; left:192px; top:340px; }
+  #security .grid { position:absolute; left:192px; top:600px; display:grid; grid-template-columns:repeat(5, 1fr); gap:64px; width:3000px; }
+  .sec-card { background:var(--surface); border:2px solid var(--border); border-radius:32px; padding:80px 48px; text-align:center; opacity:0; transform:translateY(60px); transition:opacity 0.4s, transform 0.4s; }
   .sec-card.visible { opacity:1; transform:translateY(0); }
-  .sec-icon { width:80px; height:80px; stroke:var(--accent); margin:0 auto 20px; }
-  .sec-title { font:700 28px Inter; margin-bottom:8px; }
-  .sec-desc { font:400 20px Inter; color:var(--muted); }
+  .sec-icon { width:160px; height:160px; stroke:var(--accent); stroke-width:3; margin:0 auto 40px; }
+  .sec-title { font:700 56px Inter; margin-bottom:16px; }
+  .sec-desc { font:400 40px Inter; color:var(--muted); }
 
   /* docker - terminal demo */
-  #docker .head { position:absolute; left:96px; top:170px; }
-  #docker .term { position:absolute; left:96px; top:300px; width:1180px; height:570px; border-radius:16px; background:#0d0c11;
-          border:1px solid var(--border); padding:30px 36px; font:400 25px/1.6 'JetBrains Mono'; box-shadow:0 30px 80px #0008; }
+  #docker .head { position:absolute; left:192px; top:340px; }
+  #docker .term { position:absolute; left:192px; top:600px; width:2360px; height:1140px; border-radius:32px; background:#0d0c11;
+          border:2px solid var(--border); padding:60px 72px; font:400 50px/1.8 'JetBrains Mono'; box-shadow:0 60px 160px #0008; }
   #docker .term .cmd { color:var(--accent); }
   #docker .term .ok { color:var(--green); }
   #docker .term .line { opacity:0; white-space:pre-wrap; }
 
   /* outro */
   #outro { display:flex; align-items:center; justify-content:center; text-align:center; }
-  #outro .wrap { max-width:1400px; }
-  #outro .lockup { font:700 140px Inter; letter-spacing:-.03em; color:var(--text); opacity:0; transform:translateY(30px); transition:opacity 0.4s, transform 0.4s; }
+  #outro .wrap { max-width:2800px; }
+  #outro .lockup { font:700 280px Inter; letter-spacing:-.03em; color:var(--text); opacity:0; transform:translateY(60px); transition:opacity 0.5s, transform 0.5s; }
   #outro .lockup.visible { opacity:1; transform:translateY(0); }
-  #outro .cmd { font:600 48px 'JetBrains Mono'; color:var(--accent); margin-top:24px; opacity:0; transform:translateY(20px); transition:opacity 0.4s 0.1s, transform 0.4s 0.1s; }
+  #outro .cmd { font:600 96px 'JetBrains Mono'; color:var(--accent); margin-top:48px; opacity:0; transform:translateY(40px); transition:opacity 0.4s 0.1s, transform 0.4s 0.1s; }
   #outro .cmd.visible { opacity:1; transform:translateY(0); }
-  #outro .url { font:500 34px 'JetBrains Mono'; color:var(--muted); margin-top:44px; opacity:0; transform:translateY(20px); transition:opacity 0.4s 0.2s, transform 0.4s 0.2s; }
+  #outro .url { font:500 68px 'JetBrains Mono'; color:var(--muted); margin-top:88px; opacity:0; transform:translateY(40px); transition:opacity 0.4s 0.2s, transform 0.4s 0.2s; }
   #outro .url.visible { opacity:1; transform:translateY(0); }
 </style>
 </head>
 <body>
 <div id="glow"></div>
-<div id="mark"><div class="hex"></div>bb-mcp <span class="sub">· MCP Server for Blackboard Learn</span></div>
+<div id="mark"><div class="hex"><svg viewBox="0 0 200 230" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M100 0L200 57.5L200 172.5L100 230L0 172.5L0 57.5L100 0Z" stroke="var(--accent)" stroke-width="12" fill="var(--bg)"/><text class="bb-text" x="100" y="145" text-anchor="middle" dominant-baseline="central">bb</text></svg></div>bb-mcp <span class="sub">· MCP Server for Blackboard Learn</span></div>
 
-<!-- 0. Hook: Blackboard logo morphs to bb-mcp hexagon -->
+<!-- 0. Hook: hexagon logo + wordmark -->
 <section class="scene" id="hook">
   <div class="hex-large" id="hookHex">
     <svg viewBox="0 0 200 230" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M100 0L200 57.5L200 172.5L100 230L0 172.5L0 57.5L100 0Z" stroke="var(--accent)" stroke-width="6" fill="var(--bg)"/>
+      <path d="M100 0L200 57.5L200 172.5L100 230L0 172.5L0 57.5L100 0Z" stroke="var(--accent)" stroke-width="12" fill="var(--bg)"/>
+      <text class="bb-text" x="100" y="145" text-anchor="middle" dominant-baseline="central">bb</text>
     </svg>
   </div>
   <div class="lockup" id="hookLockup">bb-mcp</div>
@@ -129,7 +145,7 @@
       <div class="arch-label">Blackboard Learn<br>REST API</div>
     </div>
   </div>
-  <div class="detail" id="revealDetail">Tool call flows left→center→right, response emits metrics, scrubs PII, returns clean JSON</div>
+  <div class="detail" id="revealDetail">Tool call flows Client → MCP Server → Blackboard API · Response emits metrics, scrubs PII, returns clean JSON</div>
 </section>
 
 <!-- 2. Student: "What's due?" -->
@@ -150,7 +166,74 @@
   </div>
 </section>
 
-<!-- 4. Security: 5 icons appear -->
+<!-- 4. Infographic: 5 personas, 40 tools -->
+<section class="scene" id="infographic">
+  <div class="head"><div class="eyebrow">What bb-mcp exposes</div><h2>5 Personas · 40 Tools · One Server</h2></div>
+  <div class="matrix">
+    <div class="persona-card" id="personaStudent">
+      <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <div class="persona-title">Student</div>
+      <div class="persona-count">9 tools</div>
+      <div class="persona-tools">
+        <div class="tool"><div class="tool-dot"></div><span>Upcoming assignments</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Grades & submissions</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Course announcements</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Course content tree</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Calendar events</span></div>
+      </div>
+    </div>
+    <div class="persona-card" id="personaInstructor">
+      <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <div class="persona-title">Instructor</div>
+      <div class="persona-count">7 tools</div>
+      <div class="persona-tools">
+        <div class="tool"><div class="tool-dot"></div><span>Course roster</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Grade distribution</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>At-risk students</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Discussion summaries</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>AI announcements</span></div>
+      </div>
+    </div>
+    <div class="persona-card" id="personaGrade">
+      <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      <div class="persona-title">Grade Write-Back</div>
+      <div class="persona-count">6 tools</div>
+      <div class="persona-tools">
+        <div class="tool"><div class="tool-dot"></div><span>Create assignments</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Grade columns</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Update grades</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Exempt grades</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>FERPA-gated</span></div>
+      </div>
+    </div>
+    <div class="persona-card" id="personaAdmin">
+      <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <div class="persona-title">Admin</div>
+      <div class="persona-count">7 tools</div>
+      <div class="persona-tools">
+        <div class="tool"><div class="tool-dot"></div><span>User directory</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Enrollments</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Audit logs</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Course management</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>System health</span></div>
+      </div>
+    </div>
+    <div class="persona-card" id="personaParent">
+      <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <div class="persona-title">Parent</div>
+      <div class="persona-count">5 tools</div>
+      <div class="persona-tools">
+        <div class="tool"><div class="tool-dot"></div><span>Children's courses</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Grades (read-only)</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Upcoming work</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Announcements</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Guardian-scoped</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Security: 5 icons appear -->
 <section class="scene" id="security">
   <div class="head"><div class="eyebrow">Security first</div><h2>Defense in depth</h2></div>
   <div class="grid">
@@ -162,7 +245,7 @@
   </div>
 </section>
 
-<!-- 5. Docker/Dev: make docker-up + npm run inspect -->
+<!-- 6. Docker/Dev: make docker-up + npm run inspect -->
 <section class="scene" id="docker">
   <div class="head"><div class="eyebrow">Docker-first dev loop</div><h2>Zero-credential validation</h2></div>
   <div class="term" id="dockerTerm">
@@ -174,7 +257,7 @@
   </div>
 </section>
 
-<!-- 6. Outro -->
+<!-- 7. Outro -->
 <section class="scene" id="outro">
   <div class="wrap">
     <div class="lockup" id="outroLockup">bb-mcp</div>
@@ -193,11 +276,12 @@ const ramp = (t, a, d) => ease((t - a) / d);
 const SCENES = [
   ['hook', 0, 2.5],
   ['reveal', 2.5, 5.5],
-  ['student', 5.5, 9],
-  ['instructor', 9, 12.5],
-  ['security', 12.5, 15.5],
-  ['docker', 15.5, 18],
-  ['outro', 18, 21]
+  ['student', 5.5, 8.5],
+  ['instructor', 8.5, 11.5],
+  ['infographic', 11.5, 15.5],
+  ['security', 15.5, 18.5],
+  ['docker', 18.5, 20.5],
+  ['outro', 20.5, 21]
 ];
 
 function show(id, a, b, t) {
@@ -240,7 +324,7 @@ window.render = (t) => {
   const r = t - 2.5;
   const nodes = ['#nodeClient', '#arrow1', '#nodeMCP', '#arrow2', '#nodeBB', '#revealDetail'];
   nodes.forEach((sel, i) => {
-    const delay = i * 0.4;
+    const delay = i * 0.35;
     const p = ramp(r, 0.2 + delay, 0.35);
     const el = $(sel);
     if (el) {
@@ -272,7 +356,7 @@ window.render = (t) => {
   }
 
   // Instructor: JSON types in
-  const ins = t - 9;
+  const ins = t - 8.5;
   const instructorLines = instructorJSON.split('\n');
   const instructorEl = $('#instructorTerm');
   if (instructorEl) {
@@ -293,38 +377,59 @@ window.render = (t) => {
     });
   }
 
-  // Security: 5 cards appear one by one with soft ticks
-  const sec = t - 12.5;
+  // Infographic: persona cards appear, then tools cascade
+  const inf = t - 11.5;
+  const personas = ['student', 'instructor', 'grade', 'admin', 'parent'];
+  personas.forEach((p, i) => {
+    const card = $(`#persona${p.charAt(0).toUpperCase() + p.slice(1)}`);
+    if (card) {
+      const delay = i * 0.15;
+      const pCard = ramp(inf, 0.1 + delay, 0.35);
+      card.style.opacity = pCard;
+      card.style.transform = `translateY(${(1 - pCard) * 30}px) scale(${0.9 + 0.1 * pCard})`;
+    }
+    // Tools cascade
+    const tools = $$(`#persona${p.charAt(0).toUpperCase() + p.slice(1)} .tool`);
+    tools.forEach((tool, j) => {
+      const delay = 0.5 + i * 0.1 + j * 0.1;
+      const pTool = ramp(inf, delay, 0.2);
+      tool.style.opacity = pTool;
+      tool.style.transform = `translateX(${(1 - pTool) * -20}px)`;
+    });
+  });
+
+  // Security: 5 cards appear one by one soft ticks
+  const sec = t - 15.5;
   for (let i = 1; i <= 5; i++) {
-    const p = ramp(sec, 0.15 + (i - 1) * 0.25, 0.25);
+    const p = ramp(sec, 0.1 + (i - 1) * 0.2, 0.25);
     const el = $(`#sec${i}`);
     if (el) {
-      el.style.opacity = 0.18 + 0.82 * p;
+      el.style.opacity = 0.15 + 0.85 * p;
       el.style.transform = `translateY(${(1 - p) * 30}px)`;
     }
   }
 
   // Docker: terminal lines type in
-  const d = t - 15.5;
+  const d = t - 18.5;
   const dockerLines = ['#dockerLine1', '#dockerLine2', '#dockerLine3', '#dockerLine4'];
   dockerLines.forEach((sel, i) => {
-    const p = ramp(d, 0.2 + i * 0.35, 0.2);
+    const p = ramp(d, 0.2 + i * 0.3, 0.2);
     const el = $(sel);
     if (el) el.style.opacity = p;
   });
 
   // Outro: lockup, cmd, url
-  const o = t - 18;
+  const o = t - 20.5;
   const outroLockup = $('#outroLockup');
   const outroCmd = $('#outroCmd');
   const outroUrl = $('#outroUrl');
   const pLockup = ramp(o, 0, 0.5);
   outroLockup.style.opacity = pLockup;
   outroLockup.style.transform = `translateY(${(1 - pLockup) * 30}px)`;
-  const pCmd = ramp(o, 0.4, 0.35);
+  const pCmd = ramp(o, 0.3, 0.35);
   outroCmd.style.opacity = pCmd;
   outroCmd.style.transform = `translateY(${(1 - pCmd) * 20}px)`;
-  const pUrl = ramp(o, 0.8, 0.35);
+  const pUrl = ramp(o, 0.7, 0.35);
   outroUrl.style.opacity = pUrl;
   outroUrl.style.transform = `translateY(${(1 - pUrl) * 20}px)`;
 };
