@@ -32,6 +32,7 @@ mkdir -p "promo/out/$SPOT"
 # Mount only the promo directory, preserving the output mount.
 # The render.cjs is copied into the image at /repo/render.cjs
 run() { MSYS_NO_PATHCONV=1 docker run --rm -v "$REPO/promo:/repo/promo:ro" -v "$REPO/promo/out:/out" bb-mcp-promo "$@"; }
+run_audio() { MSYS_NO_PATHCONV=1 docker run --rm --entrypoint "" -v "$REPO/promo:/repo/promo:ro" -v "$REPO/promo/out:/out" -w /repo bb-mcp-promo "$@"; }
 
 W="/out/$SPOT"; D="/repo/promo/$SPOT"
 if [ "$MODE" = stills ]; then
@@ -42,7 +43,7 @@ fi
 
 # The inner script is single-quoted and gets its paths as arguments, so the
 # outer shell never re-parses them.
-run sh -c '
+run_audio sh -c '
 set -e
 W="$1"; D="$2"; SPOT="$3"
 [ -d "$W/frames" ] || { echo "no frames yet; run without --audio first"; exit 1; }

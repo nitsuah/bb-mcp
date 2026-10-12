@@ -1,6 +1,6 @@
 # Music + SFX for bb-mcp · 21 s spot. 100 BPM, D minor, polished and serious.
 # Usage: python3 synth.py <spot.json> <out.wav>
-# Scene cuts at 2.5, 5.5, 9, 12.5, 15.5, 18 s
+# Scene cuts at 2.5, 5.5, 8.5, 11.5, 15.5, 18.5, 20.5 s
 import json
 import sys
 import wave
@@ -95,18 +95,21 @@ def main():
         place(sfx, hp(rng.standard_normal(int(0.015 * SR)), 4000) * np.exp(-np.arange(int(0.015 * SR)) / SR * 200), 5.5 + 0.2 + i * 0.15, 0.02)
     # Instructor: JSON typing
     for i in range(15):
-        place(sfx, hp(rng.standard_normal(int(0.015 * SR)), 4000) * np.exp(-np.arange(int(0.015 * SR)) / SR * 200), 9 + 0.2 + i * 0.15, 0.02)
+        place(sfx, hp(rng.standard_normal(int(0.015 * SR)), 4000) * np.exp(-np.arange(int(0.015 * SR)) / SR * 200), 8.5 + 0.2 + i * 0.15, 0.02)
+    # Infographic: 5 persona cards + tools cascade - rising arpeggio
+    for i in range(5):
+        place(sfx, chime(hz(74 + [0, 2, 4, 7, 9][i]), 0.4), 11.5 + 0.15 + i * 0.3, 0.06)
     # Security: 5 cards appear with soft chimes
     for i in range(5):
-        place(sfx, chime(hz(81 + [0, 2, 4, 7, 9][i]), 0.4), 12.5 + 0.15 + i * 0.25, 0.06)
+        place(sfx, chime(hz(81 + [0, 2, 4, 7, 9][i]), 0.4), 15.5 + 0.15 + i * 0.25, 0.06)
     # Docker: terminal lines with success chimes
-    place(sfx, chime(hz(78), 0.5), 15.5 + 0.2, 0.07)
-    place(sfx, chime(hz(81), 0.5), 15.5 + 0.7, 0.07)
-    place(sfx, chime(hz(86), 0.5), 15.5 + 1.2, 0.07)
-    place(sfx, chime(hz(88), 0.5), 15.5 + 1.7, 0.07)
+    place(sfx, chime(hz(78), 0.5), 18.5 + 0.2, 0.07)
+    place(sfx, chime(hz(81), 0.5), 18.5 + 0.7, 0.07)
+    place(sfx, chime(hz(86), 0.5), 18.5 + 1.2, 0.07)
+    place(sfx, chime(hz(88), 0.5), 18.5 + 1.7, 0.07)
     # Outro: resolving chord
     for m in (62, 66, 69, 74):
-        place(sfx, tone(hz(m), 2.5, 1.2), 18, 0.05)
+        place(sfx, tone(hz(m), 2.5, 1.2), 20.5, 0.05)
 
     mix = music + drums + sfx
     # Subtle room reverb

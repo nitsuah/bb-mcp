@@ -6,11 +6,12 @@
 |-------|----------|--------|-------|
 | 1. Hook | 2.5s | Blackboard logo → morphs into bb-mcp hexagon → "bb-mcp" lockup | Low synth pad, single pluck |
 | 2. Reveal | 3s | Architecture diagram animates: client → bb-mcp → Blackboard → return (PII scrub, metrics, audit) | Pad swells, subtle whoosh on flow |
-| 3. Student | 3.5s | Terminal: `get_upcoming_assignments` → typed → JSON result cards slide in | Click, soft chord |
-| 4. Instructor | 3.5s | Terminal: `get_at_risk_students` → typed → table builds row by row | Click, chord |
-| 5. Security | 3s | Icons appear: 🔐 API key gate → ⏱ rate limit → 🛡 FERPA gate → 🧹 PII scrub → 📝 audit log | Five soft ticks, one per icon |
-| 6. Docker/Dev | 2.5s | `make docker-up` → container spins → `npm run inspect` → "0 errors" badge | Terminal typing, success chime |
-| 7. Outro | 3s | "bb-mcp" lockup + GitHub URL + "npm i -g bb-mcp" (or docker) | Pad resolves, final pluck |
+| 3. Student | 3s | Terminal: `get_upcoming_assignments` → typed → JSON result cards slide in | Click, soft chord |
+| 4. Instructor | 3s | Terminal: `get_at_risk_students` → typed → table builds row by row | Click, chord |
+| 5. Infographic | 4s | 5 persona cards cascade in: Student(9) Instructor(7) Grade(6) Admin(7) Parent(5) = 34 tools | Rising arpeggio, each card chimes |
+| 6. Security | 3s | Icons appear: 🔐 API key gate → ⏱ rate limit → 🛡 FERPA gate → 🧹 PII scrub → 📝 audit log | Five soft ticks, one per icon |
+| 7. Docker/Dev | 2s | `make docker-up` → container spins → `npm run inspect` → "0 errors" badge | Terminal typing, success chime |
+| 8. Outro | 0.5s | "bb-mcp" lockup + GitHub URL + "npm i -g bb-mcp" | Pad resolves, final pluck |
 
 **Total: 21s**
 

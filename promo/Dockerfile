@@ -16,6 +16,9 @@ WORKDIR /repo
 FROM base AS test
 
 COPY package.json package-lock.json ./
+COPY config/vitest.config.ts ./config/vitest.config.ts
+COPY src/ ./src/
+COPY tests/ ./tests/
 RUN npm ci
 
 COPY promo/render.cjs ./promo/render.cjs
@@ -31,4 +34,4 @@ RUN npm ci --omit=dev && npm install playwright && npx playwright install-deps c
 COPY promo/render.cjs /repo/render.cjs
 COPY promo/ /repo/promo/
 
-ENTRYPOINT ["node", "/repo/render.cjs"]
+CMD ["node", "/repo/render.cjs"]
