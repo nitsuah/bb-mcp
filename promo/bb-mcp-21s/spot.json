@@ -3,6 +3,7 @@
   "duration": 21,
   "fps": 30,
   "poster": 6.5,
+  "size": [3840, 2160],
   "scenes": [
     ["hook", 0, 2.5],
     ["reveal", 2.5, 5.5],
