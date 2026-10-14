@@ -166,9 +166,9 @@
   </div>
 </section>
 
-<!-- 4. Infographic: 5 personas, 34 tools -->
+<!-- 4. Infographic: 5 personas, 40 tools -->
 <section class="scene" id="infographic">
-  <div class="head"><div class="eyebrow">What bb-mcp exposes</div><h2>5 Personas · 34 Tools · One Server</h2></div>
+  <div class="head"><div class="eyebrow">What bb-mcp exposes</div><h2>5 Personas · 40 Tools · One Server</h2></div>
   <div class="matrix">
     <div class="persona-card" id="personaStudent">
       <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
@@ -185,7 +185,7 @@
     <div class="persona-card" id="personaInstructor">
       <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
       <div class="persona-title">Instructor</div>
-      <div class="persona-count">7 tools</div>
+      <div class="persona-count">8 tools</div>
       <div class="persona-tools">
         <div class="tool"><div class="tool-dot"></div><span>Course roster</span></div>
         <div class="tool"><div class="tool-dot"></div><span>Grade distribution</span></div>
@@ -209,13 +209,13 @@
     <div class="persona-card" id="personaAdmin">
       <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       <div class="persona-title">Admin</div>
-      <div class="persona-count">7 tools</div>
+      <div class="persona-count">12 tools</div>
       <div class="persona-tools">
         <div class="tool"><div class="tool-dot"></div><span>User directory</span></div>
         <div class="tool"><div class="tool-dot"></div><span>Enrollments</span></div>
         <div class="tool"><div class="tool-dot"></div><span>Audit logs</span></div>
         <div class="tool"><div class="tool-dot"></div><span>Course management</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>System health</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Webhook subscriptions</span></div>
       </div>
     </div>
     <div class="persona-card" id="personaParent">
@@ -429,7 +429,7 @@ window.render = (t) => {
   const pCmd = ramp(o, 0.15, 0.35);
   outroCmd.style.opacity = pCmd;
   outroCmd.style.transform = `translateY(${(1 - pCmd) * 20}px)`;
-  const pUrl = ramp(o, 0.4, 0.35);
+  const pUrl = ramp(o, 0.2, 0.3);
   outroUrl.style.opacity = pUrl;
   outroUrl.style.transform = `translateY(${(1 - pUrl) * 20}px)`;
 };
