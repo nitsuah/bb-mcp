@@ -35,22 +35,22 @@
   #hook { display:flex; flex-direction:column; align-items:center; justify-content:center; }
   #hook .hex-large { width:400px; height:460px; display:flex; align-items:center; justify-content:center; position:relative; }
   #hook .hex-large svg { width:400px; height:460px; }
-  #hook .lockup { position:absolute; bottom:-240px; left:50%; transform:translateX(-50%); white-space:nowrap; font:700 96px Inter; color:var(--text); opacity:0; transform:translateX(-50%) translateY(40px); transition:opacity 0.4s, transform 0.4s; }
+  #hook .lockup { position:absolute; bottom:180px; left:50%; white-space:nowrap; font:700 96px Inter; color:var(--text); opacity:0; transform:translateX(-50%) translateY(40px); transition:opacity 0.4s, transform 0.4s; }
   #hook .lockup.visible { opacity:1; transform:translateX(-50%) translateY(0); }
 
   /* reveal - architecture diagram */
   #reveal { position:relative; }
-  #reveal .diagram { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; gap:160px; align-items:center; }
-  .arch-node { display:flex; flex-direction:column; align-items:center; gap:32px; opacity:0; transform:translateY(60px); transition:opacity 0.5s, transform 0.5s; }
+  #reveal .diagram { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; gap:80px; align-items:center; }
+  .arch-node { display:flex; flex-direction:column; align-items:center; gap:24px; opacity:0; transform:translateY(60px); transition:opacity 0.5s, transform 0.5s; width:240px; }
   .arch-node.visible { opacity:1; transform:translateY(0); }
-  .arch-icon { width:240px; height:240px; border-radius:48px; background:var(--surface); border:4px solid var(--border); display:flex; align-items:center; justify-content:center; box-shadow:0 40px 120px #0008; }
+  .arch-icon { width:240px; height:240px; border-radius:48px; background:var(--surface); border:4px solid var(--border); display:flex; align-items:center; justify-content:center; box-shadow:0 40px 120px #0008; flex-shrink:0; }
   .arch-icon svg { width:120px; height:120px; stroke:var(--accent); stroke-width:3; }
-  .arch-label { font:700 56px Inter; text-align:center; line-height:1.2; }
-  .arch-arrow { width:160px; height:8px; background:linear-gradient(90deg, transparent, var(--accent), transparent); opacity:0; transition:opacity 0.4s; }
+  .arch-label { font:700 48px Inter; text-align:center; line-height:1.15; max-width:360px; word-break:break-word; }
+  .arch-arrow { width:120px; height:6px; background:linear-gradient(90deg, transparent, var(--accent), transparent); opacity:0; transition:opacity 0.4s; flex-shrink:0; }
   .arch-arrow.visible { opacity:1; }
   .arch-flow { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:0; height:0; }
-  .arch-flow .particle { position:absolute; width:24px; height:24px; border-radius:50%; background:var(--accent); box-shadow:0 0 40px var(--accent); opacity:0; }
-  #reveal .detail { position:absolute; left:50%; bottom:240px; transform:translateX(-50%); text-align:center; opacity:0; transition:opacity 0.4s; font:400 44px Inter; color:var(--muted); max-width:2400px; }
+  .arch-flow .particle { position:absolute; width:20px; height:20px; border-radius:50%; background:var(--accent); box-shadow:0 0 30px var(--accent); opacity:0; }
+  #reveal .detail { position:absolute; left:50%; bottom:200px; transform:translateX(-50%); text-align:center; opacity:0; transition:opacity 0.4s; font:400 40px Inter; color:var(--muted); max-width:2800px; }
   #reveal .detail.visible { opacity:1; }
 
   /* student - terminal demo */
