@@ -1,0 +1,5 @@
+{
+  "theme": "default",
+  "themeVariables": { "fontFamily": "Arial, Helvetica, sans-serif" },
+  "flowchart": { "htmlLabels": false, "curve": "basis" }
+}

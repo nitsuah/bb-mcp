@@ -1,0 +1,24 @@
+sequenceDiagram
+  participant C as MCP client
+  participant T as /mcp or stdio transport
+  participant W as withMetrics + withTrace
+  participant H as tool handler
+  participant A as checkAuthorization
+  participant B as BlackboardClient
+  participant L as Blackboard Learn
+
+  C->>T: tools/call (name, arguments incl. caller_identity)
+  T->>W: dispatch to handler
+  W->>H: start trace (request id, latency)
+  H->>A: parseIdentity, then authorize
+  A->>A: per-role rate limit
+  A->>A: FERPA gate on restricted tools
+  A->>A: RBAC role check (deny by default)
+  A-->>H: access.granted or access.denied (audit entry)
+  H->>B: fetch data
+  B->>L: GET with cached OAuth2 token
+  L-->>B: JSON or HTTP error
+  B-->>H: data or mapped error category
+  H-->>W: tool result
+  W->>W: scrub emails from output
+  W-->>C: content (text JSON)
