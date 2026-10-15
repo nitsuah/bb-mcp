@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nightly journeys (`tests/journeys/`, `config/playwright.journeys.config.mjs`, `.github/workflows/journeys.yml`): API journeys with Playwright's `request` fixture against `node dist/index.js` (dummy `BB_CLIENT_ID`/`BB_CLIENT_SECRET`, loopback `HOST`, a test `MCP_API_KEY`; no real Blackboard anywhere) cover `/health`, `/manifest` (40 tools, transports), the `/mcp` 401, MCP initialize + `tools/list`, and a student denied `list_users`; a Pages-site journey checks the hero video and poster, the expand kit, links and no horizontal scroll at 375 px. The caller workflow is pinned to the current `nitsuah/.github` main commit with a matching `kit-ref`; `@playwright/test` 1.64.1 is a new devDependency.
 - `bb-mcp-21s-vert`: a narrated 1080x1920, 23 s re-render of the launch spot (captions burned in, Kokoro narration committed under `promo/bb-mcp-21s-vert/vo/`), published to `docs/brag/` and the Pages vertical slot. `promo/build.sh` can now borrow a base spot's music (`"synth"`) and mix committed narration; `promo/tts/` and `promo/sheet.sh` come from the stash/vigil approach.
 
+### Fixed (promo claims)
+
+- `bb-mcp-21s` re-rendered at 1920x1080 (23 s) from the code, reusing the vertical cut's scenes: 40 tools split 9 student / 7 instructor / 6 grade write-back / 12 admin and webhooks / 5 parent / 1 shared, the real RBAC refusal text, the real startup line and `/health` output, and the real result shape of `get_upcoming_assignments`. The invented CLI verbs, JSON, "34 tools" and the `npm i -g bb-mcp` outro (that name is an unrelated Bitbucket package; bb-mcp is not on npm) are gone, and the outro now points at github.com/nitsuah/bb-mcp (#149, #150). The stale `storyboard.md` is removed.
+- Pages site: "5 personas" is now "4 roles" in the description, Open Graph and Twitter text and the tagline; the Admin card is "Admin and Webhooks (12)" and a line adds the shared search tool, so the groups add up to the 40-tool headline (#151, #152).
+
 ### Removed
 
 - Root `brag-output/` folder: its video and poster were byte-identical copies of `docs/brag/` (the Pages copies); the share copy moved to `promo/brag-21s/share-copy.txt`.

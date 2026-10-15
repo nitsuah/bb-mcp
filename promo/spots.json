@@ -583,7 +583,7 @@
   "spots": [
     {
       "id": "bb-mcp-21s",
-      "seconds": 21,
+      "seconds": 23,
       "format": "landscape",
       "tool": "compose (promo/bb-mcp-21s)",
       "features": [
@@ -599,7 +599,7 @@
         "mcp-inspector-validation"
       ],
       "published": "docs/brag/bb-mcp-21s.mp4",
-      "rendered": "2026-10-11"
+      "rendered": "2026-10-15"
     },
     {
       "id": "bb-mcp-21s-vert",

@@ -18,13 +18,13 @@ _All completed foundation, 2026 Q2, and 2026 Q3 work is shipped and condensed in
 
 ### P1 - High
 
-- [ ] [#149](https://github.com/nitsuah/bb-mcp/issues/149) The 21 s spot's outro says `npm i -g bb-mcp`, which installs an unrelated Bitbucket server; this package (`blackboard-learn-mcp`) is not on npm.
-- [ ] [#150](https://github.com/nitsuah/bb-mcp/issues/150) The 21 s spot's on-screen claims (34 tools, 8/12-tool cards, CLI verbs that do not exist, invented JSON) disagree with the code; re-render it from the corrected scenes.
+- [x] [#149](https://github.com/nitsuah/bb-mcp/issues/149) The 21 s spot's outro says `npm i -g bb-mcp`, which installs an unrelated Bitbucket server; this package (`blackboard-learn-mcp`) is not on npm.
+- [x] [#150](https://github.com/nitsuah/bb-mcp/issues/150) The 21 s spot's on-screen claims (34 tools, 8/12-tool cards, CLI verbs that do not exist, invented JSON) disagree with the code; re-render it from the corrected scenes.
 
 ### P2 - Medium
 
-- [ ] [#151](https://github.com/nitsuah/bb-mcp/issues/151) Pages page says "5 personas"; there are 4 roles (`src/auth.ts:33`).
-- [ ] [#152](https://github.com/nitsuah/bb-mcp/issues/152) Pages tool-group cards add up to 34, the headline says 40 (webhooks and shared search are missing).
+- [x] [#151](https://github.com/nitsuah/bb-mcp/issues/151) Pages page says "5 personas"; there are 4 roles (`src/auth.ts:33`).
+- [x] [#152](https://github.com/nitsuah/bb-mcp/issues/152) Pages tool-group cards add up to 34, the headline says 40 (webhooks and shared search are missing).
 - [ ] **[2027-Q1]** Bind `caller_identity` to real end-user authentication instead of trusting the client's claim.
   - Priority: P2
   - Context: `auth.ts` intentionally delegates end-user identity verification to the calling MCP client (documented in its module docstring) — `parseIdentity` trusts whatever `userId`/`role`/`ferpa_authorized` the request supplies. `MCP_API_KEY` (PR #115) closes the transport-level gap for any non-loopback deployment (the server refuses to start without a key at all beyond loopback, so a client without one can't reach `/mcp`) but doesn't verify that a client *holding* the key is telling the truth about who's asking — and a loopback-bound deployment still allows any local client through with no key at all, by design. The OAuth authorization-code flow in `oauth.ts` produces application-level Blackboard API sessions, not per-end-user identity tokens usable for this. Flagged by CodeRabbit on PR #115 (2026-09-09); deliberately deferred rather than redesigning the identity model blind under a review pass — needs a real design decision (e.g. requiring the calling client to forward a verified Blackboard/SSO identity token bb-mcp can validate per request) rather than a rushed fix.
