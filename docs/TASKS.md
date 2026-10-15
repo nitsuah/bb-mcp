@@ -14,6 +14,8 @@ _All completed foundation, 2026 Q2, and 2026 Q3 work is shipped and condensed in
 
 ## Todo
 
+- [ ] Capture for promo: course-courseid (generate a visual of a `course://{courseId}` resource read, an MCP resource response from a fixture; extend scripts/visual-docs.mjs).
+
 ### P1 - High
 
 _None open._

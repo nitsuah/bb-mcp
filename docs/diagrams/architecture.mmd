@@ -1,0 +1,24 @@
+flowchart LR
+  client["MCP client<br/>(Claude Desktop, Cursor, web LLM)"]
+  subgraph server["bb-mcp server (src/index.ts)"]
+    stdio["stdio transport<br/>--stdio"]
+    http["HTTP transport<br/>POST/GET /mcp, MCP_API_KEY bearer gate"]
+    ops["GET /health, /metrics, /manifest,<br/>/oauth/authorize, /oauth/callback,<br/>/sse/search-course-materials"]
+    tools["40 tool handlers<br/>student, instructor, admin,<br/>parent, grade write-back, webhooks"]
+    auth["checkAuthorization (src/auth.ts)<br/>rate limit, FERPA gate, RBAC roles"]
+    wrap["withMetrics (src/metrics.ts)<br/>trace, PII scrub, metrics"]
+    audit[("local audit trail<br/>1000-entry ring buffer")]
+    bbc["BlackboardClient (src/bb-client.ts)<br/>cached client-credentials token,<br/>error mapping"]
+  end
+  bb[("Blackboard Learn<br/>REST API")]
+
+  client --> stdio
+  client --> http
+  stdio --> tools
+  http --> tools
+  tools --> wrap
+  wrap --> auth
+  auth --> audit
+  wrap --> bbc
+  bbc --> bb
+  ops -.-> client
