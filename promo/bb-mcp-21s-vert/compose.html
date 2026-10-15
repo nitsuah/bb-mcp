@@ -280,10 +280,14 @@ window.render = (t) => {
   rise($('#outro .fine'), ramp(s, 0.5, 0.35), 12);
 
   // burned-in captions: the narration lines, spot.json narration.lines[].text
-  const L = LINES.find((l) => t >= l.at && t < l.at + l.dur + 0.35);
+  // The most recently started line owns the caption; it ends 0.35 s after its audio or when the next line starts.
+  const idx = LINES.reduce((k, l, i) => (t >= l.at ? i : k), -1);
+  const L = idx >= 0 ? LINES[idx] : null;
+  const end = L ? Math.min(L.at + L.dur + 0.35, idx + 1 < LINES.length ? LINES[idx + 1].at : Infinity) : 0;
+  const on = L && t < end;
   const cap = $('#cap');
-  cap.textContent = L ? (L.cap || L.text) : '';
-  cap.style.opacity = L ? Math.min(clamp((t - L.at) / 0.15), clamp((L.at + L.dur + 0.35 - t) / 0.2)) : 0;
+  cap.textContent = on ? (L.cap || L.text) : '';
+  cap.style.opacity = on ? Math.min(clamp((t - L.at) / 0.15), clamp((end - t) / 0.12)) : 0;
 };
 
 // Overflow report used by the render check: every visible element must sit inside 1080x1920.

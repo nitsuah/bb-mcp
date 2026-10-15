@@ -22,7 +22,7 @@ http
   .createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
     let file = path.join(root, decodeURIComponent(url.pathname));
-    if (!file.startsWith(root)) {
+    if (file !== root && !file.startsWith(root + path.sep)) {
       res.writeHead(403).end();
       return;
     }
@@ -32,8 +32,24 @@ http
       const type = TYPES[path.extname(file)] ?? "application/octet-stream";
       const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? "");
       if (range) {
-        const start = range[1] ? Number(range[1]) : 0;
-        const end = range[2] ? Number(range[2]) : size - 1;
+        let start;
+        let end;
+        if (range[1] === "" && range[2] === "") {
+          start = size;
+          end = -1;
+        } else if (range[1] === "") {
+          // Suffix range: the last N bytes.
+          start = Math.max(0, size - Number(range[2]));
+          end = size - 1;
+        } else {
+          start = Number(range[1]);
+          end =
+            range[2] === "" ? size - 1 : Math.min(Number(range[2]), size - 1);
+        }
+        if (start >= size || start > end) {
+          res.writeHead(416, { "Content-Range": `bytes */${size}` }).end();
+          return;
+        }
         res.writeHead(206, {
           "Content-Type": type,
           "Accept-Ranges": "bytes",

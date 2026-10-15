@@ -57,7 +57,7 @@ jobs:
     uses: nitsuah/.github/.github/workflows/journeys.yml@03aa622645df326946d42abf3c4ab7919b044495
     with:
       image: mcr.microsoft.com/playwright:v1.64.1-jammy
-      command: npm run test:journeys
+      command: JOURNEYS_EXTERNAL_LINKS=1 npm run test:journeys
       features: promo/spots.json
       kit-ref: 03aa622645df326946d42abf3c4ab7919b044495
       repro: |

@@ -102,9 +102,13 @@ test(
           ...new Set(as.map((a) => a.getAttribute("href"))),
         ]);
         expect(hrefs.sort()).toEqual([...OUTBOUND].sort());
-        for (const url of OUTBOUND) {
-          const res = await request.head(url, { timeout: 20_000 });
-          expect(res.status(), url).toBeLessThan(400);
+        // Third-party hosts are only checked on the nightly and manual runs (the workflow
+        // sets JOURNEYS_EXTERNAL_LINKS there); a remote outage must not fail a pull request.
+        if (process.env.JOURNEYS_EXTERNAL_LINKS) {
+          for (const url of OUTBOUND) {
+            const res = await request.head(url, { timeout: 20_000 });
+            expect(res.status(), url).toBeLessThan(400);
+          }
         }
         const files = await page.$$eval(
           "link[href]:not([href^=http]), video[poster], source[src]",
