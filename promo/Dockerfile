@@ -16,10 +16,10 @@ WORKDIR /repo
 FROM base AS test
 
 COPY package.json package-lock.json ./
+RUN npm ci
 COPY config/vitest.config.ts ./config/vitest.config.ts
 COPY src/ ./src/
 COPY tests/ ./tests/
-RUN npm ci
 
 COPY promo/render.cjs ./promo/render.cjs
 
