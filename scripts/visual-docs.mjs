@@ -263,6 +263,9 @@ const fontFiles = [
   "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
   "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf",
 ].filter(existsSync);
+if (!Resvg && process.env.CI) {
+  throw new Error("@resvg/resvg-js is required in CI to generate the PNGs");
+}
 if (Resvg && fontFiles.length === 0) {
   throw new Error(
     "DejaVu Sans Mono not found: apt-get install fonts-dejavu-core",

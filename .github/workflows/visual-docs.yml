@@ -18,15 +18,25 @@ on:
       - ".github/workflows/visual-docs.yml"
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
+# Two quick pushes would race on the bot/visual-docs branch and PR.
+concurrency:
+  group: visual-docs
+  cancel-in-progress: true
+
+permissions: {}
 
 jobs:
   visual-docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the bot/visual-docs branch
+      pull-requests: write # open or update the regeneration PR
     steps:
       - uses: actions/checkout@v7
+        with:
+          # npm install runs package code; keep the write token out of git config.
+          # create-pull-request authenticates with its own token input.
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
