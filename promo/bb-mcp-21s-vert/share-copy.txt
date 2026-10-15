@@ -1,0 +1,1 @@
+bb-mcp, vertical: one MCP server for Blackboard Learn. 40 tools gated by role, an API key gate, a FERPA gate, per-role rate limits, email scrubbing on successful tool responses and an audit log. Build it, run it, connect your client. https://github.com/nitsuah/bb-mcp

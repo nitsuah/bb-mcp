@@ -12,7 +12,7 @@
         "docs/diagrams/architecture.svg",
         "docs/diagrams/tool-call-flow.svg"
       ],
-      "spots": ["bb-mcp-21s"],
+      "spots": ["bb-mcp-21s", "bb-mcp-21s-vert"],
       "visual": "none"
     },
     {
@@ -100,7 +100,7 @@
       "title": "RBAC Middleware",
       "category": "Security",
       "screenshots": ["docs/screenshots/rbac-middleware.png"],
-      "spots": [],
+      "spots": ["bb-mcp-21s-vert"],
       "visual": "none"
     },
     {
@@ -147,7 +147,7 @@
       "title": "get_upcoming_assignments",
       "category": "Student tools (9)",
       "screenshots": ["docs/screenshots/standardized-tool-schema.png"],
-      "spots": ["bb-mcp-21s"]
+      "spots": ["bb-mcp-21s", "bb-mcp-21s-vert"]
     },
     {
       "id": "getmygrades",
@@ -291,7 +291,7 @@
       "title": "list_users",
       "category": "Admin tools (7)",
       "screenshots": ["docs/screenshots/standardized-tool-schema.png"],
-      "spots": []
+      "spots": ["bb-mcp-21s-vert"]
     },
     {
       "id": "getuser",
@@ -432,7 +432,7 @@
       "title": "PII Scrubbing — Tool Outputs",
       "category": "Security & Compliance",
       "screenshots": [],
-      "spots": ["bb-mcp-21s"],
+      "spots": ["bb-mcp-21s", "bb-mcp-21s-vert"],
       "visual": "none"
     },
     {
@@ -440,7 +440,7 @@
       "title": "FERPA Gate on the Admin Tool Surface",
       "category": "Security & Compliance",
       "screenshots": [],
-      "spots": ["bb-mcp-21s"],
+      "spots": ["bb-mcp-21s", "bb-mcp-21s-vert"],
       "visual": "none"
     },
     {
@@ -448,7 +448,7 @@
       "title": "Local Audit Trail on the Admin Tool Surface",
       "category": "Security & Compliance",
       "screenshots": [],
-      "spots": ["bb-mcp-21s"],
+      "spots": ["bb-mcp-21s", "bb-mcp-21s-vert"],
       "visual": "none"
     },
     {
@@ -456,7 +456,7 @@
       "title": "Per-Role Rate Limiting",
       "category": "Security & Compliance",
       "screenshots": [],
-      "spots": ["bb-mcp-21s"],
+      "spots": ["bb-mcp-21s", "bb-mcp-21s-vert"],
       "visual": "none"
     },
     {
@@ -464,7 +464,7 @@
       "title": "Fail-Closed Transport Gate (`MCP_API_KEY`)",
       "category": "Security & Compliance",
       "screenshots": [],
-      "spots": ["bb-mcp-21s"],
+      "spots": ["bb-mcp-21s", "bb-mcp-21s-vert"],
       "visual": "none"
     },
     {
@@ -600,6 +600,25 @@
       ],
       "published": "docs/brag/bb-mcp-21s.mp4",
       "rendered": "2026-10-11"
+    },
+    {
+      "id": "bb-mcp-21s-vert",
+      "seconds": 23,
+      "format": "vertical",
+      "tool": "compose (promo/bb-mcp-21s-vert)",
+      "features": [
+        "mcp-protocol-implementation",
+        "getupcomingassignments",
+        "listusers",
+        "rbac-middleware",
+        "fail-closed-transport-gate-mcpapikey",
+        "per-role-rate-limiting",
+        "ferpa-gate-on-the-admin-tool-surface",
+        "pii-scrubbing-tool-outputs",
+        "local-audit-trail-on-the-admin-tool-surface"
+      ],
+      "published": "docs/brag/bb-mcp-21s-vert.mp4",
+      "rendered": "2026-10-15"
     },
     {
       "id": "brag-21s",

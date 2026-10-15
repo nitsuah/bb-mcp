@@ -6,3 +6,5 @@ dist/
 coverage/
 .DS_Store
 promo/out/
+journeys-report/
+test-results/

@@ -94,6 +94,7 @@ pip install pre-commit && pre-commit install && pre-commit install --hook-type p
 
 See `.github/workflows/ci.yml` for the full CI pipeline.
 
+**Journeys** (nightly, no AI): `tests/journeys/` drives the real server over HTTP (health, manifest, the 401 gate, an MCP session, an RBAC refusal) and checks the Pages site at 1440 px and 375 px. Run them in the Playwright image with `docker run --rm -v "$PWD:/w" -w /w -e CI=true mcr.microsoft.com/playwright:v1.64.1-jammy sh -c "npm ci && npm run test:journeys"`. Failures become `bot:journey` issues; the generated `BUGS.md` lives on the [`bot/journeys` branch](https://github.com/nitsuah/bb-mcp/blob/bot/journeys/BUGS.md) ([contract](https://github.com/nitsuah/.github/blob/main/journeys/STANDARD.md)).
 ## Makefile reference
 
 ```sh

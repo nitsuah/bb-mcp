@@ -47,7 +47,13 @@ run_audio sh -c '
 set -e
 W="$1"; D="$2"; SPOT="$3"
 [ -d "$W/frames" ] || { echo "no frames yet; run without --audio first"; exit 1; }
-python3 "$D/synth.py" "$D/spot.json" "$W/audio-raw.wav"
+# A -vert spot borrows the music of its base spot ("synth": "<spot>" in spot.json).
+SY="$D/synth.py"; [ -f "$SY" ] || SY="/repo/promo/$(node -p "require(process.argv[1]).synth" "$D/spot.json")/synth.py"
+python3 "$SY" "$D/spot.json" "$W/audio-raw.wav"
+# A spot with "narration" gets its committed vo/<id>.wav lines mixed over the music (tts/narrate.sh).
+if node -e "process.exit(require(process.argv[1]).narration ? 0 : 1)" "$D/spot.json"; then
+  python3 /repo/promo/tts/mix.py "$D/spot.json" "$D/vo" "$W/audio-raw.wav" "$W/audio-raw.wav"
+fi
 ffmpeg -hide_banner -loglevel error -y -i "$W/audio-raw.wav" -af loudnorm=I=-14:TP=-1.5:LRA=11:linear=true -ar 44100 "$W/audio.wav"
 FPS=$(node -p "require(process.argv[1]).fps || 30" "$D/spot.json")
 P=$(node -p "const s=require(process.argv[1]); String(Math.round(s.poster*(s.fps||30))).padStart(4,\"0\")" "$D/spot.json")

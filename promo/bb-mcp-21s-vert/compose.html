@@ -1,0 +1,306 @@
+<!doctype html>
+<!-- bb-mcp · vertical short (1080x1920, 23 s). A re-render of promo/bb-mcp-21s as a
+     narrated 9:16 cut. Every frame is window.render(t), a pure function of time (no CSS
+     transitions). Real artifacts only: the RBAC refusal text, /health output and startup
+     line are captured from the real server (tests/journeys/api.spec.mjs asserts the same
+     strings); tool results are fictional demo data, labelled as such. -->
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=block">
+<style>
+  :root { --bg:#1a1a2e; --surface:#1b1a21; --text:#f5f5f5; --muted:#8b93a1; --border:#2f2c39;
+          --accent:#00d4ff; --accent-soft:#003d4d; --green:#00d4aa; --red:#ff7b7b; --red-soft:#3a1d22; }
+  * { box-sizing:border-box; margin:0; }
+  html, body { width:1080px; height:1920px; overflow:hidden; background:var(--bg); color:var(--text);
+               font-family:Inter, sans-serif; -webkit-font-smoothing:antialiased; }
+  .mono { font-family:'JetBrains Mono', monospace; }
+  #glow { position:absolute; inset:0; background:radial-gradient(900px 700px at 80% 12%, #003d4d99, transparent 70%),
+          radial-gradient(900px 800px at 10% 92%, #003d3077, transparent 70%); }
+  #mark { position:absolute; left:0; right:0; top:74px; z-index:5; display:flex; align-items:center; justify-content:center; gap:22px; font:800 54px Inter; letter-spacing:-.02em; }
+  #mark svg { width:56px; height:64px; }
+  #mark .sub { color:var(--muted); font:600 28px Inter; letter-spacing:0; }
+  .bbt { font:700 78px Inter; fill:var(--accent); letter-spacing:-.05em; }
+  .scene { position:absolute; left:0; top:0; width:1080px; height:1920px; opacity:0; }
+  .eyebrow { font:600 32px 'JetBrains Mono'; color:var(--accent); letter-spacing:.02em; }
+  h2 { font:800 66px/1.08 Inter; letter-spacing:-.03em; }
+  .head { position:absolute; left:60px; right:60px; top:230px; }
+  .head h2 { margin-top:14px; }
+  .note { position:absolute; left:60px; right:60px; font:400 26px/1.4 Inter; color:var(--muted); }
+
+  /* title */
+  #title .hex { position:absolute; left:340px; top:520px; width:400px; height:460px; }
+  #title .word { position:absolute; left:0; right:0; top:1050px; text-align:center; font:800 150px Inter; letter-spacing:-.04em; }
+  #title .tag { position:absolute; left:60px; right:60px; top:1240px; text-align:center; font:600 46px/1.25 Inter; color:var(--muted); }
+  #title .chips { position:absolute; left:0; right:0; top:1390px; text-align:center; }
+  .chip { display:inline-block; font:600 34px 'JetBrains Mono'; padding:12px 26px; border-radius:999px; margin:0 8px; background:var(--accent-soft); color:var(--accent); }
+
+  /* flow */
+  .node { position:absolute; left:80px; width:920px; height:230px; border-radius:32px; background:var(--surface); border:3px solid var(--border);
+          display:flex; align-items:center; gap:36px; padding:0 44px; box-shadow:0 30px 80px #0007; }
+  .node.hot { border-color:var(--accent); }
+  .node svg { width:92px; height:92px; flex:none; stroke:var(--accent); stroke-width:1.6; fill:none; }
+  .node .t { font:800 52px/1.1 Inter; letter-spacing:-.02em; }
+  .node .s { font:500 30px/1.3 Inter; color:var(--muted); margin-top:8px; }
+  .arrow { position:absolute; left:538px; width:4px; height:84px; background:linear-gradient(180deg, var(--accent), transparent); }
+  .arrow::after { content:''; position:absolute; left:-12px; bottom:-4px; border:14px solid transparent; border-top:20px solid var(--accent); border-bottom:0; }
+
+  /* terminals */
+  .term { position:absolute; left:50px; width:980px; border-radius:28px; background:#0d0c11; border:2px solid var(--border);
+          padding:36px 40px; font:400 31px/1.45 'JetBrains Mono'; box-shadow:0 50px 120px #0009; }
+  .term .l { white-space:pre-wrap; opacity:0; overflow-wrap:anywhere; }
+  .term .cmd { color:var(--accent); }
+  .term .dim { color:var(--muted); }
+  .term .ok { color:var(--green); }
+  .term .err { color:var(--red); }
+  .term .json { color:var(--text); }
+
+  /* role map */
+  .map { position:absolute; left:60px; right:60px; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:20px; background:var(--surface); border:2px solid var(--border);
+         border-radius:22px; padding:26px 30px; margin-bottom:20px; font:600 31px 'JetBrains Mono'; }
+  .row .r { color:var(--accent); }
+  .row.bad .r { color:var(--red); }
+
+  /* groups */
+  .grp { position:absolute; left:60px; width:960px; height:178px; border-radius:26px; background:var(--surface); border:2px solid var(--border);
+         display:flex; align-items:center; justify-content:space-between; padding:0 40px; }
+  .grp .n { font:800 48px Inter; letter-spacing:-.02em; }
+  .grp .e { font:500 25px/1.3 'JetBrains Mono'; color:var(--muted); margin-top:8px; }
+  .grp .c { font:800 84px 'JetBrains Mono'; color:var(--accent); }
+  .total { position:absolute; left:60px; width:960px; text-align:center; font:800 40px 'JetBrains Mono'; color:var(--green); }
+
+  /* gates */
+  .gate { position:absolute; left:60px; width:960px; height:232px; border-radius:28px; background:var(--surface); border:2px solid var(--border);
+          display:flex; align-items:center; gap:34px; padding:0 40px; }
+  .gate svg { width:84px; height:84px; flex:none; stroke:var(--accent); stroke-width:1.7; fill:none; }
+  .gate .n { font:800 46px Inter; letter-spacing:-.02em; }
+  .gate .e { font:500 28px/1.35 Inter; color:var(--muted); margin-top:8px; }
+
+  /* outro */
+  #outro .word { position:absolute; left:0; right:0; top:620px; text-align:center; font:800 190px Inter; letter-spacing:-.04em; }
+  #outro .url { position:absolute; left:0; right:0; top:900px; text-align:center; font:600 50px 'JetBrains Mono'; color:var(--accent); }
+  #outro .what { position:absolute; left:60px; right:60px; top:1030px; text-align:center; font:600 46px/1.25 Inter; color:var(--muted); }
+  #outro .fine { position:absolute; left:90px; right:90px; top:1250px; text-align:center; font:400 26px/1.45 Inter; color:#667085; }
+
+  #cap { position:absolute; left:50px; right:50px; top:1655px; height:150px; display:flex; align-items:flex-start; justify-content:center; text-align:center;
+         font:700 52px/1.2 Inter; letter-spacing:-.01em; text-shadow:0 4px 24px #000, 0 0 6px #000; opacity:0; z-index:9; }
+</style>
+</head>
+<body>
+<div id="glow"></div>
+<div id="mark"><svg viewBox="0 0 200 230" fill="none"><path d="M100 0L200 57.5L200 172.5L100 230L0 172.5L0 57.5L100 0Z" stroke="#00d4ff" stroke-width="12" fill="#1a1a2e"/><text class="bbt" x="100" y="145" text-anchor="middle" dominant-baseline="central">bb</text></svg>bb-mcp</div>
+
+<section class="scene" id="title">
+  <svg class="hex" viewBox="0 0 200 230" fill="none"><path d="M100 0L200 57.5L200 172.5L100 230L0 172.5L0 57.5L100 0Z" stroke="#00d4ff" stroke-width="10" fill="#1a1a2e"/><text class="bbt" x="100" y="145" text-anchor="middle" dominant-baseline="central">bb</text></svg>
+  <div class="word">bb-mcp</div>
+  <div class="tag">One MCP server for Blackboard Learn</div>
+  <div class="chips"><span class="chip">40 tools</span><span class="chip">4 roles</span></div>
+</section>
+
+<section class="scene" id="flow">
+  <div class="head"><div class="eyebrow">How a call travels</div><h2>Client, server, Blackboard</h2></div>
+  <div class="node" id="n1" style="top:470px"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><div><div class="t">MCP client</div><div class="s">Claude Desktop, Cursor</div></div></div>
+  <div class="arrow" id="a1" style="top:704px"></div>
+  <div class="node hot" id="n2" style="top:800px"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><div><div class="t">bb-mcp</div><div class="s">stdio or streamable HTTP · 40 tools</div></div></div>
+  <div class="arrow" id="a2" style="top:1034px"></div>
+  <div class="node" id="n3" style="top:1130px"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/></svg><div><div class="t">Blackboard Learn</div><div class="s">REST API</div></div></div>
+  <div class="note" id="flowNote" style="top:1400px;text-align:center;font-size:32px">Roles are checked, and emails scrubbed from successful tool responses, on the way through.</div>
+</section>
+
+<section class="scene" id="student">
+  <div class="head"><div class="eyebrow">Student</div><h2 class="mono" style="font-size:50px;letter-spacing:-.04em">get_upcoming_assignments</h2></div>
+  <div class="term" id="studentTerm" style="top:470px;height:1010px"></div>
+  <div class="note" style="top:1500px;text-align:center;font-size:28px">Fictional demo data, abridged. No real Blackboard behind this clip.</div>
+</section>
+
+<section class="scene" id="denied">
+  <div class="head"><div class="eyebrow">Same server, wrong role</div><h2 class="mono" style="font-size:50px;letter-spacing:-.04em">list_users</h2></div>
+  <div class="term" id="deniedTerm" style="top:470px;height:400px"></div>
+  <div class="map" id="deniedMap" style="top:930px">
+    <div class="row bad" id="m1"><span>list_users</span><span class="r">admin only</span></div>
+    <div class="row" id="m2"><span>get_upcoming_assignments</span><span class="r">student</span></div>
+    <div class="row" id="m3"><span>update_grade</span><span class="r">instructor, admin</span></div>
+    <div class="row" id="m4"><span>get_my_children</span><span class="r">parent</span></div>
+  </div>
+  <div class="note" id="deniedNote" style="top:1440px;text-align:center;font-size:30px">Every refusal is written to the audit log as access.denied.</div>
+</section>
+
+<section class="scene" id="groups">
+  <div class="head"><div class="eyebrow">What bb-mcp exposes</div><h2>40 tools, gated by role</h2></div>
+  <div class="grp" id="g1" style="top:440px"><div><div class="n">Student</div><div class="e">get_my_grades, get_announcements</div></div><div class="c">9</div></div>
+  <div class="grp" id="g2" style="top:640px"><div><div class="n">Instructor</div><div class="e">list_roster, get_at_risk_students</div></div><div class="c">7</div></div>
+  <div class="grp" id="g3" style="top:840px"><div><div class="n">Grade write-back</div><div class="e">create_assignment, update_grade</div></div><div class="c">6</div></div>
+  <div class="grp" id="g4" style="top:1040px"><div><div class="n">Admin and webhooks</div><div class="e">list_users, list_audit_logs, 5 webhook tools</div></div><div class="c">12</div></div>
+  <div class="grp" id="g5" style="top:1240px"><div><div class="n">Parent</div><div class="e">guardian-scoped, read-only</div></div><div class="c">5</div></div>
+  <div class="grp" id="g6" style="top:1440px;height:150px"><div><div class="n" style="font-size:42px">Shared</div><div class="e">search_course_materials</div></div><div class="c">1</div></div>
+</section>
+
+<section class="scene" id="gates">
+  <div class="head"><div class="eyebrow">Security</div><h2>Five gates, one call</h2></div>
+  <div class="gate" id="s1" style="top:400px;height:210px"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><div><div class="n">API key gate</div><div class="e">MCP_API_KEY bearer token, required off loopback</div></div></div>
+  <div class="gate" id="s2" style="top:640px;height:210px"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><div><div class="n">FERPA gate</div><div class="e">8 tools need ferpa_authorized: true</div></div></div>
+  <div class="gate" id="s3" style="top:880px;height:210px"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><div><div class="n">Rate limits</div><div class="e">Per minute, per role:<br>student 60 · instructor 120 · admin 180 · parent 60</div></div></div>
+  <div class="gate" id="s4" style="top:1120px;height:210px"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h12"/></svg><div><div class="n">Email scrubbing</div><div class="e">Emails scrubbed from successful tool responses</div></div></div>
+  <div class="gate" id="s5" style="top:1360px;height:210px"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg><div><div class="n">Audit log</div><div class="e">access.granted and access.denied, subject hashed</div></div></div>
+</section>
+
+<section class="scene" id="run">
+  <div class="head"><div class="eyebrow">Run it</div><h2>Two commands, then connect</h2></div>
+  <div class="term" id="runTerm" style="top:470px;height:560px"></div>
+  <div class="map" id="runMap" style="top:1080px">
+    <div class="row" id="e1"><span>/mcp</span><span class="r">streamable HTTP</span></div>
+    <div class="row" id="e2"><span>/health</span><span class="r">liveness</span></div>
+    <div class="row" id="e3"><span>/metrics</span><span class="r">Prometheus text</span></div>
+    <div class="row" id="e4"><span>/manifest</span><span class="r">40 tools + roles</span></div>
+  </div>
+</section>
+
+<section class="scene" id="outro">
+  <div class="word">bb-mcp</div>
+  <div class="url">github.com/nitsuah/bb-mcp</div>
+  <div class="what">MCP server for Blackboard Learn</div>
+  <div class="fine">An independent project, not affiliated with or endorsed by Anthology Inc. or Blackboard Inc.</div>
+</section>
+
+<div id="cap"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const ramp = (t, a, d) => ease((t - a) / d);
+// Inlined from spot.json (a file:// page cannot fetch it). Keep the two in step.
+const SPOT = {"scenes":[["title",0,2.5],["flow",2.5,5.5],["student",5.5,8.5],["denied",8.5,11.5],["groups",11.5,15.5],["gates",15.5,18.5],["run",18.5,20.5],["outro",20.5,23]],"narration":{"lines":[{"at":0.15,"dur":2.62,"text":"One MCP server for Blackboard Learn."},{"at":2.8,"dur":2.8,"text":"Your client, bb-mcp, then Blackboard."},{"at":5.6,"dur":2,"text":"A student asks what is due this week."},{"at":8.6,"dur":2.99,"text":"Ask for the user directory, and the role check says no."},{"at":11.7,"dur":2.24,"text":"Forty tools, each gated by role."},{"at":15.6,"dur":3.24,"text":"Key gate, FERPA gate, rate limits, scrubbing, audit log."},{"at":18.8,"dur":2.16,"text":"Build it, run it, connect your client."},{"at":21.2,"dur":1.62,"text":"Open source, on GitHub."}]}};
+
+// Scene windows come from spot.json so compose and the audio stay in step.
+const SCENES = SPOT.scenes;
+const LINES = SPOT.narration.lines;
+
+function sceneOpacity(a, b, t, last) {
+  if (t < a || t >= b) return 0;
+  const inn = a === 0 ? 1 : clamp((t - a) / 0.3);
+  const out = last ? 1 : 1 - clamp((t - (b - 0.22)) / 0.22);
+  return Math.min(inn, out);
+}
+
+// Terminals: each entry is [class, text, startOffsetSeconds, typeSeconds].
+function term(el, rows, s) {
+  if (!el.dataset.built) {
+    el.dataset.built = '1';
+    rows.forEach(([cls, text]) => {
+      const d = document.createElement('div');
+      d.className = 'l ' + cls;
+      d.textContent = text;
+      el.appendChild(d);
+    });
+  }
+  [...el.children].forEach((d, i) => {
+    const [, text, at, dur] = rows[i];
+    const p = clamp((s - at) / dur);
+    d.style.opacity = p > 0 ? 1 : 0;
+    d.textContent = text.slice(0, Math.ceil(text.length * p));
+    d.style.visibility = p > 0 ? 'visible' : 'hidden';
+  });
+}
+
+const STUDENT = [
+  ['cmd', '$ tools/call get_upcoming_assignments', 0.1, 0.3],
+  ['dim', '  caller_identity: student, daysAhead: 7', 0.35, 0.2],
+  ['json', '', 0.5, 0.01],
+  ['json', '[', 0.55, 0.05],
+  ['json', '  {', 0.6, 0.05],
+  ['json', '    "id": "_8841_1",', 0.65, 0.2],
+  ['json', '    "title": "Week 3 Problem Set",', 0.75, 0.25],
+  ['json', '    "course": "CS101 Intro to Programming",', 0.9, 0.3],
+  ['json', '    "due": "2026-10-16T23:59:00Z",', 1.05, 0.25],
+  ['json', '    "dueIn": "1 days"', 1.2, 0.2],
+  ['json', '  },', 1.35, 0.05],
+  ['json', '  {', 1.4, 0.05],
+  ['json', '    "id": "_8842_1",', 1.45, 0.2],
+  ['json', '    "title": "Lab Report 4",', 1.55, 0.2],
+  ['json', '    "course": "PHYS201 Mechanics",', 1.7, 0.25],
+  ['json', '    "due": "2026-10-19T17:00:00Z",', 1.85, 0.25],
+  ['json', '    "dueIn": "5 days"', 2.0, 0.2],
+  ['json', '  }', 2.15, 0.05],
+  ['json', ']', 2.2, 0.05],
+];
+
+const DENIED = [
+  ['cmd', '$ tools/call list_users', 0.1, 0.3],
+  ['dim', '  caller_identity: student, ferpa_authorized: true', 0.35, 0.3],
+  ['dim', '', 0.7, 0.01],
+  ['err', 'isError: true', 0.8, 0.2],
+  ['err', 'Tool "list_users" is not available to role "student". Allowed roles: admin.', 1.0, 0.8],
+];
+
+const RUN = [
+  ['cmd', '$ npm ci && npm run build', 0.05, 0.2],
+  ['cmd', '$ HOST=127.0.0.1 node dist/index.js', 0.25, 0.25],
+  ['ok', 'blackboard-learn-mcp HTTP server listening on 127.0.0.1:3100', 0.5, 0.25],
+  ['dim', '', 0.75, 0.01],
+  ['cmd', '$ curl -s 127.0.0.1:3100/health', 0.75, 0.2],
+  ['json', '{"status":"ok","name":"blackboard-learn-mcp","version":"0.1.0", ...}', 0.95, 0.3],
+];
+
+function at(id) { return SCENES.find((s) => s[0] === id); }
+function rise(el, p, dy = 40) { el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * dy}px)`; }
+
+window.render = (t) => {
+  SCENES.forEach(([id, a, b], i) => { $('#' + id).style.opacity = sceneOpacity(a, b, t, i === SCENES.length - 1); });
+
+  // title: wordmark is on screen from frame 0
+  rise($('#title .tag'), ramp(t, 0.15, 0.4), 24);
+  rise($('#title .chips'), ramp(t, 0.35, 0.4), 24);
+
+  // flow
+  let s = t - at('flow')[1];
+  [['#n1', 0.1], ['#a1', 0.5], ['#n2', 0.7], ['#a2', 1.1], ['#n3', 1.3]].forEach(([sel, d]) => rise($(sel), ramp(s, d, 0.4), 30));
+  rise($('#flowNote'), ramp(s, 1.9, 0.4), 16);
+
+  term($('#studentTerm'), STUDENT, t - at('student')[1]);
+  s = t - at('denied')[1];
+  term($('#deniedTerm'), DENIED, s);
+  ['#m1', '#m2', '#m3', '#m4'].forEach((sel, i) => rise($(sel), ramp(s, 1.3 + i * 0.3, 0.3), 20));
+  rise($('#deniedNote'), ramp(s, 2.0, 0.3), 12);
+
+  s = t - at('groups')[1];
+  for (let i = 1; i <= 6; i++) rise($('#g' + i), ramp(s, 0.15 + (i - 1) * 0.28, 0.35), 34);
+
+  s = t - at('gates')[1];
+  for (let i = 1; i <= 5; i++) rise($('#s' + i), ramp(s, 0.1 + (i - 1) * 0.32, 0.35), 34);
+
+  s = t - at('run')[1];
+  term($('#runTerm'), RUN, s);
+  ['#e1', '#e2', '#e3', '#e4'].forEach((sel, i) => rise($(sel), ramp(s, 0.6 + i * 0.15, 0.2), 20));
+
+  s = t - at('outro')[1];
+  rise($('#outro .url'), ramp(s, 0.15, 0.35), 20);
+  rise($('#outro .what'), ramp(s, 0.3, 0.35), 20);
+  rise($('#outro .fine'), ramp(s, 0.5, 0.35), 12);
+
+  // burned-in captions: the narration lines, spot.json narration.lines[].text
+  const L = LINES.find((l) => t >= l.at && t < l.at + l.dur + 0.35);
+  const cap = $('#cap');
+  cap.textContent = L ? (L.cap || L.text) : '';
+  cap.style.opacity = L ? Math.min(clamp((t - L.at) / 0.15), clamp((L.at + L.dur + 0.35 - t) / 0.2)) : 0;
+};
+
+// Overflow report used by the render check: every visible element must sit inside 1080x1920.
+window.bounds = () => {
+  const out = [];
+  document.querySelectorAll('body *').forEach((el) => {
+    if (el.closest('svg') && el.tagName !== 'svg') return;
+    const sc = el.closest('.scene');
+    if (sc && +sc.style.opacity === 0) return;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    if (+getComputedStyle(el).opacity === 0 || getComputedStyle(el).visibility === 'hidden') return;
+    if (r.left < -0.5 || r.right > 1080.5 || r.top < -0.5 || r.bottom > 1920.5) out.push([el.id || el.className || el.tagName, Math.round(r.left), Math.round(r.right), Math.round(r.top), Math.round(r.bottom)]);
+  });
+  return out;
+};
+window.render(0);
+</script>
+</body>
+</html>
