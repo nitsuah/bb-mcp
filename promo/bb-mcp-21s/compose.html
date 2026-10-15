@@ -102,7 +102,7 @@
 <section class="scene" id="student">
   <div class="head"><div class="eyebrow">Student</div><h2 style="font:800 52px 'JetBrains Mono';letter-spacing:-.04em">get_upcoming_assignments</h2></div>
   <div class="term" id="studentTerm" style="left:96px;top:300px;width:1100px;height:640px"></div>
-  <div class="note" style="left:1260px;right:96px;top:330px;font-size:30px;line-height:1.5">The tool is called over MCP with a <span style="color:var(--accent);font-family:'JetBrains Mono'">caller_identity</span>, and returns a plain list.<br><br>Fictional demo data, abridged. No real Blackboard behind this clip.</div>
+  <div class="note" style="left:1260px;right:96px;top:330px;font-size:30px;line-height:1.5">The tool is called as an MCP request with a <span style="color:var(--accent);font-family:'JetBrains Mono'">caller_identity</span>, and returns a plain list.<br><br>Fictional demo data, abridged. No real Blackboard behind this clip.</div>
 </section>
 
 <section class="scene" id="denied">
@@ -184,8 +184,8 @@ function term(el, rows, s) {
 }
 // Result shape: a bare array of { id, title, course, courseId, due, dueIn, maxScore } (src/tools/student.ts).
 const STUDENT = [
-  ['cmd', '$ tools/call get_upcoming_assignments', 0.1, 0.3],
-  ['dim', '  caller_identity: student, daysAhead: 7', 0.35, 0.2],
+  ['cmd', 'MCP request · tools/call get_upcoming_assignments', 0.1, 0.3],
+  ['dim', '  caller_identity: {userId: "u_demo", role: "student"}, daysAhead: 7', 0.35, 0.2],
   ['json', '[', 0.55, 0.05],
   ['json', '  {', 0.6, 0.05],
   ['json', '    "id": "_8841_1",', 0.65, 0.2],
@@ -198,19 +198,20 @@ const STUDENT = [
   ['json', ']', 1.6, 0.05],
 ];
 const DENIED = [
-  ['cmd', '$ tools/call list_users', 0.1, 0.3],
-  ['dim', '  caller_identity: student, ferpa_authorized: true', 0.35, 0.3],
+  ['cmd', 'MCP request · tools/call list_users', 0.1, 0.3],
+  ['dim', '  caller_identity: {userId: "u_demo", role: "student", ferpa_authorized: true}', 0.35, 0.3],
   ['dim', '', 0.7, 0.01],
   ['err', 'isError: true', 0.8, 0.2],
   ['err', 'Tool "list_users" is not available to role "student". Allowed roles: admin.', 1.0, 0.8],
 ];
 const RUN = [
   ['cmd', '$ npm ci && npm run build', 0.05, 0.2],
-  ['cmd', '$ HOST=127.0.0.1 node dist/index.js', 0.25, 0.25],
-  ['ok', 'blackboard-learn-mcp HTTP server listening on 127.0.0.1:3100', 0.5, 0.25],
-  ['dim', '', 0.75, 0.01],
-  ['cmd', '$ curl -s 127.0.0.1:3100/health', 0.75, 0.2],
-  ['json', '{"status":"ok","name":"blackboard-learn-mcp","version":"0.1.0", ...}', 0.95, 0.3],
+  ['dim', '# configure .env: BB_CLIENT_ID, BB_CLIENT_SECRET', 0.25, 0.25],
+  ['cmd', '$ HOST=127.0.0.1 node dist/index.js', 0.45, 0.2],
+  ['ok', 'blackboard-learn-mcp HTTP server listening on 127.0.0.1:3100', 0.65, 0.2],
+  ['dim', '', 0.85, 0.01],
+  ['cmd', '$ curl -s 127.0.0.1:3100/health', 0.85, 0.2],
+  ['json', '{"status":"ok","name":"blackboard-learn-mcp","version":"0.1.0", ...}', 1.05, 0.3],
 ];
 function at(id) { return SCENES.find((s) => s[0] === id); }
 function rise(el, p, dy = 40) { el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * dy}px)`; }
