@@ -179,7 +179,11 @@
         <div class="tool"><div class="tool-dot"></div><span>View grades & submission status</span></div>
         <div class="tool"><div class="tool-dot"></div><span>Read course announcements</span></div>
         <div class="tool"><div class="tool-dot"></div><span>Browse course content & files</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Check calendar events</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>View enrolled courses</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Submit assignments</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>View assignment feedback</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Search course materials</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>List course contents (alias)</span></div>
       </div>
     </div>
     <div class="persona-card" id="personaInstructor">
@@ -192,6 +196,9 @@
         <div class="tool"><div class="tool-dot"></div><span>Identify at-risk students</span></div>
         <div class="tool"><div class="tool-dot"></div><span>Summarize discussions</span></div>
         <div class="tool"><div class="tool-dot"></div><span>Generate AI announcements</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>View submission status</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Get grades (student or course)</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Search course materials</span></div>
       </div>
     </div>
     <div class="persona-card" id="personaGrade">
@@ -200,10 +207,11 @@
       <div class="persona-count">6 tools</div>
       <div class="persona-tools">
         <div class="tool"><div class="tool-dot"></div><span>Create assignments in gradebook</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Manage grade columns & categories</span></div>
         <div class="tool"><div class="tool-dot"></div><span>Update & override student grades</span></div>
         <div class="tool"><div class="tool-dot"></div><span>Exempt grades from calculations</span></div>
         <div class="tool"><div class="tool-dot"></div><span>FERPA-gated write operations</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Create & view grade columns</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Delete grade columns</span></div>
       </div>
     </div>
     <div class="persona-card" id="personaAdmin">
@@ -212,10 +220,17 @@
       <div class="persona-count">12 tools</div>
       <div class="persona-tools">
         <div class="tool"><div class="tool-dot"></div><span>Manage user directory & roles</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Bulk enrollments & sections</span></div>
         <div class="tool"><div class="tool-dot"></div><span>View audit logs & activity</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Course & term management</span></div>
         <div class="tool"><div class="tool-dot"></div><span>Webhook subscriptions</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Manage enrollments</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Create enrollments</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Update enrollments</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Delete enrollments</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Get user details</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>List webhook subscriptions</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Create webhook subscription</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Update webhook subscription</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Delete webhook subscription</span></div>
       </div>
     </div>
     <div class="persona-card" id="personaParent">
@@ -225,8 +240,11 @@
       <div class="persona-tools">
         <div class="tool"><div class="tool-dot"></div><span>View children's courses & schedule</span></div>
         <div class="tool"><div class="tool-dot"></div><span>Check grades (read-only)</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Create alerts for upcoming work</span></div>
         <div class="tool"><div class="tool-dot"></div><span>Read school announcements</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>View upcoming assignments</span></div>
+        <div class="tool"><div class="tool-dot"></div><span>Guardian-scoped access</span></div>
+      </div>
+    </div>
         <div class="tool"><div class="tool-dot"></div><span>Guardian-scoped access</span></div>
       </div>
     </div>
@@ -252,7 +270,7 @@
     <div class="line cmd">$ make docker-up</div>
     <div class="line ok" id="dockerLine1">✓ Container started: bb-mcp (read-only fs, dropped caps, no-new-privileges)</div>
     <div class="line cmd" id="dockerLine2">$ npm run inspect</div>
-    <div class="line ok" id="dockerLine3">✓ MCP Inspector: 0 errors across all 40 tools</div>
+    <div class="line ok" id="dockerLine3">✓ MCP Inspector: 0 errors across all 34 tools</div>
     <div class="line ok" id="dockerLine4">✓ Tools schema valid · JSON-RPC 2.0 compliant</div>
   </div>
 </section>
@@ -429,7 +447,7 @@ window.render = (t) => {
   const pCmd = ramp(o, 0.15, 0.35);
   outroCmd.style.opacity = pCmd;
   outroCmd.style.transform = `translateY(${(1 - pCmd) * 20}px)`;
-  const pUrl = ramp(o, 0.2, 0.3);
+  const pUrl = ramp(o, 0.1, 0.25);
   outroUrl.style.opacity = pUrl;
   outroUrl.style.transform = `translateY(${(1 - pUrl) * 20}px)`;
 };
