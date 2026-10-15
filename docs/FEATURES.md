@@ -118,6 +118,7 @@
 
 ## DevOps & Infrastructure
 - **Node.js Optimized** - Lightweight runtime footprint designed for high-concurrency API proxying.
+- **Nightly Journeys** - Playwright journeys run the real server (`/health`, `/manifest` with 40 tools, the `/mcp` bearer gate, an MCP initialize and `tools/list`, an RBAC refusal) and the Pages site with no Blackboard credentials; failures file deduplicated `bot:journey` issues
 - **Docker Ready** - Containerization support for consistent deployment across development and production environments.
 - **Rate Limit Handling** - Built-in logic to respect Blackboard API throttling and prevent service interruptions.
 - **Error Mapping** - Translates Blackboard-specific HTTP errors into standardized MCP error codes for better LLM recovery.

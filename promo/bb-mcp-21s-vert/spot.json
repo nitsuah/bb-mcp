@@ -1,0 +1,73 @@
+{
+  "title": "bb-mcp - vertical short (narrated), a 9:16 re-render of bb-mcp-21s",
+  "format": "vertical",
+  "size": [1080, 1920],
+  "synth": "bb-mcp-21s",
+  "duration": 23,
+  "fps": 30,
+  "poster": 13.8,
+  "scenes": [
+    ["title", 0, 2.5],
+    ["flow", 2.5, 5.5],
+    ["student", 5.5, 8.5],
+    ["denied", 8.5, 11.5],
+    ["groups", 11.5, 15.5],
+    ["gates", 15.5, 18.5],
+    ["run", 18.5, 20.5],
+    ["outro", 20.5, 23]
+  ],
+  "narration": {
+    "voice": "af_heart",
+    "speed": 1,
+    "lines": [
+      {
+        "id": "01",
+        "at": 0.15,
+        "dur": 2.62,
+        "text": "One MCP server for Blackboard Learn."
+      },
+      {
+        "id": "02",
+        "at": 2.8,
+        "dur": 2.8,
+        "text": "Your client, bb-mcp, then Blackboard."
+      },
+      {
+        "id": "03",
+        "at": 5.6,
+        "dur": 2,
+        "text": "A student asks what is due this week."
+      },
+      {
+        "id": "04",
+        "at": 8.6,
+        "dur": 2.99,
+        "text": "Ask for the user directory, and the role check says no."
+      },
+      {
+        "id": "05",
+        "at": 11.7,
+        "dur": 2.24,
+        "text": "Forty tools, each gated by role."
+      },
+      {
+        "id": "06",
+        "at": 15.6,
+        "dur": 3.24,
+        "text": "Key gate, FERPA gate, rate limits, scrubbing, audit log."
+      },
+      {
+        "id": "07",
+        "at": 18.8,
+        "dur": 2.16,
+        "text": "Build it, run it, connect your client."
+      },
+      {
+        "id": "08",
+        "at": 21.2,
+        "dur": 1.62,
+        "text": "Open source, on GitHub."
+      }
+    ]
+  }
+}

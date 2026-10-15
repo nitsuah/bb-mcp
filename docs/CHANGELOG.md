@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (journeys and vertical short)
+
+- Nightly journeys (`tests/journeys/`, `config/playwright.journeys.config.mjs`, `.github/workflows/journeys.yml`): API journeys with Playwright's `request` fixture against `node dist/index.js` (dummy `BB_CLIENT_ID`/`BB_CLIENT_SECRET`, loopback `HOST`, a test `MCP_API_KEY`; no real Blackboard anywhere) cover `/health`, `/manifest` (40 tools, transports), the `/mcp` 401, MCP initialize + `tools/list`, and a student denied `list_users`; a Pages-site journey checks the hero video and poster, the expand kit, links and no horizontal scroll at 375 px. The caller workflow is pinned to the current `nitsuah/.github` main commit with a matching `kit-ref`; `@playwright/test` 1.64.1 is a new devDependency.
+- `bb-mcp-21s-vert`: a narrated 1080x1920, 23 s re-render of the launch spot (captions burned in, Kokoro narration committed under `promo/bb-mcp-21s-vert/vo/`), published to `docs/brag/` and the Pages vertical slot. `promo/build.sh` can now borrow a base spot's music (`"synth"`) and mix committed narration; `promo/tts/` and `promo/sheet.sh` come from the stash/vigil approach.
+
 ### Removed
 
 - Root `brag-output/` folder: its video and poster were byte-identical copies of `docs/brag/` (the Pages copies); the share copy moved to `promo/brag-21s/share-copy.txt`.
