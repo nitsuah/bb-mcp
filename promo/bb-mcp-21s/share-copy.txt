@@ -1,1 +1,1 @@
-bb-mcp: one MCP server for Blackboard Learn. 40 tools, 5 personas, emails scrubbed from successful tool responses.
+bb-mcp: one MCP server for Blackboard Learn. 40 tools gated by role (student, instructor, admin, parent), an API key gate, a FERPA gate, per-role rate limits, email scrubbing on successful tool responses and an audit log. Build it, run it, connect your client. https://github.com/nitsuah/bb-mcp

@@ -1,457 +1,259 @@
 <!doctype html>
-<!-- bb-mcp · 21 s spot. Every frame is window.render(t). Real artifacts only:
-     terminal output from MCP tools, architecture flow, Docker CLI, real JSON. -->
+<!-- bb-mcp · landscape spot (1920x1080, 23 s). Every frame is window.render(t), a pure
+     function of time. Re-derived from the code (bb-mcp#149, #150), same content as
+     bb-mcp-21s-vert: 40 tools = 9 student, 7 instructor, 6 grade write-back, 12 admin and
+     webhooks, 5 parent, 1 shared (src/tools/*.ts, src/rbac.ts). The refusal text is
+     src/auth.ts; the startup line and /health output are the real server's. Tool
+     results are fictional demo data, labelled as such. -->
 <html>
 <head>
 <meta charset="utf-8">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=block">
 <style>
-  :root { --bg:#1a1a2e; --surface:#1b1a21; --surface-2:#23212b; --text:#f5f5f5; --muted:#6b7280; --border:#2f2c39;
-          --accent:#00d4ff; --accent-soft:#003d4d; --green:#00d4aa; --green-soft:#003d30; --warn:#f0975c; --red:#ff6b6b; }
+  :root { --bg:#1a1a2e; --surface:#1b1a21; --text:#f5f5f5; --muted:#8b93a1; --border:#2f2c39;
+          --accent:#00d4ff; --accent-soft:#003d4d; --green:#00d4aa; --red:#ff7b7b; }
   * { box-sizing:border-box; margin:0; }
-  html, body { width:3840px; height:2160px; overflow:hidden; background:var(--bg); color:var(--text);
+  html, body { width:1920px; height:1080px; overflow:hidden; background:var(--bg); color:var(--text);
                font-family:Inter, sans-serif; -webkit-font-smoothing:antialiased; }
-  .mono { font-family:'JetBrains Mono', monospace; }
-  #glow { position:absolute; inset:0; background:radial-gradient(2400px 1400px at 78% 18%, #003d4d88, transparent 70%),
-          radial-gradient(1800px 1200px at 10% 100%, #003d3066, transparent 70%); }
-  #mark { position:absolute; left:192px; top:144px; font:700 68px Inter; display:flex; align-items:center; gap:32px; z-index:5; }
-  #mark .hex { width:80px; height:92px; display:flex; align-items:center; justify-content:center; }
-  #mark .hex svg { width:80px; height:92px; }
-  #mark .hex .bb-text, #hookHex .bb-text { font-size:36px; font-weight:700; fill:var(--accent); letter-spacing:-0.05em; }
-  #mark .sub { color:var(--muted); font-weight:600; font-size:28px; }
-  .scene { position:absolute; inset:0; opacity:0; }
-  .eyebrow { font:600 52px 'JetBrains Mono'; color:var(--accent); letter-spacing:.02em; }
-  h1 { font:800 224px/1.02 Inter; letter-spacing:-.035em; }
-  h2 { font:800 128px/1.08 Inter; letter-spacing:-.025em; }
-  h3 { font:700 64px/1.1 Inter; letter-spacing:-.02em; }
-  .muted { color:var(--muted); }
-  .chip { display:inline-block; font:600 40px 'JetBrains Mono'; padding:10px 24px; border-radius:999px; margin-right:16px; }
-  .c-v { background:var(--accent-soft); color:var(--accent); }
-  .c-g { background:var(--green-soft); color:var(--green); }
-  .c-r { background:#3a1d22; color:#ff8e8e; }
-  .c-o { background:#3a2519; color:var(--warn); }
+  #glow { position:absolute; inset:0; background:radial-gradient(1300px 800px at 80% 10%, #003d4d99, transparent 70%),
+          radial-gradient(1100px 800px at 8% 100%, #003d3077, transparent 70%); }
+  #mark { position:absolute; left:96px; top:56px; z-index:5; display:flex; align-items:center; gap:18px; font:800 44px Inter; letter-spacing:-.02em; }
+  #mark svg { width:46px; height:52px; }
+  #mark .sub { color:var(--muted); font:600 24px Inter; letter-spacing:0; }
+  .bbt { font:700 78px Inter; fill:var(--accent); letter-spacing:-.05em; }
+  .scene { position:absolute; left:0; top:0; width:1920px; height:1080px; opacity:0; }
+  .eyebrow { font:600 26px 'JetBrains Mono'; color:var(--accent); }
+  h2 { font:800 60px/1.08 Inter; letter-spacing:-.03em; }
+  .head { position:absolute; left:96px; right:96px; top:150px; }
+  .head h2 { margin-top:10px; }
+  .note { position:absolute; left:96px; right:96px; font:400 24px/1.4 Inter; color:var(--muted); }
 
-  /* hook - morphing logo */
-  #hook { display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  #hook .hex-large { width:400px; height:460px; display:flex; align-items:center; justify-content:center; position:relative; }
-  #hook .hex-large svg { width:400px; height:460px; }
-  #hook .lockup { position:absolute; bottom:180px; left:50%; white-space:nowrap; font:700 96px Inter; color:var(--text); opacity:0; transform:translateX(-50%) translateY(40px); transition:opacity 0.4s, transform 0.4s; }
-  #hook .lockup.visible { opacity:1; transform:translateX(-50%) translateY(0); }
+  /* title */
+  #title .hex { position:absolute; left:840px; top:150px; width:240px; height:276px; }
+  #title .word { position:absolute; left:0; right:0; top:440px; text-align:center; font:800 170px Inter; letter-spacing:-.04em; }
+  #title .tag { position:absolute; left:0; right:0; top:660px; text-align:center; font:600 46px Inter; color:var(--muted); }
+  #title .chips { position:absolute; left:0; right:0; top:760px; text-align:center; }
+  .chip { display:inline-block; font:600 32px 'JetBrains Mono'; padding:10px 26px; border-radius:999px; margin:0 8px; background:var(--accent-soft); color:var(--accent); }
 
-  /* reveal - architecture diagram */
-  #reveal { position:relative; }
-  #reveal .diagram { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; gap:80px; align-items:center; }
-  .arch-node { display:flex; flex-direction:column; align-items:center; gap:20px; opacity:0; transform:translateY(60px); transition:opacity 0.5s, transform 0.5s; width:240px; }
-  .arch-node.visible { opacity:1; transform:translateY(0); }
-  .arch-icon { width:220px; height:220px; border-radius:44px; background:var(--surface); border:4px solid var(--border); display:flex; align-items:center; justify-content:center; box-shadow:0 30px 100px #0008; flex-shrink:0; }
-  .arch-icon svg { width:110px; height:110px; stroke:var(--accent); stroke-width:3; }
-  .arch-label { font:700 42px Inter; text-align:center; line-height:1.1; max-width:340px; word-break:break-word; }
-  .arch-arrow { width:100px; height:5px; background:linear-gradient(90deg, transparent, var(--accent), transparent); opacity:0; transition:opacity 0.4s; flex-shrink:0; }
-  .arch-arrow.visible { opacity:1; }
-  .arch-flow { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:0; height:0; }
-  .arch-flow .particle { position:absolute; width:16px; height:16px; border-radius:50%; background:var(--accent); box-shadow:0 0 24px var(--accent); opacity:0; }
-  #reveal .detail { position:absolute; left:50%; bottom:280px; transform:translateX(-50%); text-align:center; opacity:0; transition:opacity 0.4s; font:400 36px Inter; color:var(--muted); max-width:2800px; }
-  #reveal .detail.visible { opacity:1; }
+  /* flow */
+  .node { position:absolute; top:400px; width:480px; height:210px; border-radius:28px; background:var(--surface); border:3px solid var(--border);
+          display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; box-shadow:0 30px 80px #0007; }
+  .node.hot { border-color:var(--accent); }
+  .node svg { width:64px; height:64px; stroke:var(--accent); stroke-width:1.6; fill:none; }
+  .node .t { font:800 40px/1.1 Inter; letter-spacing:-.02em; }
+  .node .s { font:500 24px/1.3 Inter; color:var(--muted); }
+  .arrow { position:absolute; top:502px; width:150px; height:4px; background:linear-gradient(90deg, var(--accent), transparent); }
+  .arrow::after { content:''; position:absolute; right:-4px; top:-12px; border:14px solid transparent; border-left:20px solid var(--accent); border-right:0; }
 
-  /* student - terminal demo */
-  #student .head { position:absolute; left:192px; top:340px; }
-  #student .head h2 { margin-top:28px; }
-  #student .term { position:absolute; left:192px; top:600px; width:2360px; height:1140px; border-radius:32px; background:#0d0c11;
-          border:2px solid var(--border); padding:60px 72px; font:400 50px/1.6 'JetBrains Mono'; box-shadow:0 60px 160px #0008; }
-  #student .term .cmd { color:var(--accent); }
-  #student .term .json { color:var(--text); white-space:pre; }
-  #student .term .line { opacity:0; white-space:pre-wrap; }
+  /* terminals */
+  .term { position:absolute; border-radius:24px; background:#0d0c11; border:2px solid var(--border);
+          padding:32px 44px; font:400 30px/1.45 'JetBrains Mono'; box-shadow:0 40px 100px #0009; }
+  .term .l { white-space:pre-wrap; opacity:0; overflow-wrap:anywhere; }
+  .term .cmd { color:var(--accent); } .term .dim { color:var(--muted); } .term .ok { color:var(--green); }
+  .term .err { color:var(--red); } .term .json { color:var(--text); }
 
-  /* instructor - terminal demo */
-  #instructor .head { position:absolute; left:192px; top:340px; }
-  #instructor .term { position:absolute; left:192px; top:600px; width:2360px; height:1140px; border-radius:32px; background:#0d0c11;
-          border:2px solid var(--border); padding:60px 72px; font:400 50px/1.6 'JetBrains Mono'; box-shadow:0 60px 160px #0008; }
-  #instructor .term .cmd { color:var(--accent); }
-  #instructor .term .json { color:var(--green); }
-  #instructor .term .line { opacity:0; white-space:pre-wrap; }
+  .map { position:absolute; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:20px; background:var(--surface); border:2px solid var(--border);
+         border-radius:18px; padding:20px 28px; margin-bottom:16px; font:600 28px 'JetBrains Mono'; }
+  .row .r { color:var(--accent); } .row.bad .r { color:var(--red); }
 
-  /* infographic - personas matrix */
-  #infographic { position:relative; }
-  #infographic .head { position:absolute; left:192px; top:120px; text-align:center; width:3456px; }
-  #infographic .matrix { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:grid; grid-template-columns:repeat(5, 1fr); gap:36px; width:3456px; }
-  .persona-card { background:var(--surface); border:2px solid var(--border); border-radius:28px; padding:36px 24px; text-align:center; opacity:0; transform:translateY(60px) scale(0.9); transition:opacity 0.5s, transform 0.5s; }
-  .persona-card.visible { opacity:1; transform:translateY(0) scale(1); }
-  .persona-icon { width:120px; height:120px; stroke:var(--accent); margin:0 auto 24px; }
-  .persona-title { font:700 48px Inter; margin-bottom:12px; }
-  .persona-count { font:800 40px 'JetBrains Mono'; color:var(--accent); margin-bottom:18px; }
-  .persona-tools { display:flex; flex-direction:column; gap:10px; text-align:left; font:400 32px Inter; color:var(--muted); }
-  .persona-tools .tool { display:flex; align-items:center; gap:14px; opacity:0; transform:translateX(-20px); transition:opacity 0.3s, transform 0.3s; }
-  .persona-tools .tool.visible { opacity:1; transform:translateX(0); }
-  .tool-dot { width:10px; height:10px; border-radius:50%; background:var(--accent); flex-shrink:0; }
+  /* groups: 3x2 grid */
+  .grp { position:absolute; width:560px; height:200px; border-radius:24px; background:var(--surface); border:2px solid var(--border);
+         display:flex; align-items:center; justify-content:space-between; padding:0 34px; }
+  .grp .n { font:800 38px Inter; letter-spacing:-.02em; }
+  .grp .e { font:500 21px/1.3 'JetBrains Mono'; color:var(--muted); margin-top:8px; max-width:370px; }
+  .grp .c { font:800 82px 'JetBrains Mono'; color:var(--accent); }
+  #gsum { position:absolute; left:96px; right:96px; top:880px; text-align:center; font:800 36px 'JetBrains Mono'; color:var(--green); }
 
-  /* security - icons grid */
-  #security .head { position:absolute; left:192px; top:340px; }
-  #security .grid { position:absolute; left:192px; top:600px; display:grid; grid-template-columns:repeat(5, 1fr); gap:64px; width:3000px; }
-  .sec-card { background:var(--surface); border:2px solid var(--border); border-radius:32px; padding:80px 48px; text-align:center; opacity:0; transform:translateY(60px); transition:opacity 0.4s, transform 0.4s; }
-  .sec-card.visible { opacity:1; transform:translateY(0); }
-  .sec-icon { width:160px; height:160px; stroke:var(--accent); stroke-width:3; margin:0 auto 40px; }
-  .sec-title { font:700 56px Inter; margin-bottom:16px; }
-  .sec-desc { font:400 40px Inter; color:var(--muted); }
-
-  /* docker - terminal demo */
-  #docker .head { position:absolute; left:192px; top:340px; }
-  #docker .term { position:absolute; left:192px; top:600px; width:2360px; height:1140px; border-radius:32px; background:#0d0c11;
-          border:2px solid var(--border); padding:60px 72px; font:400 50px/1.8 'JetBrains Mono'; box-shadow:0 60px 160px #0008; }
-  #docker .term .cmd { color:var(--accent); }
-  #docker .term .ok { color:var(--green); }
-  #docker .term .line { opacity:0; white-space:pre-wrap; }
+  /* gates: 5 columns */
+  .gate { position:absolute; top:380px; width:326px; height:350px; border-radius:24px; background:var(--surface); border:2px solid var(--border); padding:32px 26px; }
+  .gate svg { width:68px; height:68px; stroke:var(--accent); stroke-width:1.7; fill:none; margin-bottom:20px; }
+  .gate .n { font:800 34px/1.1 Inter; letter-spacing:-.02em; }
+  .gate .e { font:500 23px/1.35 Inter; color:var(--muted); margin-top:12px; }
 
   /* outro */
-  #outro { display:flex; align-items:center; justify-content:center; text-align:center; }
-  #outro .wrap { max-width:2800px; }
-  #outro .lockup { font:700 280px Inter; letter-spacing:-.03em; color:var(--text); opacity:0; transform:translateY(60px); transition:opacity 0.5s, transform 0.5s; }
-  #outro .lockup.visible { opacity:1; transform:translateY(0); }
-  #outro .cmd { font:600 96px 'JetBrains Mono'; color:var(--accent); margin-top:48px; opacity:0; transform:translateY(40px); transition:opacity 0.4s 0.1s, transform 0.4s 0.1s; }
-  #outro .cmd.visible { opacity:1; transform:translateY(0); }
-  #outro .url { font:500 68px 'JetBrains Mono'; color:var(--muted); margin-top:88px; opacity:0; transform:translateY(40px); transition:opacity 0.4s 0.2s, transform 0.4s 0.2s; }
-  #outro .url.visible { opacity:1; transform:translateY(0); }
+  #outro .word { position:absolute; left:0; right:0; top:320px; text-align:center; font:800 220px Inter; letter-spacing:-.04em; }
+  #outro .url { position:absolute; left:0; right:0; top:590px; text-align:center; font:600 58px 'JetBrains Mono'; color:var(--accent); }
+  #outro .what { position:absolute; left:0; right:0; top:690px; text-align:center; font:600 40px Inter; color:var(--muted); }
+  #outro .fine { position:absolute; left:200px; right:200px; top:860px; text-align:center; font:400 24px/1.45 Inter; color:#667085; }
 </style>
 </head>
 <body>
 <div id="glow"></div>
-<div id="mark"><div class="hex"><svg viewBox="0 0 200 230" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M100 0L200 57.5L200 172.5L100 230L0 172.5L0 57.5L100 0Z" stroke="var(--accent)" stroke-width="12" fill="var(--bg)"/><text class="bb-text" x="100" y="145" text-anchor="middle" dominant-baseline="central">bb</text></svg></div>bb-mcp <span class="sub">· MCP Server for Blackboard Learn</span></div>
+<div id="mark"><svg viewBox="0 0 200 230" fill="none"><path d="M100 0L200 57.5L200 172.5L100 230L0 172.5L0 57.5L100 0Z" stroke="#00d4ff" stroke-width="12" fill="#1a1a2e"/><text class="bbt" x="100" y="145" text-anchor="middle" dominant-baseline="central">bb</text></svg>bb-mcp <span class="sub">· MCP server for Blackboard Learn</span></div>
 
-<!-- 0. Hook: hexagon logo + wordmark -->
-<section class="scene" id="hook">
-  <div class="hex-large" id="hookHex">
-    <svg viewBox="0 0 200 230" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M100 0L200 57.5L200 172.5L100 230L0 172.5L0 57.5L100 0Z" stroke="var(--accent)" stroke-width="12" fill="var(--bg)"/>
-      <text class="bb-text" x="100" y="145" text-anchor="middle" dominant-baseline="central">bb</text>
-    </svg>
-  </div>
-  <div class="lockup" id="hookLockup">bb-mcp</div>
+<section class="scene" id="title">
+  <svg class="hex" viewBox="0 0 200 230" fill="none"><path d="M100 0L200 57.5L200 172.5L100 230L0 172.5L0 57.5L100 0Z" stroke="#00d4ff" stroke-width="10" fill="#1a1a2e"/><text class="bbt" x="100" y="145" text-anchor="middle" dominant-baseline="central">bb</text></svg>
+  <div class="word">bb-mcp</div>
+  <div class="tag">One MCP server for Blackboard Learn</div>
+  <div class="chips"><span class="chip">40 tools</span><span class="chip">4 roles</span></div>
 </section>
 
-<!-- 1. Reveal: Architecture diagram animates -->
-<section class="scene" id="reveal">
-  <div class="diagram">
-    <div class="arch-node" id="nodeClient">
-      <div class="arch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
-      <div class="arch-label">MCP Client<br>(Claude Desktop, Cursor)</div>
-    </div>
-    <div class="arch-arrow" id="arrow1"></div>
-    <div class="arch-node" id="nodeMCP">
-      <div class="arch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
-      <div class="arch-label">bb-mcp<br>MCP Server</div>
-    </div>
-    <div class="arch-arrow" id="arrow2"></div>
-    <div class="arch-node" id="nodeBB">
-      <div class="arch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg></div>
-      <div class="arch-label">Blackboard Learn<br>REST API</div>
-    </div>
-  </div>
-  <div class="detail" id="revealDetail">Tool calls flow: MCP Client (Claude Desktop, Cursor) → bb-mcp Server → Blackboard Learn REST API · Response emits metrics, scrubs PII, returns clean JSON</div>
+<section class="scene" id="flow">
+  <div class="head"><div class="eyebrow">How a call travels</div><h2>Client, server, Blackboard</h2></div>
+  <div class="node" id="n1" style="left:150px"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><div class="t">MCP client</div><div class="s">Claude Desktop, Cursor</div></div>
+  <div class="arrow" id="a1" style="left:650px"></div>
+  <div class="node hot" id="n2" style="left:720px"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><div class="t">bb-mcp</div><div class="s">stdio or streamable HTTP · 40 tools</div></div>
+  <div class="arrow" id="a2" style="left:1220px"></div>
+  <div class="node" id="n3" style="left:1290px"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/></svg><div class="t">Blackboard Learn</div><div class="s">REST API</div></div>
+  <div class="note" id="flowNote" style="top:700px;text-align:center;font-size:30px">Roles are checked, and emails scrubbed from successful tool responses, on the way through.</div>
 </section>
 
-<!-- 2. Student: "What's due?" -->
 <section class="scene" id="student">
-  <div class="head"><div class="eyebrow">Student persona</div><h2>get_upcoming_assignments</h2></div>
-  <div class="term" id="studentTerm">
-    <div class="line cmd">$ bb-mcp get_upcoming_assignments --days 7</div>
-    <div class="line json" id="studentLine1"></div>
+  <div class="head"><div class="eyebrow">Student</div><h2 style="font:800 52px 'JetBrains Mono';letter-spacing:-.04em">get_upcoming_assignments</h2></div>
+  <div class="term" id="studentTerm" style="left:96px;top:300px;width:1100px;height:640px"></div>
+  <div class="note" style="left:1260px;right:96px;top:330px;font-size:30px;line-height:1.5">The tool is called as an MCP request with a <span style="color:var(--accent);font-family:'JetBrains Mono'">caller_identity</span>, and returns a plain list.<br><br>Fictional demo data, abridged. No real Blackboard behind this clip.</div>
+</section>
+
+<section class="scene" id="denied">
+  <div class="head"><div class="eyebrow">Same server, wrong role</div><h2 style="font:800 52px 'JetBrains Mono';letter-spacing:-.04em">list_users</h2></div>
+  <div class="term" id="deniedTerm" style="left:96px;top:300px;width:1100px;height:380px"></div>
+  <div class="map" id="deniedMap" style="left:1240px;width:584px;top:300px">
+    <div class="row bad" id="m1"><span>list_users</span><span class="r">admin only</span></div>
+    <div class="row" id="m2" style="font-size:20px"><span>get_upcoming_assignments</span><span class="r">student</span></div>
+    <div class="row" id="m3" style="font-size:24px"><span>update_grade</span><span class="r">instructor, admin</span></div>
+    <div class="row" id="m4"><span>get_my_children</span><span class="r">parent</span></div>
+  </div>
+  <div class="note" id="deniedNote" style="top:760px;text-align:center;font-size:28px">Every refusal is written to the audit log as access.denied.</div>
+</section>
+
+<section class="scene" id="groups">
+  <div class="head" style="top:130px"><div class="eyebrow">What bb-mcp exposes</div><h2>40 tools, gated by role</h2></div>
+  <div class="grp" id="g1" style="left:96px;top:330px"><div><div class="n">Student</div><div class="e">get_my_grades, get_announcements</div></div><div class="c">9</div></div>
+  <div class="grp" id="g2" style="left:680px;top:330px"><div><div class="n">Instructor</div><div class="e">list_roster, get_at_risk_students</div></div><div class="c">7</div></div>
+  <div class="grp" id="g3" style="left:1264px;top:330px"><div><div class="n">Grade write-back</div><div class="e">create_assignment, update_grade</div></div><div class="c">6</div></div>
+  <div class="grp" id="g4" style="left:96px;top:560px"><div><div class="n">Admin and webhooks</div><div class="e">list_users, list_audit_logs, 5 webhook tools</div></div><div class="c">12</div></div>
+  <div class="grp" id="g5" style="left:680px;top:560px"><div><div class="n">Parent</div><div class="e">guardian-scoped, read-only</div></div><div class="c">5</div></div>
+  <div class="grp" id="g6" style="left:1264px;top:560px"><div><div class="n">Shared</div><div class="e">search_course_materials</div></div><div class="c">1</div></div>
+  <div id="gsum">9 + 7 + 6 + 12 + 5 + 1 = 40</div>
+</section>
+
+<section class="scene" id="gates">
+  <div class="head" style="top:130px"><div class="eyebrow">Security</div><h2>Five gates, one call</h2></div>
+  <div class="gate" id="s1" style="left:96px"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><div class="n">API key gate</div><div class="e">MCP_API_KEY bearer token, required off loopback</div></div>
+  <div class="gate" id="s2" style="left:458px"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><div class="n">FERPA gate</div><div class="e">8 tools need ferpa_authorized: true</div></div>
+  <div class="gate" id="s3" style="left:820px"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><div class="n">Rate limits</div><div class="e">Per minute, per role:<br>student 60<br>instructor 120<br>admin 180<br>parent 60</div></div>
+  <div class="gate" id="s4" style="left:1182px"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h12"/></svg><div class="n">Email scrubbing</div><div class="e">Emails scrubbed from successful tool responses</div></div>
+  <div class="gate" id="s5" style="left:1544px"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg><div class="n">Audit log</div><div class="e">access.granted and access.denied, subject hashed</div></div>
+</section>
+
+<section class="scene" id="run">
+  <div class="head"><div class="eyebrow">Run it</div><h2>Two commands, then connect</h2></div>
+  <div class="term" id="runTerm" style="left:96px;top:300px;width:1100px;height:420px"></div>
+  <div class="map" id="runMap" style="left:1240px;width:584px;top:300px">
+    <div class="row" id="e1"><span>/mcp</span><span class="r">streamable HTTP</span></div>
+    <div class="row" id="e2"><span>/health</span><span class="r">liveness</span></div>
+    <div class="row" id="e3"><span>/metrics</span><span class="r">Prometheus text</span></div>
+    <div class="row" id="e4"><span>/manifest</span><span class="r">40 tools + roles</span></div>
   </div>
 </section>
 
-<!-- 3. Instructor: "Who's at risk?" -->
-<section class="scene" id="instructor">
-  <div class="head"><div class="eyebrow">Instructor persona</div><h2>get_at_risk_students</h2></div>
-  <div class="term" id="instructorTerm">
-    <div class="line cmd">$ bb-mcp get_at_risk_students --course-id _12345_1 --threshold 70</div>
-    <div class="line json" id="instructorLine1"></div>
-  </div>
-</section>
-
-<!-- 4. Infographic: 5 personas, 40 tools -->
-<section class="scene" id="infographic">
-  <div class="head"><div class="eyebrow">What bb-mcp exposes</div><h2>5 Personas · 40 Tools · One Server</h2></div>
-  <div class="matrix">
-    <div class="persona-card" id="personaStudent">
-      <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-      <div class="persona-title">Student</div>
-      <div class="persona-count">9 tools</div>
-      <div class="persona-tools">
-        <div class="tool"><div class="tool-dot"></div><span>Lookup upcoming assignments & due dates</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>View grades & submission status</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Read course announcements</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Browse course content & files</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>View enrolled courses</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Submit assignments</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>View assignment feedback</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Search course materials</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>List course contents (alias)</span></div>
-      </div>
-    </div>
-    <div class="persona-card" id="personaInstructor">
-      <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-      <div class="persona-title">Instructor</div>
-      <div class="persona-count">8 tools</div>
-      <div class="persona-tools">
-        <div class="tool"><div class="tool-dot"></div><span>View course roster & enrollment</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Grade distribution analytics</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Identify at-risk students</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Summarize discussions</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Generate AI announcements</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>View submission status</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Get grades (student or course)</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Search course materials</span></div>
-      </div>
-    </div>
-    <div class="persona-card" id="personaGrade">
-      <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
-      <div class="persona-title">Grade Write-Back</div>
-      <div class="persona-count">6 tools</div>
-      <div class="persona-tools">
-        <div class="tool"><div class="tool-dot"></div><span>Create assignments in gradebook</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Update & override student grades</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Exempt grades from calculations</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>FERPA-gated write operations</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Create & view grade columns</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Delete grade columns</span></div>
-      </div>
-    </div>
-    <div class="persona-card" id="personaAdmin">
-      <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      <div class="persona-title">Admin</div>
-      <div class="persona-count">12 tools</div>
-      <div class="persona-tools">
-        <div class="tool"><div class="tool-dot"></div><span>Manage user directory & roles</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>View audit logs & activity</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Webhook subscriptions</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Manage enrollments</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Create enrollments</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Update enrollments</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Delete enrollments</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Get user details</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>List webhook subscriptions</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Create webhook subscription</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Update webhook subscription</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Delete webhook subscription</span></div>
-      </div>
-    </div>
-    <div class="persona-card" id="personaParent">
-      <svg class="persona-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-      <div class="persona-title">Parent</div>
-      <div class="persona-count">5 tools</div>
-      <div class="persona-tools">
-        <div class="tool"><div class="tool-dot"></div><span>View children's courses & schedule</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Check grades (read-only)</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Read school announcements</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>View upcoming assignments</span></div>
-        <div class="tool"><div class="tool-dot"></div><span>Guardian-scoped access</span></div>
-      </div>
-    </div>
-        <div class="tool"><div class="tool-dot"></div><span>Guardian-scoped access</span></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 5. Security: 5 icons appear -->
-<section class="scene" id="security">
-  <div class="head"><div class="eyebrow">Security first</div><h2>Defense in depth</h2></div>
-  <div class="grid">
-    <div class="sec-card" id="sec1"><svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10v6M18 10v6"/><path d="M4 14h16"/></svg><div class="sec-title">API Key Gate</div><div class="sec-desc">MCP_API_KEY fail-closed</div></div>
-    <div class="sec-card" id="sec2"><svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><div class="sec-title">Rate Limits</div><div class="sec-desc">Per-role, per-minute</div></div>
-    <div class="sec-card" id="sec3"><svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><div class="sec-title">FERPA Gate</div><div class="sec-desc">ferpa_authorized: true</div></div>
-    <div class="sec-card" id="sec4"><svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18M3 12h18M3 18h12"/><path d="M19 6v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg><div class="sec-title">PII Scrubbing</div><div class="sec-desc">Emails scrubbed from responses</div></div>
-    <div class="sec-card" id="sec5"><svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg><div class="sec-title">Audit Trail</div><div class="sec-desc">Local access-audit log</div></div>
-  </div>
-</section>
-
-<!-- 6. Docker/Dev: make docker-up + npm run inspect -->
-<section class="scene" id="docker">
-  <div class="head"><div class="eyebrow">Docker-first dev loop</div><h2>Zero-credential validation</h2></div>
-  <div class="term" id="dockerTerm">
-    <div class="line cmd">$ make docker-up</div>
-    <div class="line ok" id="dockerLine1">✓ Container started: bb-mcp (read-only fs, dropped caps, no-new-privileges)</div>
-    <div class="line cmd" id="dockerLine2">$ npm run inspect</div>
-    <div class="line ok" id="dockerLine3">✓ MCP Inspector: 0 errors across all 34 tools</div>
-    <div class="line ok" id="dockerLine4">✓ Tools schema valid · JSON-RPC 2.0 compliant</div>
-  </div>
-</section>
-
-<!-- 7. Outro -->
 <section class="scene" id="outro">
-  <div class="wrap">
-    <div class="lockup" id="outroLockup">bb-mcp</div>
-    <div class="cmd" id="outroCmd">npm i -g bb-mcp</div>
-    <div class="url" id="outroUrl">github.com/nitsuah/bb-mcp</div>
-  </div>
+  <div class="word">bb-mcp</div>
+  <div class="url">github.com/nitsuah/bb-mcp</div>
+  <div class="what">MCP server for Blackboard Learn · open source</div>
+  <div class="fine">An independent project, not affiliated with or endorsed by Anthology Inc. or Blackboard Inc.</div>
 </section>
 
 <script>
 const $ = (s) => document.querySelector(s);
-const $$ = (s) => [...document.querySelectorAll(s)];
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
-const ease = (x) => { x = clamp(x); return 1 - Math.pow(1 - x, 3); };
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
 const ramp = (t, a, d) => ease((t - a) / d);
+// Inlined from spot.json (a file:// page cannot fetch it). Keep the two in step.
+const SCENES = [["title",0,2.5],["flow",2.5,5.5],["student",5.5,8.5],["denied",8.5,11.5],["groups",11.5,15.5],["gates",15.5,18.5],["run",18.5,20.5],["outro",20.5,23]];
 
-const SCENES = [
-  ['hook', 0, 2.5],
-  ['reveal', 2.5, 5.5],
-  ['student', 5.5, 8.5],
-  ['instructor', 8.5, 11.5],
-  ['infographic', 11.5, 15.5],
-  ['security', 15.5, 18.5],
-  ['docker', 18.5, 20.5],
-  ['outro', 20.5, 21]
-];
-
-function show(id, a, b, t) {
-  const el = $('#' + id);
-  const inn = a === 0 ? 1 : ramp(t, a, 0.35);
-  const out = b >= 21 ? 1 : 1 - ramp(t, b - 0.25, 0.25);
-  const o = t < a || t >= b ? 0 : Math.min(inn, out);
-  el.style.opacity = o;
-  el.style.transform = `translateY(${(1 - inn) * 30}px)`;
-  return t - a;
+function sceneOpacity(a, b, t, last) {
+  if (t < a || t >= b) return 0;
+  const inn = a === 0 ? 1 : clamp((t - a) / 0.3);
+  const out = last ? 1 : 1 - clamp((t - (b - 0.22)) / 0.22);
+  return Math.min(inn, out);
 }
-function rise(el, p) { el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * 24}px)`; }
-
-const studentJSON = `{
-  "assignments": [
-    {"id": "asg_1", "title": "Week 3 Problem Set", "dueAt": "2026-10-12T23:59:00Z", "courseId": "_12345_1", "courseName": "CS101 Intro to Programming"},
-    {"id": "asg_2", "title": "Midterm Essay", "dueAt": "2026-10-15T23:59:00Z", "courseId": "_12345_1", "courseName": "CS101 Intro to Programming"},
-    {"id": "asg_3", "title": "Lab Report 4", "dueAt": "2026-10-16T17:00:00Z", "courseId": "_67890_1", "courseName": "PHYS201 Mechanics"}
-  ]
-}`;
-
-const instructorJSON = `{
-  "atRiskStudents": [
-    {"userId": "stu_001", "displayName": "Alex Chen", "grade": 62.3, "missingAssignments": 3},
-    {"userId": "stu_002", "displayName": "Jordan Kim", "grade": 58.7, "missingAssignments": 5},
-    {"userId": "stu_003", "displayName": "Taylor Smith", "grade": 65.1, "missingAssignments": 2}
-  ]
-}`;
+function term(el, rows, s) {
+  if (!el.dataset.built) {
+    el.dataset.built = '1';
+    rows.forEach(([cls, text]) => { const d = document.createElement('div'); d.className = 'l ' + cls; d.textContent = text; el.appendChild(d); });
+  }
+  [...el.children].forEach((d, i) => {
+    const [, text, at, dur] = rows[i];
+    const p = clamp((s - at) / dur);
+    d.style.opacity = p > 0 ? 1 : 0;
+    d.textContent = text.slice(0, Math.ceil(text.length * p));
+    d.style.visibility = p > 0 ? 'visible' : 'hidden';
+  });
+}
+// Result shape: a bare array of { id, title, course, courseId, due, dueIn, maxScore } (src/tools/student.ts).
+const STUDENT = [
+  ['cmd', 'MCP request · tools/call get_upcoming_assignments', 0.1, 0.3],
+  ['dim', '  caller_identity: {userId: "u_demo", role: "student"}, daysAhead: 7', 0.35, 0.2],
+  ['json', '[', 0.55, 0.05],
+  ['json', '  {', 0.6, 0.05],
+  ['json', '    "id": "_8841_1",', 0.65, 0.2],
+  ['json', '    "title": "Week 3 Problem Set",', 0.75, 0.25],
+  ['json', '    "course": "CS101 Intro to Programming",', 0.9, 0.3],
+  ['json', '    "due": "2026-10-16T23:59:00Z",', 1.05, 0.25],
+  ['json', '    "dueIn": "1 days"', 1.2, 0.2],
+  ['json', '  },', 1.35, 0.05],
+  ['dim', '  ...', 1.45, 0.1],
+  ['json', ']', 1.6, 0.05],
+];
+const DENIED = [
+  ['cmd', 'MCP request · tools/call list_users', 0.1, 0.3],
+  ['dim', '  caller_identity: {userId: "u_demo", role: "student", ferpa_authorized: true}', 0.35, 0.3],
+  ['dim', '', 0.7, 0.01],
+  ['err', 'isError: true', 0.8, 0.2],
+  ['err', 'Tool "list_users" is not available to role "student". Allowed roles: admin.', 1.0, 0.8],
+];
+const RUN = [
+  ['cmd', '$ npm ci && npm run build', 0.05, 0.2],
+  ['dim', '# configure .env: BB_CLIENT_ID, BB_CLIENT_SECRET', 0.25, 0.25],
+  ['cmd', '$ HOST=127.0.0.1 node dist/index.js', 0.45, 0.2],
+  ['ok', 'blackboard-learn-mcp HTTP server listening on 127.0.0.1:3100', 0.65, 0.2],
+  ['dim', '', 0.85, 0.01],
+  ['cmd', '$ curl -s 127.0.0.1:3100/health', 0.85, 0.2],
+  ['json', '{"status":"ok","name":"blackboard-learn-mcp","version":"0.1.0", ...}', 1.05, 0.3],
+];
+function at(id) { return SCENES.find((s) => s[0] === id); }
+function rise(el, p, dy = 40) { el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * dy}px)`; }
 
 window.render = (t) => {
-  for (const [id, a, b] of SCENES) show(id, a, b, t);
-
-  // Hook: hex morphs, lockup appears
-  const h = t;
-  const hex = $('#hookHex');
-  const lockup = $('#hookLockup');
-  if (h >= 1.0) lockup.classList.add('visible');
-
-  // Reveal: nodes and arrows appear in sequence
-  const r = t - 2.5;
-  const nodes = ['#nodeClient', '#arrow1', '#nodeMCP', '#arrow2', '#nodeBB', '#revealDetail'];
-  nodes.forEach((sel, i) => {
-    const delay = i * 0.35;
-    const p = ramp(r, 0.2 + delay, 0.35);
-    const el = $(sel);
-    if (el) {
-      el.style.opacity = p;
-      if (sel.startsWith('#node') || sel === '#revealDetail') el.style.transform = `translateY(${(1 - p) * 30}px)`;
-    }
-  });
-
-  // Student: JSON types in character by character
-  const s = t - 5.5;
-  const studentLines = studentJSON.split('\n');
-  const studentEl = $('#studentTerm');
-  if (studentEl) {
-    studentLines.forEach((line, i) => {
-      const lineEl = $(`#studentLine${i + 1}`) || (() => {
-        const div = document.createElement('div');
-        div.className = 'line json';
-        div.id = `studentLine${i + 1}`;
-        studentEl.appendChild(div);
-        return div;
-      })();
-      const p = ramp(s, 0.2 + i * 0.15, 0.25);
-      lineEl.style.opacity = p;
-      if (p > 0) {
-        const chars = Math.floor(line.length * p);
-        lineEl.textContent = line.slice(0, chars);
-      }
-    });
-  }
-
-  // Instructor: JSON types in
-  const ins = t - 8.5;
-  const instructorLines = instructorJSON.split('\n');
-  const instructorEl = $('#instructorTerm');
-  if (instructorEl) {
-    instructorLines.forEach((line, i) => {
-      const lineEl = $(`#instructorLine${i + 1}`) || (() => {
-        const div = document.createElement('div');
-        div.className = 'line json';
-        div.id = `instructorLine${i + 1}`;
-        instructorEl.appendChild(div);
-        return div;
-      })();
-      const p = ramp(ins, 0.2 + i * 0.15, 0.25);
-      lineEl.style.opacity = p;
-      if (p > 0) {
-        const chars = Math.floor(line.length * p);
-        lineEl.textContent = line.slice(0, chars);
-      }
-    });
-  }
-
-  // Infographic: persona cards appear, then tools cascade
-  const inf = t - 11.5;
-  const personas = ['student', 'instructor', 'grade', 'admin', 'parent'];
-  personas.forEach((p, i) => {
-    const card = $(`#persona${p.charAt(0).toUpperCase() + p.slice(1)}`);
-    if (card) {
-      const delay = i * 0.15;
-      const pCard = ramp(inf, 0.1 + delay, 0.35);
-      card.style.opacity = pCard;
-      card.style.transform = `translateY(${(1 - pCard) * 30}px) scale(${0.9 + 0.1 * pCard})`;
-    }
-    // Tools cascade
-    const tools = $$(`#persona${p.charAt(0).toUpperCase() + p.slice(1)} .tool`);
-    tools.forEach((tool, j) => {
-      const delay = 0.5 + i * 0.1 + j * 0.1;
-      const pTool = ramp(inf, delay, 0.2);
-      tool.style.opacity = pTool;
-      tool.style.transform = `translateX(${(1 - pTool) * -20}px)`;
-    });
-  });
-
-  // Security: 5 cards appear one by one soft ticks
-  const sec = t - 15.5;
-  for (let i = 1; i <= 5; i++) {
-    const p = ramp(sec, 0.1 + (i - 1) * 0.2, 0.25);
-    const el = $(`#sec${i}`);
-    if (el) {
-      el.style.opacity = 0.15 + 0.85 * p;
-      el.style.transform = `translateY(${(1 - p) * 30}px)`;
-    }
-  }
-
-  // Docker: terminal lines type in
-  const d = t - 18.5;
-  const dockerLines = ['#dockerLine1', '#dockerLine2', '#dockerLine3', '#dockerLine4'];
-  dockerLines.forEach((sel, i) => {
-    const p = ramp(d, 0.2 + i * 0.3, 0.2);
-    const el = $(sel);
-    if (el) el.style.opacity = p;
-  });
-
-  // Outro: lockup, cmd, url
-  const o = t - 20.5;
-  const outroLockup = $('#outroLockup');
-  const outroCmd = $('#outroCmd');
-  const outroUrl = $('#outroUrl');
-  const pLockup = ramp(o, 0, 0.5);
-  outroLockup.style.opacity = pLockup;
-  outroLockup.style.transform = `translateY(${(1 - pLockup) * 30}px)`;
-  const pCmd = ramp(o, 0.15, 0.35);
-  outroCmd.style.opacity = pCmd;
-  outroCmd.style.transform = `translateY(${(1 - pCmd) * 20}px)`;
-  const pUrl = ramp(o, 0.1, 0.25);
-  outroUrl.style.opacity = pUrl;
-  outroUrl.style.transform = `translateY(${(1 - pUrl) * 20}px)`;
+  SCENES.forEach(([id, a, b], i) => { $('#' + id).style.opacity = sceneOpacity(a, b, t, i === SCENES.length - 1); });
+  rise($('#title .tag'), ramp(t, 0.15, 0.4), 24);
+  rise($('#title .chips'), ramp(t, 0.35, 0.4), 24);
+  let s = t - at('flow')[1];
+  [['#n1', 0.1], ['#a1', 0.5], ['#n2', 0.7], ['#a2', 1.1], ['#n3', 1.3]].forEach(([sel, d]) => rise($(sel), ramp(s, d, 0.4), 30));
+  rise($('#flowNote'), ramp(s, 1.9, 0.4), 16);
+  term($('#studentTerm'), STUDENT, t - at('student')[1]);
+  s = t - at('denied')[1];
+  term($('#deniedTerm'), DENIED, s);
+  ['#m1', '#m2', '#m3', '#m4'].forEach((sel, i) => rise($(sel), ramp(s, 1.3 + i * 0.3, 0.3), 20));
+  rise($('#deniedNote'), ramp(s, 2.0, 0.3), 12);
+  s = t - at('groups')[1];
+  for (let i = 1; i <= 6; i++) rise($('#g' + i), ramp(s, 0.15 + (i - 1) * 0.28, 0.35), 34);
+  rise($('#gsum'), ramp(s, 1.9, 0.4), 16);
+  s = t - at('gates')[1];
+  for (let i = 1; i <= 5; i++) rise($('#s' + i), ramp(s, 0.1 + (i - 1) * 0.32, 0.35), 34);
+  s = t - at('run')[1];
+  term($('#runTerm'), RUN, s);
+  ['#e1', '#e2', '#e3', '#e4'].forEach((sel, i) => rise($(sel), ramp(s, 0.6 + i * 0.15, 0.2), 20));
+  s = t - at('outro')[1];
+  rise($('#outro .url'), ramp(s, 0.15, 0.35), 20);
+  rise($('#outro .what'), ramp(s, 0.3, 0.35), 20);
+  rise($('#outro .fine'), ramp(s, 0.5, 0.35), 12);
 };
-
+window.bounds = () => {
+  const out = [];
+  document.querySelectorAll('body *').forEach((el) => {
+    if (el.closest('svg') && el.tagName !== 'svg') return;
+    const sc = el.closest('.scene');
+    if (sc && +sc.style.opacity === 0) return;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    if (+getComputedStyle(el).opacity === 0 || getComputedStyle(el).visibility === 'hidden') return;
+    if (r.left < -0.5 || r.right > 1920.5 || r.top < -0.5 || r.bottom > 1080.5) out.push([el.id || el.className || el.tagName, Math.round(r.left), Math.round(r.right), Math.round(r.top), Math.round(r.bottom)]);
+  });
+  return out;
+};
 window.render(0);
 </script>
 </body>

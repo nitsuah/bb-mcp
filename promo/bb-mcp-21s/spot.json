@@ -1,17 +1,18 @@
 {
-  "title": "bb-mcp — 21s spot",
-  "duration": 21,
+  "title": "bb-mcp - 21s spot (landscape, re-derived from the code)",
+  "format": "landscape",
+  "size": [1920, 1080],
+  "duration": 23,
   "fps": 30,
-  "poster": 6.5,
-  "size": [3840, 2160],
+  "poster": 14.2,
   "scenes": [
-    ["hook", 0, 2.5],
-    ["reveal", 2.5, 5.5],
+    ["title", 0, 2.5],
+    ["flow", 2.5, 5.5],
     ["student", 5.5, 8.5],
-    ["instructor", 8.5, 11.5],
-    ["infographic", 11.5, 15.5],
-    ["security", 15.5, 18.5],
-    ["docker", 18.5, 20.5],
-    ["outro", 20.5, 21]
+    ["denied", 8.5, 11.5],
+    ["groups", 11.5, 15.5],
+    ["gates", 15.5, 18.5],
+    ["run", 18.5, 20.5],
+    ["outro", 20.5, 23]
   ]
 }
