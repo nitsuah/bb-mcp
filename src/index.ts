@@ -663,7 +663,7 @@ async function startHttpServer(): Promise<void> {
     oidcConfigured: isOidcEnabled(config.oidc) && Boolean(config.oidc.issuer && config.oidc.audience && config.oidc.jwksUri),
   });
 
-  if (!config.security.mcpApiKey) {
+  if (!config.security.mcpApiKey && !isOidcEnabled(config.oidc)) {
     console.warn(
       "WARNING: MCP_API_KEY is not set. This is only safe because this " +
         `server is listening on loopback ("${listenHost}"); on any other ` +
@@ -942,7 +942,15 @@ async function startHttpServer(): Promise<void> {
         if (verifiedIdentity) {
           await runWithVerifiedIdentity(verifiedIdentity, () => transport.handleRequest(req, res));
         } else {
-          await transport.handleRequest(req, res);
+          if (verifiedIdentity) {
+            await runWithVerifiedIdentity(verifiedIdentity, () => transport.handleRequest(req, res));
+          } else {
+            if (verifiedIdentity) {
+            await runWithVerifiedIdentity(verifiedIdentity, () => transport.handleRequest(req, res));
+          } else {
+            await transport.handleRequest(req, res);
+          }
+          }
         }
         return;
       }
