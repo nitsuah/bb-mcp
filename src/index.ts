@@ -39,6 +39,7 @@ import {
 import {
   assertSafeMcpAuthConfig,
   isAuthorizedMcpRequest,
+  isAuthorizedMcpApiKeyHeader,
   resolveListenHost,
 } from "./mcp-auth.js";
 import { authenticateOidcRequest, isOidcEnabled } from "./oidc-auth.js";
@@ -631,6 +632,28 @@ async function startHttpServer(): Promise<void> {
     config.server.tls.certPath && config.server.tls.keyPath,
   );
 
+  if (
+    isOidcEnabled(config.oidc) &&
+    (!config.oidc.issuer || !config.oidc.audience || !config.oidc.jwksUri)
+  ) {
+    throw new Error(
+      "OIDC is partially configured. Set OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI together.",
+    );
+  }
+  if (
+    (config.oidc.mtlsMode === "optional" || config.oidc.mtlsMode === "required") &&
+    !tlsConfigured
+  ) {
+    throw new Error(
+      "OIDC_MTLS_MODE=optional|required requires TLS_CERT_PATH and TLS_KEY_PATH. Use OIDC_MTLS_MODE=trusted-proxy with TRUST_PROXY_TLS=true when mTLS terminates at a trusted proxy.",
+    );
+  }
+  if (config.oidc.mtlsMode === "trusted-proxy" && !config.server.trustProxyTls) {
+    throw new Error(
+      "OIDC_MTLS_MODE=trusted-proxy requires TRUST_PROXY_TLS=true so the listener is restricted to loopback.",
+    );
+  }
+
   // TRUST_PROXY_TLS isn't just an assertion — it forces the actual listen
   // host to loopback, since a configured HOST would otherwise remain a
   // second, unprotected path straight to this plain-HTTP listener. Only a
@@ -810,6 +833,11 @@ async function startHttpServer(): Promise<void> {
           res.end(JSON.stringify({ error: "unauthorized", message }));
           return;
         }
+        if (!isAuthorizedMcpApiKeyHeader(req, config.security.mcpApiKey)) {
+          res.writeHead(401, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "unauthorized", message: "Missing or invalid X-MCP-API-Key header." }));
+          return;
+        }
       } else if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
         res.writeHead(401, { "Content-Type": "application/json" });
         res.end(
@@ -917,6 +945,11 @@ async function startHttpServer(): Promise<void> {
           const message = authError instanceof Error ? authError.message : "OIDC authentication failed.";
           res.writeHead(401, { "Content-Type": "application/json", "WWW-Authenticate": 'Bearer realm="bb-mcp", error="invalid_token"' });
           res.end(JSON.stringify({ error: "unauthorized", message }));
+          return;
+        }
+        if (!isAuthorizedMcpApiKeyHeader(req, config.security.mcpApiKey)) {
+          res.writeHead(401, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "unauthorized", message: "Missing or invalid X-MCP-API-Key header." }));
           return;
         }
       } else if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
