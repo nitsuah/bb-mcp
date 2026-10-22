@@ -140,6 +140,29 @@ describe("assertSafeMcpAuthConfig (fail closed, CWE-306 + CWE-319)", () => {
     ).toThrow(/plain HTTP/);
   });
 
+  it("requires OIDC when a loopback listener is exposed through a trusted TLS proxy", () => {
+    expect(() =>
+      assertSafeMcpAuthConfig({
+        host: "127.0.0.1",
+        mcpApiKey: null,
+        tlsConfigured: false,
+        trustProxyTls: true,
+      }),
+    ).toThrow(/OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI are required/);
+  });
+
+  it("allows OIDC behind a trusted TLS proxy without direct TLS on the listener", () => {
+    expect(() =>
+      assertSafeMcpAuthConfig({
+        host: "127.0.0.1",
+        mcpApiKey: null,
+        tlsConfigured: false,
+        oidcConfigured: true,
+        trustProxyTls: true,
+      }),
+    ).not.toThrow();
+  });
+
   it("does not throw when bound to loopback, even with no MCP_API_KEY or TLS", () => {
     expect(() =>
       assertSafeMcpAuthConfig({ host: "127.0.0.1", mcpApiKey: null, tlsConfigured: false }),
