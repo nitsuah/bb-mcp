@@ -28,6 +28,8 @@ export interface OidcAuthConfig {
 interface JwtHeader {
   alg?: string;
   kid?: string;
+  crit?: unknown;
+  b64?: boolean;
 }
 
 interface JwtClaims {
@@ -45,6 +47,7 @@ interface JwkSet {
 }
 
 interface CachedJwks {
+  uri: string;
   expiresAt: number;
   keys: JwkSet["keys"];
 }
@@ -73,7 +76,7 @@ function audienceMatches(aud: unknown, expected: string): boolean {
 }
 
 async function getJwks(uri: string): Promise<JwkSet["keys"]> {
-  if (cachedJwks && cachedJwks.expiresAt > Date.now()) return cachedJwks.keys;
+  if (cachedJwks && cachedJwks.uri === uri && cachedJwks.expiresAt > Date.now()) return cachedJwks.keys;
   const response = await fetch(uri, {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(5_000),
@@ -85,7 +88,7 @@ async function getJwks(uri: string): Promise<JwkSet["keys"]> {
   if (!Array.isArray(data.keys) || data.keys.length === 0) {
     throw new Error("OIDC JWKS endpoint did not return signing keys.");
   }
-  cachedJwks = { keys: data.keys, expiresAt: Date.now() + JWKS_CACHE_MS };
+  cachedJwks = { uri, keys: data.keys, expiresAt: Date.now() + JWKS_CACHE_MS };
   return data.keys;
 }
 
@@ -97,7 +100,14 @@ function getBearerToken(req: Pick<IncomingMessage, "headers">): string {
 }
 
 function assertMtls(req: IncomingMessage, config: OidcAuthConfig): void {
-  if (config.mtlsMode === "disabled" || config.mtlsMode === "optional") return;
+  if (config.mtlsMode === "disabled") return;
+  if (config.mtlsMode === "optional") {
+    const socket = req.socket as TLSSocket;
+    if (socket.encrypted && socket.getPeerCertificate().raw && !socket.authorized) {
+      throw new Error("The presented client certificate is not trusted.");
+    }
+    return;
+  }
 
   if (config.mtlsMode === "trusted-proxy") {
     // TRUST_PROXY_TLS forces the listener to loopback. This header is safe to
@@ -144,7 +154,7 @@ export async function authenticateOidcRequest(
   const claims = decodeJsonSegment<JwtClaims>(encodedClaims, "claims");
 
   // Explicit algorithm allowlist prevents alg=none and key-type confusion.
-  if (header.alg !== "RS256" || !header.kid) {
+  if (header.alg !== "RS256" || !header.kid || header.crit !== undefined || header.b64 === false) {
     throw new Error("Unsupported OIDC token signing algorithm or missing key id.");
   }
 
@@ -165,7 +175,7 @@ export async function authenticateOidcRequest(
   }
 
   const keys = await getJwks(config.jwksUri);
-  const jwk = keys?.find((key) => key.kid === header.kid && key.kty === "RSA" && (!key.use || key.use === "sig"));
+  const jwk = keys?.find((key) => key.kid === header.kid && key.kty === "RSA" && (!key.use || key.use === "sig") && (!key.alg || key.alg === "RS256"));
   if (!jwk) {
     // A rotated signing key may have appeared since the last cache refresh.
     cachedJwks = undefined;
