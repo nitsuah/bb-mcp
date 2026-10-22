@@ -78,12 +78,9 @@ export function assertSafeMcpAuthConfig(check: McpAuthConfigCheck): void {
   const { host, mcpApiKey, tlsConfigured, oidcConfigured = false } = check;
   if (isLoopbackHost(host)) return;
 
-  if (!mcpApiKey && !oidcConfigured) {
+  if (!oidcConfigured) {
     throw new Error(
-      `MCP_API_KEY is required when HOST ("${host}") is not loopback — ` +
-        "the /mcp endpoint would otherwise accept unauthenticated requests " +
-        "from anything that can reach this port. Configure OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI, set MCP_API_KEY, or set " +
-        "HOST=127.0.0.1 for a genuinely local-only deployment.",
+      `OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI are required when HOST ("${host}") is not loopback — a shared API key authenticates the client application but cannot verify caller_identity.userId, role, or FERPA authorization. Configure OIDC for end-user authentication, or bind to loopback for local-only use.`,
     );
   }
 
@@ -119,5 +116,23 @@ export function isAuthorizedMcpRequest(
   const expected = Buffer.from(mcpApiKey);
   if (provided.length !== expected.length) return false;
 
+  return timingSafeEqual(provided, expected);
+}
+ 
+/**
+ * Optional second-factor shared key for OIDC deployments. OIDC uses the
+ * Authorization bearer header, so the legacy transport key moves to a
+ * dedicated header whenever OIDC is enabled.
+ */
+export function isAuthorizedMcpApiKeyHeader(
+  req: Pick<IncomingMessage, "headers">,
+  mcpApiKey: string | null,
+): boolean {
+  if (!mcpApiKey) return true;
+  const header = req.headers["x-mcp-api-key"];
+  if (typeof header !== "string" || header.length === 0) return false;
+  const provided = Buffer.from(header);
+  const expected = Buffer.from(mcpApiKey);
+  if (provided.length !== expected.length) return false;
   return timingSafeEqual(provided, expected);
 }
