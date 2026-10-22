@@ -55,6 +55,8 @@ export interface McpAuthConfigCheck {
   mcpApiKey: string | null;
   /** True when both TLS_CERT_PATH and TLS_KEY_PATH are configured. */
   tlsConfigured: boolean;
+  /** A fully configured OIDC validator may replace the shared API key. */
+  oidcConfigured?: boolean;
 }
 
 /**
@@ -73,14 +75,14 @@ export interface McpAuthConfigCheck {
  * starts listening, not after — nothing here is enforced at request time.
  */
 export function assertSafeMcpAuthConfig(check: McpAuthConfigCheck): void {
-  const { host, mcpApiKey, tlsConfigured } = check;
+  const { host, mcpApiKey, tlsConfigured, oidcConfigured = false } = check;
   if (isLoopbackHost(host)) return;
 
-  if (!mcpApiKey) {
+  if (!mcpApiKey && !oidcConfigured) {
     throw new Error(
       `MCP_API_KEY is required when HOST ("${host}") is not loopback — ` +
         "the /mcp endpoint would otherwise accept unauthenticated requests " +
-        "from anything that can reach this port. Set MCP_API_KEY, or set " +
+        "from anything that can reach this port. Configure OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI, set MCP_API_KEY, or set " +
         "HOST=127.0.0.1 for a genuinely local-only deployment.",
     );
   }
