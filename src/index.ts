@@ -41,6 +41,8 @@ import {
   isAuthorizedMcpRequest,
   resolveListenHost,
 } from "./mcp-auth.js";
+import { authenticateOidcRequest, isOidcEnabled } from "./oidc-auth.js";
+import { runWithVerifiedIdentity } from "./request-identity.js";
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -658,6 +660,7 @@ async function startHttpServer(): Promise<void> {
     host: listenHost,
     mcpApiKey: config.security.mcpApiKey,
     tlsConfigured,
+    oidcConfigured: isOidcEnabled(config.oidc) && Boolean(config.oidc.issuer && config.oidc.audience && config.oidc.jwksUri),
   });
 
   if (!config.security.mcpApiKey) {
@@ -797,13 +800,22 @@ async function startHttpServer(): Promise<void> {
       // Same gate as /mcp — this route builds caller_identity straight from
       // query parameters with no other verification, so without this check
       // it would accept forged identity claims from anyone who can reach it.
-      if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
+      let verifiedIdentity;
+      if (isOidcEnabled(config.oidc)) {
+        try {
+          verifiedIdentity = await authenticateOidcRequest(req, config.oidc);
+        } catch (authError) {
+          const message = authError instanceof Error ? authError.message : "OIDC authentication failed.";
+          res.writeHead(401, { "Content-Type": "application/json", "WWW-Authenticate": 'Bearer realm="bb-mcp", error="invalid_token"' });
+          res.end(JSON.stringify({ error: "unauthorized", message }));
+          return;
+        }
+      } else if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
         res.writeHead(401, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
             error: "unauthorized",
-            message:
-              "Missing or invalid Authorization: Bearer <MCP_API_KEY> header.",
+            message: "Missing or invalid Authorization: Bearer <MCP_API_KEY> header.",
           }),
         );
         return;
@@ -841,7 +853,7 @@ async function startHttpServer(): Promise<void> {
       try {
         writeSseEvent(res, "status", { step: "authorizing" });
 
-        const result = await searchCourseMaterialsHandler({
+        const invoke = () => searchCourseMaterialsHandler({
           caller_identity: {
             userId: url.searchParams.get("userId") ?? "sse-user",
             role,
@@ -853,6 +865,9 @@ async function startHttpServer(): Promise<void> {
           query,
           courseId: url.searchParams.get("courseId") ?? undefined,
         });
+        const result = verifiedIdentity
+          ? await runWithVerifiedIdentity(verifiedIdentity, invoke)
+          : await invoke();
 
         const textResult =
           result.content[0]?.type === "text"
@@ -912,7 +927,11 @@ async function startHttpServer(): Promise<void> {
           return;
         }
         const transport = transports.get(sessionId)!;
-        await transport.handleRequest(req, res);
+        if (verifiedIdentity) {
+          await runWithVerifiedIdentity(verifiedIdentity, () => transport.handleRequest(req, res));
+        } else {
+          await transport.handleRequest(req, res);
+        }
         return;
       }
 
@@ -955,7 +974,11 @@ async function startHttpServer(): Promise<void> {
 
         const mcpServer = buildServer();
         await mcpServer.connect(transport);
-        await transport.handleRequest(req, res);
+        if (verifiedIdentity) {
+          await runWithVerifiedIdentity(verifiedIdentity, () => transport.handleRequest(req, res));
+        } else {
+          await transport.handleRequest(req, res);
+        }
         return;
       }
 
@@ -973,6 +996,11 @@ async function startHttpServer(): Promise<void> {
         {
           cert: readFileSync(config.server.tls.certPath!),
           key: readFileSync(config.server.tls.keyPath!),
+          ...(config.oidc.mtlsMode === "required"
+            ? { requestCert: true, rejectUnauthorized: true }
+            : config.oidc.mtlsMode === "optional"
+              ? { requestCert: true, rejectUnauthorized: false }
+              : {}),
         },
         requestHandler,
       )
