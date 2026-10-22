@@ -692,6 +692,7 @@ async function startHttpServer(): Promise<void> {
       Boolean(
         config.oidc.issuer && config.oidc.audience && config.oidc.jwksUri,
       ),
+    trustProxyTls: config.server.trustProxyTls,
   });
 
   if (!config.security.mcpApiKey && !isOidcEnabled(config.oidc)) {
