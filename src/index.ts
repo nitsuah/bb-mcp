@@ -862,9 +862,11 @@ async function startHttpServer(): Promise<void> {
         return;
       }
 
-      const roleRaw = (url.searchParams.get("role") ?? "student").toLowerCase();
+      const roleRaw = (verifiedIdentity?.role ?? url.searchParams.get("role") ?? "student").toLowerCase();
       const role =
-        roleRaw === "instructor" || roleRaw === "admin" ? roleRaw : "student";
+        roleRaw === "instructor" || roleRaw === "admin" || roleRaw === "parent"
+          ? roleRaw
+          : "student";
 
       res.writeHead(200, {
         "Content-Type": "text/event-stream",
