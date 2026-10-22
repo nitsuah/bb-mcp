@@ -9,7 +9,10 @@
 import { createPublicKey, verify as verifySignature } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import type { TLSSocket } from "node:tls";
-import type { VerifiedCallerIdentity, VerifiedRole } from "./request-identity.js";
+import type {
+  VerifiedCallerIdentity,
+  VerifiedRole,
+} from "./request-identity.js";
 
 export type MtlsMode = "disabled" | "optional" | "required" | "trusted-proxy";
 
@@ -43,7 +46,14 @@ interface JwtClaims {
 }
 
 interface JwkSet {
-  keys?: Array<Record<string, unknown> & { kid?: string; kty?: string; use?: string; alg?: string }>;
+  keys?: Array<
+    Record<string, unknown> & {
+      kid?: string;
+      kty?: string;
+      use?: string;
+      alg?: string;
+    }
+  >;
 }
 
 interface CachedJwks {
@@ -78,6 +88,7 @@ function audienceMatches(aud: unknown, expected: string): boolean {
 async function getJwks(uri: string): Promise<JwkSet["keys"]> {
   if (cachedJwks && cachedJwks.uri === uri && cachedJwks.expiresAt > Date.now()) return cachedJwks.keys;
   const response = await fetch(uri, {
+    
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(5_000),
   });
@@ -103,7 +114,11 @@ function assertMtls(req: IncomingMessage, config: OidcAuthConfig): void {
   if (config.mtlsMode === "disabled") return;
   if (config.mtlsMode === "optional") {
     const socket = req.socket as TLSSocket;
-    if (socket.encrypted && socket.getPeerCertificate().raw && !socket.authorized) {
+    if (
+      socket.encrypted &&
+      socket.getPeerCertificate().raw &&
+      !socket.authorized
+    ) {
       throw new Error("The presented client certificate is not trusted.");
     }
     return;
@@ -114,10 +129,14 @@ function assertMtls(req: IncomingMessage, config: OidcAuthConfig): void {
     // consume only in that mode, where an external client cannot reach the
     // process directly and the proxy must strip/rewrite the header.
     if (!config.trustProxyTls) {
-      throw new Error("OIDC_MTLS_MODE=trusted-proxy requires TRUST_PROXY_TLS=true.");
+      throw new Error(
+        "OIDC_MTLS_MODE=trusted-proxy requires TRUST_PROXY_TLS=true.",
+      );
     }
     if (req.headers["x-client-cert-verified"] !== "SUCCESS") {
-      throw new Error("A client certificate verified by the trusted proxy is required.");
+      throw new Error(
+        "A client certificate verified by the trusted proxy is required.",
+      );
     }
     return;
   }
@@ -141,7 +160,9 @@ export async function authenticateOidcRequest(
   config: OidcAuthConfig,
 ): Promise<VerifiedCallerIdentity> {
   if (!config.issuer || !config.audience || !config.jwksUri) {
-    throw new Error("OIDC requires OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI.");
+    throw new Error(
+      "OIDC requires OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI.",
+    );
   }
 
   assertMtls(req, config);
@@ -154,8 +175,15 @@ export async function authenticateOidcRequest(
   const claims = decodeJsonSegment<JwtClaims>(encodedClaims, "claims");
 
   // Explicit algorithm allowlist prevents alg=none and key-type confusion.
-  if (header.alg !== "RS256" || !header.kid || header.crit !== undefined || header.b64 === false) {
-    throw new Error("Unsupported OIDC token signing algorithm or missing key id.");
+  if (
+    header.alg !== "RS256" ||
+    !header.kid ||
+    header.crit !== undefined ||
+    header.b64 === false
+  ) {
+    throw new Error(
+      "Unsupported OIDC token signing algorithm or missing key id.",
+    );
   }
 
   if (claims.iss !== config.issuer) throw new Error("OIDC token issuer mismatch.");
@@ -164,7 +192,10 @@ export async function authenticateOidcRequest(
   }
 
   const now = Math.floor(Date.now() / 1000);
-  if (typeof claims.exp !== "number" || claims.exp <= now - CLOCK_SKEW_SECONDS) {
+  if (
+    typeof claims.exp !== "number" ||
+    claims.exp <= now - CLOCK_SKEW_SECONDS
+  ) {
     throw new Error("OIDC token is expired or has no valid expiration.");
   }
   if (typeof claims.nbf === "number" && claims.nbf > now + CLOCK_SKEW_SECONDS) {
@@ -175,19 +206,36 @@ export async function authenticateOidcRequest(
   }
 
   const keys = await getJwks(config.jwksUri);
-  const jwk = keys?.find((key) => key.kid === header.kid && key.kty === "RSA" && (!key.use || key.use === "sig") && (!key.alg || key.alg === "RS256"));
+  const jwk = keys?.find((key) =>
+        key.kid === header.kid &&
+        key.kty === "RSA" &&
+        (!key.use || key.use === "sig") &&
+        (!key.alg || key.alg === "RS256") && (!key.alg || key.alg === "RS256"));
   if (!jwk) {
     // A rotated signing key may have appeared since the last cache refresh.
     cachedJwks = undefined;
     const refreshed = await getJwks(config.jwksUri);
     const replacement = refreshed?.find((key) => key.kid === header.kid && key.kty === "RSA" && (!key.use || key.use === "sig"));
     if (!replacement) throw new Error("OIDC signing key was not found in the configured JWKS.");
-    const publicKey = createPublicKey({ key: replacement as JsonWebKey, format: "jwk" });
-    if (!verifySignature("RSA-SHA256", Buffer.from(`${encodedHeader}.${encodedClaims}`), publicKey, Buffer.from(encodedSignature, "base64url"))) {
+    const publicKey = createPublicKey({
+      key: replacement as JsonWebKey,
+      format: "jwk",
+    });
+    if (
+      !verifySignature(
+        "RSA-SHA256",
+        Buffer.from(`${encodedHeader}.${encodedClaims}`),
+        publicKey,
+        Buffer.from(encodedSignature, "base64url"),
+      )
+    ) {
       throw new Error("OIDC token signature is invalid.");
     }
   } else {
-    const publicKey = createPublicKey({ key: jwk as JsonWebKey, format: "jwk" });
+    const publicKey = createPublicKey({
+      key: jwk as JsonWebKey,
+      format: "jwk",
+    });
     if (!verifySignature("RSA-SHA256", Buffer.from(`${encodedHeader}.${encodedClaims}`), publicKey, Buffer.from(encodedSignature, "base64url"))) {
       throw new Error("OIDC token signature is invalid.");
     }
@@ -198,22 +246,33 @@ export async function authenticateOidcRequest(
   }
   const userIdClaim = claimAtPath(claims, config.userIdClaim);
   if (typeof userIdClaim !== "string" || userIdClaim.trim().length === 0) {
-    throw new Error(`OIDC token is missing the configured user id claim "${config.userIdClaim}".`);
+    throw new Error(
+      `OIDC token is missing the configured user id claim "${config.userIdClaim}".`,
+    );
   }
 
   const rawRole = claimAtPath(claims, config.roleClaim);
   const roleValues = Array.isArray(rawRole) ? rawRole : [rawRole];
   const mappedRoles = roleValues
     .filter((value): value is string => typeof value === "string")
-    .map((value) => config.roleMap[value] ?? config.roleMap[value.toLowerCase()])
+    .map(
+      (value) => config.roleMap[value] ?? config.roleMap[value.toLowerCase()],
+    )
     .filter((role): role is VerifiedRole => Boolean(role));
   const distinctRoles = [...new Set(mappedRoles)];
   if (distinctRoles.length !== 1) {
-    throw new Error("OIDC role claim must map to exactly one configured bb-mcp role.");
+    throw new Error(
+      "OIDC role claim must map to exactly one configured bb-mcp role.",
+    );
   }
 
   const ferpaClaim = claimAtPath(claims, config.ferpaClaim);
-  const clientApp = typeof claims.azp === "string" ? claims.azp : typeof claims.client_id === "string" ? claims.client_id : undefined;
+  const clientApp =
+    typeof claims.azp === "string"
+      ? claims.azp
+      : typeof claims.client_id === "string"
+        ? claims.client_id
+        : undefined;
   return {
     userId: userIdClaim,
     role: distinctRoles[0],
