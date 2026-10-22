@@ -1,25 +1,8 @@
 /**
- * Transport-level authentication for the /mcp HTTP endpoint.
- *
- * Every tool call trusts the client-supplied `caller_identity` (userId,
- * role, ferpa_authorized) with no other identity verification — see
- * auth.ts's module docstring. This is the one gate standing between
- * "anyone who can reach this port" and "a client the operator has actually
- * issued a key to."
- *
- * mcpApiKey is unset ("opt-in") only for a server actually listening on
- * loopback — index.ts's startHttpServer refuses to start otherwise
- * (assertSafeMcpAuthConfig below), so isAuthorizedMcpRequest allowing every
- * request when mcpApiKey is unset never actually happens on a
- * network-reachable bind (CWE-306: Missing Authentication for Critical
- * Function). A non-loopback bind additionally requires real TLS, since a
- * bearer token sent over plain HTTP can be captured and replayed (CWE-319:
- * Cleartext Transmission of Sensitive Information) — trusting an external
- * reverse proxy (TRUST_PROXY_TLS) only means anything without direct
- * network access to this process, so resolveListenHost forces the actual
- * bind to loopback in that mode rather than merely asserting a proxy
- * exists: an operator claim can't be verified from inside this process,
- * but an unreachable port can be.
+ * Transport authentication boundary for HTTP MCP and the dedicated SSE route.
+ * Network-reachable deployments require OIDC end-user identity validation;
+ * MCP_API_KEY can be layered on as an additional client/service credential.
+ * Legacy bearer-key authentication remains available only on loopback binds.
  */
 import { timingSafeEqual } from "crypto";
 import type { IncomingMessage } from "http";
