@@ -75,12 +75,12 @@ export const config = {
         .split(",")
         .map((entry) => entry.trim().split("="))
         .filter(([claim, role]) => {
-          const validRole = [
-            "student",
-            "instructor",
-            "admin",
-            "parent",
-          ].includes(role.toLowerCase());
+          const validRole = Boolean(
+            role &&
+              ["student", "instructor", "admin", "parent"].includes(
+                role.toLowerCase(),
+              ),
+          );
           return Boolean(claim && role && validRole);
         })
         .map(([claim, role]) => [
