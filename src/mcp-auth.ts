@@ -40,6 +40,8 @@ export interface McpAuthConfigCheck {
   tlsConfigured: boolean;
   /** A fully configured OIDC validator may replace the shared API key. */
   oidcConfigured?: boolean;
+  /** True when TLS terminates at a trusted proxy and this listener is loopback-only. */
+  trustProxyTls?: boolean;
 }
 
 /**
@@ -58,8 +60,13 @@ export interface McpAuthConfigCheck {
  * starts listening, not after — nothing here is enforced at request time.
  */
 export function assertSafeMcpAuthConfig(check: McpAuthConfigCheck): void {
-  const { host, tlsConfigured, oidcConfigured = false } = check;
-  if (isLoopbackHost(host)) return;
+  const {
+    host,
+    tlsConfigured,
+    oidcConfigured = false,
+    trustProxyTls = false,
+  } = check;
+  if (isLoopbackHost(host) && !trustProxyTls) return;
 
   if (!oidcConfigured) {
     throw new Error(
@@ -67,11 +74,11 @@ export function assertSafeMcpAuthConfig(check: McpAuthConfigCheck): void {
     );
   }
 
-  if (!tlsConfigured) {
+  if (!trustProxyTls && !tlsConfigured) {
     throw new Error(
       `HOST ("${host}") is not loopback, and this server speaks plain ` +
-        "HTTP — an on-path attacker could capture and replay the " +
-        "MCP_API_KEY bearer token. Set TLS_CERT_PATH and TLS_KEY_PATH to " +
+        "HTTP — an on-path attacker could capture and replay an access token. " +
+        "Set TLS_CERT_PATH and TLS_KEY_PATH to " +
         "serve HTTPS directly, or set TRUST_PROXY_TLS=true and run a " +
         "TLS-terminating reverse proxy sharing this process's network " +
         "namespace (which forces this server itself to bind to loopback, " +
