@@ -68,13 +68,31 @@ export const config = {
     roleClaim: process.env.OIDC_ROLE_CLAIM ?? "role",
     ferpaClaim: process.env.OIDC_FERPA_CLAIM ?? "ferpa_authorized",
     roleMap: Object.fromEntries(
-      (process.env.OIDC_ROLE_MAP ?? "student=student,instructor=instructor,admin=admin,parent=parent")
+      (
+        process.env.OIDC_ROLE_MAP ??
+        "student=student,instructor=instructor,admin=admin,parent=parent"
+      )
         .split(",")
         .map((entry) => entry.trim().split("="))
-        .filter(([claim, role]) => Boolean(claim && role && ["student", "instructor", "admin", "parent"].includes(role.toLowerCase())))
-        .map(([claim, role]) => [claim, role.toLowerCase() as "student" | "instructor" | "admin" | "parent"]),
+        .filter(([claim, role]) =>
+          Boolean(
+            claim &&
+              role &&
+              ["student", "instructor", "admin", "parent"].includes(
+                role.toLowerCase(),
+              ),
+          ),
+        )
+        .map(([claim, role]) => [
+          claim,
+          role.toLowerCase() as "student" | "instructor" | "admin" | "parent",
+        ]),
     ),
-    mtlsMode: (process.env.OIDC_MTLS_MODE ?? "disabled") as "disabled" | "optional" | "required" | "trusted-proxy",
+    mtlsMode: (process.env.OIDC_MTLS_MODE ?? "disabled") as
+      | "disabled"
+      | "optional"
+      | "required"
+      | "trusted-proxy",
     mtlsCaPath: process.env.MTLS_CA_PATH ?? null,
     trustProxyTls: process.env.TRUST_PROXY_TLS === "true",
   },
