@@ -934,7 +934,7 @@ async function startHttpServer(): Promise<void> {
 
     // ── MCP endpoint ──
     if (url.pathname === "/mcp") {
-      let verifiedIdentity;
+      let verifiedIdentity: Awaited<ReturnType<typeof authenticateOidcRequest>> | undefined;
       if (isOidcEnabled(config.oidc)) {
         try {
           verifiedIdentity = await authenticateOidcRequest(req, {
