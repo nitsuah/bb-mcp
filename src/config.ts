@@ -74,25 +74,21 @@ export const config = {
       )
         .split(",")
         .map((entry) => entry.trim().split("="))
-        .filter(([claim, role]) =>
-          Boolean(
-            claim &&
-              role &&
-              ["student", "instructor", "admin", "parent"].includes(
-                role.toLowerCase(),
-              ),
-          ),
-        )
+        .filter(([claim, role]) => {
+          const validRole = [
+            "student",
+            "instructor",
+            "admin",
+            "parent",
+          ].includes(role.toLowerCase());
+          return Boolean(claim && role && validRole);
+        })
         .map(([claim, role]) => [
           claim,
           role.toLowerCase() as "student" | "instructor" | "admin" | "parent",
         ]),
     ),
-    mtlsMode: (process.env.OIDC_MTLS_MODE ?? "disabled") as
-      | "disabled"
-      | "optional"
-      | "required"
-      | "trusted-proxy",
+    mtlsMode: (process.env.OIDC_MTLS_MODE ?? "disabled") as "disabled" | "optional" | "required" | "trusted-proxy",
     mtlsCaPath: process.env.MTLS_CA_PATH ?? null,
     trustProxyTls: process.env.TRUST_PROXY_TLS === "true",
   },
