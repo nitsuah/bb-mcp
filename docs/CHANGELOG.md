@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `npm audit fix`: follow-redirects, vite and hono bumped in the lockfile to clear the high-severity audit gate.
-- Visual docs: the manifest-drawn screenshots now come from `npm run capture:screenshots` (still `scripts/visual-docs.mjs`), so vigil's Visual Docs content check sees the workflow regenerate them and grades them `ci`, not `static`.
+- Visual docs: the manifest-drawn screenshots now come from `npm run capture:screenshots` (still `scripts/visual-docs.mjs`), a step vigil's workflow-content check recognises: `npm run showcase -- audit` grades them `ci` now, and the dashboard will once nitsuah/vigil#317 (sync reads workflow contents) is merged and deployed.
 
 ### Added (journeys and vertical short)
 
