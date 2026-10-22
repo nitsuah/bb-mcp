@@ -961,7 +961,9 @@ async function startHttpServer(): Promise<void> {
 
     // ── MCP endpoint ──
     if (url.pathname === "/mcp") {
-      let verifiedIdentity: Awaited<ReturnType<typeof authenticateOidcRequest>> | undefined;
+      let verifiedIdentity:
+        | Awaited<ReturnType<typeof authenticateOidcRequest>>
+        | undefined;
       if (isOidcEnabled(config.oidc)) {
         try {
           verifiedIdentity = await authenticateOidcRequest(req, {
@@ -969,14 +971,25 @@ async function startHttpServer(): Promise<void> {
             trustProxyTls: config.server.trustProxyTls,
           });
         } catch (authError) {
-          const message = authError instanceof Error ? authError.message : "OIDC authentication failed.";
-          res.writeHead(401, { "Content-Type": "application/json", "WWW-Authenticate": 'Bearer realm="bb-mcp", error="invalid_token"' });
+          const message =
+            authError instanceof Error
+              ? authError.message
+              : "OIDC authentication failed.";
+          res.writeHead(401, {
+            "Content-Type": "application/json",
+            "WWW-Authenticate": 'Bearer realm="bb-mcp", error="invalid_token"',
+          });
           res.end(JSON.stringify({ error: "unauthorized", message }));
           return;
         }
         if (!isAuthorizedMcpApiKeyHeader(req, config.security.mcpApiKey)) {
           res.writeHead(401, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "unauthorized", message: "Missing or invalid X-MCP-API-Key header." }));
+          res.end(
+            JSON.stringify({
+              error: "unauthorized",
+              message: "Missing or invalid X-MCP-API-Key header.",
+            }),
+          );
           return;
         }
       } else if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
