@@ -71,10 +71,11 @@ export const config = {
       (process.env.OIDC_ROLE_MAP ?? "student=student,instructor=instructor,admin=admin,parent=parent")
         .split(",")
         .map((entry) => entry.trim().split("="))
-        .filter(([claim, role]) => Boolean(claim && role))
-        .map(([claim, role]) => [claim, role.toLowerCase()]),
+        .filter(([claim, role]) => Boolean(claim && role && ["student", "instructor", "admin", "parent"].includes(role.toLowerCase())))
+        .map(([claim, role]) => [claim, role.toLowerCase() as "student" | "instructor" | "admin" | "parent"]),
     ),
     mtlsMode: (process.env.OIDC_MTLS_MODE ?? "disabled") as "disabled" | "optional" | "required" | "trusted-proxy",
+    trustProxyTls: process.env.TRUST_PROXY_TLS === "true",
   },
   metrics: {
     pushUrl: process.env.METRICS_PUSH_URL ?? null,
