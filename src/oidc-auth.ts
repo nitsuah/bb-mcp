@@ -218,16 +218,10 @@ export async function authenticateOidcRequest(
   ) {
     throw new Error("OIDC token is expired or has no valid expiration.");
   }
-  if (
-    typeof claims.nbf === "number" &&
-    claims.nbf > now + CLOCK_SKEW_SECONDS
-  ) {
+  if (typeof claims.nbf === "number" && claims.nbf > now + CLOCK_SKEW_SECONDS) {
     throw new Error("OIDC token is not yet valid.");
   }
-  if (
-    typeof claims.iat === "number" &&
-    claims.iat > now + CLOCK_SKEW_SECONDS
-  ) {
+  if (typeof claims.iat === "number" && claims.iat > now + CLOCK_SKEW_SECONDS) {
     throw new Error("OIDC token was issued in the future.");
   }
 
