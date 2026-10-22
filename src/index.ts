@@ -800,7 +800,7 @@ async function startHttpServer(): Promise<void> {
       // Same gate as /mcp — this route builds caller_identity straight from
       // query parameters with no other verification, so without this check
       // it would accept forged identity claims from anyone who can reach it.
-      let verifiedIdentity;
+      let verifiedIdentity: Awaited<ReturnType<typeof authenticateOidcRequest>> | undefined;
       if (isOidcEnabled(config.oidc)) {
         try {
           verifiedIdentity = await authenticateOidcRequest(req, config.oidc);
