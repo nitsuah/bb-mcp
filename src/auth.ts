@@ -29,6 +29,7 @@
 import { config } from "./config.js";
 import { scrubLogText, toAuditSubject } from "./privacy.js";
 import { canRoleAccessTool, getAllowedRolesForTool } from "./rbac.js";
+import { getVerifiedIdentity } from "./request-identity.js";
 
 export type Role = "student" | "instructor" | "admin" | "parent";
 
@@ -319,6 +320,22 @@ export function parseIdentity(raw: unknown): CallerIdentity {
   }
 
   const obj = raw as Record<string, unknown>;
+  const verified = getVerifiedIdentity();
+  if (verified) {
+    // In HTTP OIDC mode, the signed token is authoritative. Reject explicit
+    // contradictions so forged caller_identity claims are visible, and never
+    // let a body-supplied FERPA assertion elevate the verified principal.
+    if (typeof obj.userId === "string" && obj.userId !== verified.userId) {
+      throw new AuthorizationError("caller_identity.userId does not match the verified OIDC subject.");
+    }
+    if (typeof obj.role === "string" && obj.role !== verified.role) {
+      throw new AuthorizationError("caller_identity.role does not match the verified OIDC role.");
+    }
+    if (obj.ferpa_authorized === true && !verified.ferpa_authorized) {
+      throw new AuthorizationError("caller_identity.ferpa_authorized cannot elevate the verified OIDC principal.");
+    }
+    return { ...verified };
+  }
 
   if (!obj.userId || typeof obj.userId !== "string") {
     throw new AuthorizationError(
