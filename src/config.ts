@@ -60,6 +60,22 @@ export const config = {
     // Falls back to http://localhost:<PORT> when not set.
     publicBaseUrl: process.env.PUBLIC_BASE_URL ?? null,
   },
+  oidc: {
+    issuer: process.env.OIDC_ISSUER ?? null,
+    audience: process.env.OIDC_AUDIENCE ?? null,
+    jwksUri: process.env.OIDC_JWKS_URI ?? null,
+    userIdClaim: process.env.OIDC_USER_ID_CLAIM ?? "sub",
+    roleClaim: process.env.OIDC_ROLE_CLAIM ?? "role",
+    ferpaClaim: process.env.OIDC_FERPA_CLAIM ?? "ferpa_authorized",
+    roleMap: Object.fromEntries(
+      (process.env.OIDC_ROLE_MAP ?? "student=student,instructor=instructor,admin=admin,parent=parent")
+        .split(",")
+        .map((entry) => entry.trim().split("="))
+        .filter(([claim, role]) => Boolean(claim && role))
+        .map(([claim, role]) => [claim, role.toLowerCase()]),
+    ),
+    mtlsMode: (process.env.OIDC_MTLS_MODE ?? "disabled") as "disabled" | "optional" | "required" | "trusted-proxy",
+  },
   metrics: {
     pushUrl: process.env.METRICS_PUSH_URL ?? null,
   },
