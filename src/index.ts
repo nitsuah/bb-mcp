@@ -854,7 +854,7 @@ async function startHttpServer(): Promise<void> {
         writeSseEvent(res, "status", { step: "authorizing" });
 
         const invoke = () => searchCourseMaterialsHandler({
-          caller_identity: {
+          caller_identity: verifiedIdentity ?? {
             userId: url.searchParams.get("userId") ?? "sse-user",
             role,
             ferpa_authorized: isTruthy(
@@ -906,13 +906,25 @@ async function startHttpServer(): Promise<void> {
 
     // ── MCP endpoint ──
     if (url.pathname === "/mcp") {
-      if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
+      let verifiedIdentity;
+      if (isOidcEnabled(config.oidc)) {
+        try {
+          verifiedIdentity = await authenticateOidcRequest(req, {
+            ...config.oidc,
+            trustProxyTls: config.server.trustProxyTls,
+          });
+        } catch (authError) {
+          const message = authError instanceof Error ? authError.message : "OIDC authentication failed.";
+          res.writeHead(401, { "Content-Type": "application/json", "WWW-Authenticate": 'Bearer realm="bb-mcp", error="invalid_token"' });
+          res.end(JSON.stringify({ error: "unauthorized", message }));
+          return;
+        }
+      } else if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
         res.writeHead(401, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
             error: "unauthorized",
-            message:
-              "Missing or invalid Authorization: Bearer <MCP_API_KEY> header.",
+            message: "Missing or invalid Authorization: Bearer <MCP_API_KEY> header.",
           }),
         );
         return;
