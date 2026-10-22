@@ -96,10 +96,32 @@ describe("assertSafeMcpAuthConfig (fail closed, CWE-306 + CWE-319)", () => {
     ).toThrow(/plain HTTP/);
   });
 
-  it("does not throw when bound beyond loopback with MCP_API_KEY and TLS configured", () => {
+  it("requires OIDC even when a shared API key and TLS are configured remotely", () => {
     expect(() =>
       assertSafeMcpAuthConfig({ host: "0.0.0.0", mcpApiKey: "secret-key", tlsConfigured: true }),
+    ).toThrow(/OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI are required/);
+  });
+
+  it("allows a remote deployment with OIDC and TLS, without requiring a shared key", () => {
+    expect(() =>
+      assertSafeMcpAuthConfig({
+        host: "0.0.0.0",
+        mcpApiKey: null,
+        tlsConfigured: true,
+        oidcConfigured: true,
+      }),
     ).not.toThrow();
+  });
+
+  it("still requires TLS for remote OIDC deployments", () => {
+    expect(() =>
+      assertSafeMcpAuthConfig({
+        host: "0.0.0.0",
+        mcpApiKey: null,
+        tlsConfigured: false,
+        oidcConfigured: true,
+      }),
+    ).toThrow(/plain HTTP/);
   });
 
   it("does not throw when bound to loopback, even with no MCP_API_KEY or TLS", () => {
