@@ -355,7 +355,7 @@ All require admin role. This is subscription *registration* only — receiving i
 
 ## Identity & access control
 
-**Remote end-user authentication (OIDC)** — every non-loopback deployment must configure `OIDC_ISSUER`, `OIDC_AUDIENCE`, and `OIDC_JWKS_URI`. A shared `MCP_API_KEY` alone authenticates a client application, not the person represented by `caller_identity`. The HTTP boundary verifies the RS256 signature against the configured JWKS, exact issuer, audience, expiration, and time claims, then derives the principal from signed claims. Client-supplied identity values must match the verified principal and cannot elevate role or FERPA authorization. Entra ID, Okta, and other OIDC providers are supported through configuration. The existing Blackboard OAuth authorization-code flow remains separate because it creates Blackboard API sessions, not general-purpose institutional identity tokens.
+**Remote end-user authentication (OIDC)** — every non-loopback deployment must configure `OIDC_ISSUER`, `OIDC_AUDIENCE`, and `OIDC_JWKS_URI`. A shared `MCP_API_KEY` authenticates a client application, not the person represented by `caller_identity`. The HTTP boundary verifies the RS256 signature against the configured JWKS, exact issuer, audience, expiration, and time claims, then derives the principal from signed claims. Client-supplied identity values must match the verified principal and cannot elevate role or FERPA authorization. Entra ID, Okta, and other OIDC providers are supported through configuration. The existing Blackboard OAuth authorization-code flow remains separate because it creates Blackboard API sessions, not general-purpose institutional identity tokens.
 
 When OIDC is enabled, send the user's access token as `Authorization: Bearer <OIDC_ACCESS_TOKEN>`. If `MCP_API_KEY` is also configured, send it as `X-MCP-API-Key`. Do not send access tokens over plain HTTP.
 
@@ -363,47 +363,18 @@ When OIDC is enabled, send the user's access token as `Authorization: Bearer <OI
 
 Loopback-only deployments can still use the legacy local-client flow without OIDC. It is not permitted on network-reachable binds.
 
-Once authenticated, the auth layer enforces the following before any Blackboard API call is made:
+Once authenticated, the authorization layer enforces:
+1. **Verified identity** — in OIDC mode, `caller_identity.userId`, `role`, and `ferpa_authorized` cannot override signed claims. Contradictory user/role claims and forged FERPA elevation are rejected.
+2. **Rate gate** — per-role, per-minute call limits prevent bulk data extraction; 429 responses include a retry-after interval.
+3. **Role gate** — instructor-only tools reject student callers; unknown tools are denied by default.
+4. **FERPA gate** — protected student-data tools require a signed, server-verified `ferpa_authorized: true` claim in OIDC mode.
+5. **Course entitlement gate** — grade write-back tools verify that the caller is enrolled in the target course as Instructor, TeachingAssistant, or CourseBuilder. The admin role retains its documented org-wide bypass.
 
+Every access attempt (granted or denied) is written to stdout as structured JSON and kept in a bounded in-memory ring buffer. User identifiers in bb-mcp's local audit trail are SHA-256 hashed before emission or storage. The separate Blackboard `/audit/logs` response is passed through as Blackboard provides it.
 
-1. **`caller_identity` is required** on every tool call — the client asserts who is asking. This identity is trusted at face value (bb-mcp does not itself verify end-user identity); `MCP_API_KEY` establishes that the *client* is one the operator issued a key to, not that the claimed `userId`/`role` is truthful — the calling application (e.g. agent-board) is responsible for that.
-2. **Rate gate** — per-role, per-minute call limits prevent bulk data extraction; 429 responses include a retry-after interval
-3. **Role gate** — instructor-only tools reject `role: "student"` callers
-4. **FERPA gate** — tools that access protected student data require `ferpa_authorized: true`; this covers the instructor at-risk/grade/submission tools and the full admin directory surface (`list_users`, `get_user`, `list_enrollments`, `list_audit_logs`)
-5. **Course entitlement gate** — the grade write-back tools (`create_assignment`, `create_grade_column`, `update_grade`, `delete_grade`, `exempt_grade`, `get_grade_column`) additionally verify the caller is enrolled in the target `courseId` as Instructor, TeachingAssistant, or CourseBuilder — role=instructor alone does not authorize writing grades in an arbitrary course. `role: "admin"` bypasses this course-scoped check (already trusted org-wide).
+Every tool response is also scrubbed before it reaches the MCP client — `src/output-scrub.ts` strips email addresses from tool payloads centrally via `withMetrics()`.
 
-Every access attempt (granted or denied) is written to stdout as structured JSON, and kept in a bounded in-memory ring buffer — bb-mcp's own **local audit trail**. User identifiers in this local trail are SHA-256 hashed before emission or storage; raw user IDs are never written to bb-mcp's own logs or returned in the `localAuditTrail` portion of `list_audit_logs`'s response. This hashing does *not* apply to the separate `logs` field in that same response, which passes through the Blackboard instance's own `/audit/logs` entries (when available) unmodified, including whatever raw user identifiers Blackboard itself records — the same identifiers an admin caller can already resolve directly via `get_user`/`list_users` under the same role+FERPA gate, so this is consistent with, not a bypass of, that authorization boundary.
-
-On top of the audit-log scrubbing above, every tool response is separately scrubbed before it reaches the MCP client — `src/output-scrub.ts` strips email addresses (by field name and by pattern) out of the actual `get_my_grades` / `list_roster` / `list_users` / etc. payloads, applied centrally via `withMetrics()` so no individual tool can skip it.
-
-```json
-{
-  "timestamp": "2026-03-24T10:00:00.000Z",
-  "event": "access.granted",
-  "tool": "get_my_grades",
-  "subject": "anon:a3f9c1e02b47",
-  "role": "student",
-  "courseId": null,
-  "clientApp": "agent-board",
-  "reason": null,
-  "piiRedaction": "hashed-subject"
-}
-```
-
-This format is suitable for ingestion by any log aggregator (Datadog, CloudWatch, Loki, etc.).
-
----
-
-
-1. **`caller_identity` is required** on every tool call — the client asserts who is asking. This identity is trusted at face value (bb-mcp does not itself verify end-user identity); `MCP_API_KEY` establishes that the *client* is one the operator issued a key to, not that the claimed `userId`/`role` is truthful — the calling application (e.g. agent-board) is responsible for that.
-2. **Rate gate** — per-role, per-minute call limits prevent bulk data extraction; 429 responses include a retry-after interval
-3. **Role gate** — instructor-only tools reject `role: "student"` callers
-4. **FERPA gate** — tools that access protected student data require `ferpa_authorized: true`; this covers the instructor at-risk/grade/submission tools and the full admin directory surface (`list_users`, `get_user`, `list_enrollments`, `list_audit_logs`)
-5. **Course entitlement gate** — the grade write-back tools (`create_assignment`, `create_grade_column`, `update_grade`, `delete_grade`, `exempt_grade`, `get_grade_column`) additionally verify the caller is enrolled in the target `courseId` as Instructor, TeachingAssistant, or CourseBuilder — role=instructor alone does not authorize writing grades in an arbitrary course. `role: "admin"` bypasses this course-scoped check (already trusted org-wide).
-
-Every access attempt (granted or denied) is written to stdout as structured JSON, and kept in a bounded in-memory ring buffer — bb-mcp's own **local audit trail**. User identifiers in this local trail are SHA-256 hashed before emission or storage; raw user IDs are never written to bb-mcp's own logs or returned in the `localAuditTrail` portion of `list_audit_logs`'s response. This hashing does *not* apply to the separate `logs` field in that same response, which passes through the Blackboard instance's own `/audit/logs` entries (when available) unmodified, including whatever raw user identifiers Blackboard itself records — the same identifiers an admin caller can already resolve directly via `get_user`/`list_users` under the same role+FERPA gate, so this is consistent with, not a bypass of, that authorization boundary.
-
-On top of the audit-log scrubbing above, every tool response is separately scrubbed before it reaches the MCP client — `src/output-scrub.ts` strips email addresses (by field name and by pattern) out of the actual `get_my_grades` / `list_roster` / `list_users` / etc. payloads, applied centrally via `withMetrics()` so no individual tool can skip it.
+Example local audit event:
 
 ```json
 {
@@ -419,9 +390,7 @@ On top of the audit-log scrubbing above, every tool response is separately scrub
 }
 ```
 
-This format is suitable for ingestion by any log aggregator (Datadog, CloudWatch, Loki, etc.).
-
----
+This format is suitable for ingestion by log aggregators such as Datadog, CloudWatch, and Loki.
 
 ## Metrics
 
