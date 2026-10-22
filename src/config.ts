@@ -77,9 +77,9 @@ export const config = {
         .filter(([claim, role]) => {
           const validRole = Boolean(
             role &&
-              ["student", "instructor", "admin", "parent"].includes(
-                role.toLowerCase(),
-              ),
+            ["student", "instructor", "admin", "parent"].includes(
+              role.toLowerCase(),
+            ),
           );
           return Boolean(claim && role && validRole);
         })
