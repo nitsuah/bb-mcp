@@ -642,10 +642,10 @@ async function startHttpServer(): Promise<void> {
   }
   if (
     (config.oidc.mtlsMode === "optional" || config.oidc.mtlsMode === "required") &&
-    !tlsConfigured
+    (!tlsConfigured || !config.oidc.mtlsCaPath)
   ) {
     throw new Error(
-      "OIDC_MTLS_MODE=optional|required requires TLS_CERT_PATH and TLS_KEY_PATH. Use OIDC_MTLS_MODE=trusted-proxy with TRUST_PROXY_TLS=true when mTLS terminates at a trusted proxy.",
+      "OIDC_MTLS_MODE=optional|required requires TLS_CERT_PATH, TLS_KEY_PATH and MTLS_CA_PATH (the trusted client-certificate CA bundle). Use OIDC_MTLS_MODE=trusted-proxy with TRUST_PROXY_TLS=true when mTLS terminates at a trusted proxy.",
     );
   }
   if (config.oidc.mtlsMode === "trusted-proxy" && !config.server.trustProxyTls) {
@@ -1052,9 +1052,9 @@ async function startHttpServer(): Promise<void> {
           cert: readFileSync(config.server.tls.certPath!),
           key: readFileSync(config.server.tls.keyPath!),
           ...(config.oidc.mtlsMode === "required"
-            ? { requestCert: true, rejectUnauthorized: true }
+            ? { requestCert: true, rejectUnauthorized: true, ca: readFileSync(config.oidc.mtlsCaPath!) }
             : config.oidc.mtlsMode === "optional"
-              ? { requestCert: true, rejectUnauthorized: false }
+              ? { requestCert: true, rejectUnauthorized: false, ca: readFileSync(config.oidc.mtlsCaPath!) }
               : {}),
         },
         requestHandler,
