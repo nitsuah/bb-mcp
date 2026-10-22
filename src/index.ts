@@ -940,17 +940,11 @@ async function startHttpServer(): Promise<void> {
         }
         const transport = transports.get(sessionId)!;
         if (verifiedIdentity) {
-          await runWithVerifiedIdentity(verifiedIdentity, () => transport.handleRequest(req, res));
+          await runWithVerifiedIdentity(verifiedIdentity, () =>
+            transport.handleRequest(req, res),
+          );
         } else {
-          if (verifiedIdentity) {
-            await runWithVerifiedIdentity(verifiedIdentity, () => transport.handleRequest(req, res));
-          } else {
-            if (verifiedIdentity) {
-            await runWithVerifiedIdentity(verifiedIdentity, () => transport.handleRequest(req, res));
-          } else {
-            await transport.handleRequest(req, res);
-          }
-          }
+          await transport.handleRequest(req, res);
         }
         return;
       }
@@ -975,7 +969,13 @@ async function startHttpServer(): Promise<void> {
         if (sessionId && transports.has(sessionId)) {
           // Existing session
           const transport = transports.get(sessionId)!;
-          await transport.handleRequest(req, res);
+          if (verifiedIdentity) {
+            await runWithVerifiedIdentity(verifiedIdentity, () =>
+              transport.handleRequest(req, res),
+            );
+          } else {
+            await transport.handleRequest(req, res);
+          }
           return;
         }
 
