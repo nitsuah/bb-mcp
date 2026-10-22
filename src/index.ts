@@ -648,7 +648,10 @@ async function startHttpServer(): Promise<void> {
       "OIDC_MTLS_MODE=optional|required requires TLS_CERT_PATH, TLS_KEY_PATH and MTLS_CA_PATH (the trusted client-certificate CA bundle). Use OIDC_MTLS_MODE=trusted-proxy with TRUST_PROXY_TLS=true when mTLS terminates at a trusted proxy.",
     );
   }
-  if (config.oidc.mtlsMode === "trusted-proxy" && !config.server.trustProxyTls) {
+  if (
+    config.oidc.mtlsMode === "trusted-proxy" &&
+    !config.server.trustProxyTls
+  ) {
     throw new Error(
       "OIDC_MTLS_MODE=trusted-proxy requires TRUST_PROXY_TLS=true so the listener is restricted to loopback.",
     );
@@ -683,7 +686,11 @@ async function startHttpServer(): Promise<void> {
     host: listenHost,
     mcpApiKey: config.security.mcpApiKey,
     tlsConfigured,
-    oidcConfigured: isOidcEnabled(config.oidc) && Boolean(config.oidc.issuer && config.oidc.audience && config.oidc.jwksUri),
+    oidcConfigured:
+      isOidcEnabled(config.oidc) &&
+      Boolean(
+        config.oidc.issuer && config.oidc.audience && config.oidc.jwksUri,
+      ),
   });
 
   if (!config.security.mcpApiKey && !isOidcEnabled(config.oidc)) {
@@ -823,19 +830,32 @@ async function startHttpServer(): Promise<void> {
       // Same gate as /mcp — this route builds caller_identity straight from
       // query parameters with no other verification, so without this check
       // it would accept forged identity claims from anyone who can reach it.
-      let verifiedIdentity: Awaited<ReturnType<typeof authenticateOidcRequest>> | undefined;
+      let verifiedIdentity:
+        | Awaited<ReturnType<typeof authenticateOidcRequest>>
+        | undefined;
       if (isOidcEnabled(config.oidc)) {
         try {
           verifiedIdentity = await authenticateOidcRequest(req, config.oidc);
         } catch (authError) {
-          const message = authError instanceof Error ? authError.message : "OIDC authentication failed.";
-          res.writeHead(401, { "Content-Type": "application/json", "WWW-Authenticate": 'Bearer realm="bb-mcp", error="invalid_token"' });
+          const message =
+            authError instanceof Error
+              ? authError.message
+              : "OIDC authentication failed.";
+          res.writeHead(401, {
+            "Content-Type": "application/json",
+            "WWW-Authenticate": 'Bearer realm="bb-mcp", error="invalid_token"',
+          });
           res.end(JSON.stringify({ error: "unauthorized", message }));
           return;
         }
         if (!isAuthorizedMcpApiKeyHeader(req, config.security.mcpApiKey)) {
           res.writeHead(401, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "unauthorized", message: "Missing or invalid X-MCP-API-Key header." }));
+          res.end(
+            JSON.stringify({
+              error: "unauthorized",
+              message: "Missing or invalid X-MCP-API-Key header.",
+            }),
+          );
           return;
         }
       } else if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
@@ -862,7 +882,11 @@ async function startHttpServer(): Promise<void> {
         return;
       }
 
-      const roleRaw = (verifiedIdentity?.role ?? url.searchParams.get("role") ?? "student").toLowerCase();
+      const roleRaw = (
+        verifiedIdentity?.role ??
+        url.searchParams.get("role") ??
+        "student"
+      ).toLowerCase();
       const role =
         roleRaw === "instructor" || roleRaw === "admin" || roleRaw === "parent"
           ? roleRaw
@@ -883,18 +907,19 @@ async function startHttpServer(): Promise<void> {
       try {
         writeSseEvent(res, "status", { step: "authorizing" });
 
-        const invoke = () => searchCourseMaterialsHandler({
-          caller_identity: verifiedIdentity ?? {
-            userId: url.searchParams.get("userId") ?? "sse-user",
-            role,
-            ferpa_authorized: isTruthy(
-              url.searchParams.get("ferpa_authorized"),
-            ),
-            clientApp: url.searchParams.get("clientApp") ?? "bb-mcp-sse",
-          },
-          query,
-          courseId: url.searchParams.get("courseId") ?? undefined,
-        });
+        const invoke = () =>
+          searchCourseMaterialsHandler({
+            caller_identity: verifiedIdentity ?? {
+              userId: url.searchParams.get("userId") ?? "sse-user",
+              role,
+              ferpa_authorized: isTruthy(
+                url.searchParams.get("ferpa_authorized"),
+              ),
+              clientApp: url.searchParams.get("clientApp") ?? "bb-mcp-sse",
+            },
+            query,
+            courseId: url.searchParams.get("courseId") ?? undefined,
+          });
         const result = verifiedIdentity
           ? await runWithVerifiedIdentity(verifiedIdentity, invoke)
           : await invoke();
@@ -1030,7 +1055,9 @@ async function startHttpServer(): Promise<void> {
         const mcpServer = buildServer();
         await mcpServer.connect(transport);
         if (verifiedIdentity) {
-          await runWithVerifiedIdentity(verifiedIdentity, () => transport.handleRequest(req, res));
+          await runWithVerifiedIdentity(verifiedIdentity, () =>
+            transport.handleRequest(req, res),
+          );
         } else {
           await transport.handleRequest(req, res);
         }
