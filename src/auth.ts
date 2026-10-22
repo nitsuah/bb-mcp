@@ -1,29 +1,18 @@
 /**
  * Identity & authorization layer.
  *
- * The MCP spec does not define end-user identity (that lives in the calling
- * client — Claude Desktop, agent-board, Cursor, etc.).  This module enforces:
+ * HTTP deployments with OIDC enabled derive identity from a verified RS256
+ * access token at the transport boundary. AsyncLocalStorage binds that
+ * verified principal to tool execution; caller_identity body claims cannot
+ * elevate the role or FERPA flag. Network-reachable binds require OIDC.
+ * Loopback-only stdio/local deployments retain the legacy caller_identity
+ * contract for compatibility and should only be used with trusted local clients.
  *
- *   1. A required `caller_identity` parameter on every tool call — the client
- *      MUST pass who is asking (userId or service account name).
- *
- *   2. Role-based access control: "instructor" vs "student" tools are scoped
- *      via the `role` claim.
- *
- *   3. FERPA guardrails: tools marked `restricted` require the caller to
- *      assert an explicit `ferpa_authorized: true` flag, which the calling
- *      client (e.g. agent-board) must gate behind real identity verification.
- *      If the flag is absent or false the tool call is rejected before any
- *      Blackboard API call is made.
- *
- *   4. All access attempts are logged to stdout in a structured JSON format
- *      suitable for ingestion by any log aggregator.
- *
- *   5. Course-level entitlement: role=instructor alone is not sufficient to
- *      write grades in an arbitrary course — checkCourseEntitlement confirms
- *      the caller is actually enrolled as Instructor/TeachingAssistant/
- *      CourseBuilder in the specific courseId being written to (IDOR guard,
- *      CWE-639). role=admin is trusted org-wide and bypasses this check.
+ * This module additionally enforces:
+ *   1. Role-based access control for each tool.
+ *   2. FERPA guardrails for configured restricted tools.
+ *   3. Structured audit logging with hashed user identifiers.
+ *   4. Course-level entitlement for grade write-back (IDOR/CWE-639).
  */
 
 import { config } from "./config.js";
