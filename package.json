@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "capture:screenshots": "node scripts/visual-docs.mjs",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "docker:test-image": "docker build --target test -t bb-mcp:test .",

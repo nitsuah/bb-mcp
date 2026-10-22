@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `npm audit fix`: follow-redirects, vite and hono bumped in the lockfile to clear the high-severity audit gate.
+- Visual docs: the manifest-drawn screenshots now come from `npm run capture:screenshots` (still `scripts/visual-docs.mjs`), a step vigil's workflow-content check recognises: `npm run showcase -- audit` grades them `ci` now, and the dashboard will once nitsuah/vigil#317 (sync reads workflow contents) is merged and deployed.
+
 ### Added (journeys and vertical short)
 
 - Nightly journeys (`tests/journeys/`, `config/playwright.journeys.config.mjs`, `.github/workflows/journeys.yml`): API journeys with Playwright's `request` fixture against `node dist/index.js` (dummy `BB_CLIENT_ID`/`BB_CLIENT_SECRET`, loopback `HOST`, a test `MCP_API_KEY`; no real Blackboard anywhere) cover `/health`, `/manifest` (40 tools, transports), the `/mcp` 401, MCP initialize + `tools/list`, and a student denied `list_users`; a Pages-site journey checks the hero video and poster, the expand kit, links and no horizontal scroll at 375 px. The caller workflow is pinned to the current `nitsuah/.github` main commit with a matching `kit-ref`; `@playwright/test` 1.64.1 is a new devDependency.

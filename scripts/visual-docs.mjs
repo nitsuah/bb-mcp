@@ -3,7 +3,7 @@
  * Generates the README/Pages visuals from the real tool manifest and RBAC
  * policy (bb-mcp has no web UI, so there is nothing to screenshot).
  *
- *   npm run build && node scripts/visual-docs.mjs
+ *   npm run build && npm run capture:screenshots
  *
  * Output: docs/screenshots/<feature-id>.png (plus the .svg it is drawn from).
  * Deterministic: no clock, no randomness, fixed fixture for the chat turn.
