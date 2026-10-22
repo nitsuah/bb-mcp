@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   assertSafeMcpAuthConfig,
   isAuthorizedMcpRequest,
+  isAuthorizedMcpApiKeyHeader,
   isLoopbackHost,
   resolveListenHost,
 } from "../src/mcp-auth.js";
@@ -39,6 +40,21 @@ describe("isAuthorizedMcpRequest (transport-level auth gate, CWE-862)", () => {
 
   it("rejects an empty bearer token", () => {
     expect(isAuthorizedMcpRequest(reqWith("Bearer "), "secret-key")).toBe(false);
+  });
+});
+
+describe("isAuthorizedMcpApiKeyHeader", () => {
+  it("accepts the configured key in the dedicated header", () => {
+    expect(isAuthorizedMcpApiKeyHeader({ headers: { "x-mcp-api-key": "secret-key" } }, "secret-key")).toBe(true);
+  });
+
+  it("rejects a missing or incorrect dedicated key", () => {
+    expect(isAuthorizedMcpApiKeyHeader({ headers: {} }, "secret-key")).toBe(false);
+    expect(isAuthorizedMcpApiKeyHeader({ headers: { "x-mcp-api-key": "wrong-key" } }, "secret-key")).toBe(false);
+  });
+
+  it("does not require the second factor when no key is configured", () => {
+    expect(isAuthorizedMcpApiKeyHeader({ headers: {} }, null)).toBe(true);
   });
 });
 
