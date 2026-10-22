@@ -86,32 +86,48 @@ function audienceMatches(aud: unknown, expected: string): boolean {
 }
 
 async function getJwks(uri: string): Promise<JwkSet["keys"]> {
-  if (cachedJwks && cachedJwks.uri === uri && cachedJwks.expiresAt > Date.now()) return cachedJwks.keys;
+  if (
+    cachedJwks &&
+    cachedJwks.uri === uri &&
+    cachedJwks.expiresAt > Date.now()
+  ) {
+    return cachedJwks.keys;
+  }
+
   const response = await fetch(uri, {
-    
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(5_000),
   });
   if (!response.ok) {
     throw new Error(`OIDC JWKS endpoint returned HTTP ${response.status}.`);
   }
+
   const data = (await response.json()) as JwkSet;
   if (!Array.isArray(data.keys) || data.keys.length === 0) {
     throw new Error("OIDC JWKS endpoint did not return signing keys.");
   }
-  cachedJwks = { uri, keys: data.keys, expiresAt: Date.now() + JWKS_CACHE_MS };
+
+  cachedJwks = {
+    uri,
+    keys: data.keys,
+    expiresAt: Date.now() + JWKS_CACHE_MS,
+  };
   return data.keys;
 }
 
 function getBearerToken(req: Pick<IncomingMessage, "headers">): string {
   const header = req.headers.authorization;
-  const match = typeof header === "string" ? /^Bearer ([^\s]+)$/i.exec(header) : null;
-  if (!match) throw new Error("A valid OIDC bearer access token is required.");
+  const match =
+    typeof header === "string" ? /^Bearer ([^\s]+)$/i.exec(header) : null;
+  if (!match) {
+    throw new Error("A valid OIDC bearer access token is required.");
+  }
   return match[1];
 }
 
 function assertMtls(req: IncomingMessage, config: OidcAuthConfig): void {
   if (config.mtlsMode === "disabled") return;
+
   if (config.mtlsMode === "optional") {
     const socket = req.socket as TLSSocket;
     if (
@@ -168,7 +184,9 @@ export async function authenticateOidcRequest(
   assertMtls(req, config);
   const token = getBearerToken(req);
   const segments = token.split(".");
-  if (segments.length !== 3) throw new Error("Invalid OIDC token: expected a signed JWT.");
+  if (segments.length !== 3) {
+    throw new Error("Invalid OIDC token: expected a signed JWT.");
+  }
 
   const [encodedHeader, encodedClaims, encodedSignature] = segments;
   const header = decodeJsonSegment<JwtHeader>(encodedHeader, "header");
@@ -186,7 +204,9 @@ export async function authenticateOidcRequest(
     );
   }
 
-  if (claims.iss !== config.issuer) throw new Error("OIDC token issuer mismatch.");
+  if (claims.iss !== config.issuer) {
+    throw new Error("OIDC token issuer mismatch.");
+  }
   if (!audienceMatches(claims.aud, config.audience)) {
     throw new Error("OIDC token audience mismatch.");
   }
@@ -198,52 +218,56 @@ export async function authenticateOidcRequest(
   ) {
     throw new Error("OIDC token is expired or has no valid expiration.");
   }
-  if (typeof claims.nbf === "number" && claims.nbf > now + CLOCK_SKEW_SECONDS) {
+  if (
+    typeof claims.nbf === "number" &&
+    claims.nbf > now + CLOCK_SKEW_SECONDS
+  ) {
     throw new Error("OIDC token is not yet valid.");
   }
-  if (typeof claims.iat === "number" && claims.iat > now + CLOCK_SKEW_SECONDS) {
+  if (
+    typeof claims.iat === "number" &&
+    claims.iat > now + CLOCK_SKEW_SECONDS
+  ) {
     throw new Error("OIDC token was issued in the future.");
   }
 
   const keys = await getJwks(config.jwksUri);
-  const jwk = keys?.find((key) =>
-        key.kid === header.kid &&
-        key.kty === "RSA" &&
-        (!key.use || key.use === "sig") &&
-        (!key.alg || key.alg === "RS256") && (!key.alg || key.alg === "RS256"));
+  const isSigningKey = (key: NonNullable<JwkSet["keys"]>[number]) =>
+    key.kid === header.kid &&
+    key.kty === "RSA" &&
+    (!key.use || key.use === "sig") &&
+    (!key.alg || key.alg === "RS256");
+
+  let jwk = keys?.find(isSigningKey);
   if (!jwk) {
     // A rotated signing key may have appeared since the last cache refresh.
     cachedJwks = undefined;
     const refreshed = await getJwks(config.jwksUri);
-    const replacement = refreshed?.find((key) => key.kid === header.kid && key.kty === "RSA" && (!key.use || key.use === "sig"));
-    if (!replacement) throw new Error("OIDC signing key was not found in the configured JWKS.");
-    const publicKey = createPublicKey({
-      key: replacement as JsonWebKey,
-      format: "jwk",
-    });
-    if (
-      !verifySignature(
-        "RSA-SHA256",
-        Buffer.from(`${encodedHeader}.${encodedClaims}`),
-        publicKey,
-        Buffer.from(encodedSignature, "base64url"),
-      )
-    ) {
-      throw new Error("OIDC token signature is invalid.");
-    }
-  } else {
-    const publicKey = createPublicKey({
-      key: jwk as JsonWebKey,
-      format: "jwk",
-    });
-    if (!verifySignature("RSA-SHA256", Buffer.from(`${encodedHeader}.${encodedClaims}`), publicKey, Buffer.from(encodedSignature, "base64url"))) {
-      throw new Error("OIDC token signature is invalid.");
-    }
+    jwk = refreshed?.find(isSigningKey);
+  }
+  if (!jwk) {
+    throw new Error("OIDC signing key was not found in the configured JWKS.");
+  }
+
+  const publicKey = createPublicKey({
+    key: jwk as JsonWebKey,
+    format: "jwk",
+  });
+  if (
+    !verifySignature(
+      "RSA-SHA256",
+      Buffer.from(`${encodedHeader}.${encodedClaims}`),
+      publicKey,
+      Buffer.from(encodedSignature, "base64url"),
+    )
+  ) {
+    throw new Error("OIDC token signature is invalid.");
   }
 
   if (typeof claims.sub !== "string" || claims.sub.length === 0) {
     throw new Error("OIDC token must include a non-empty subject.");
   }
+
   const userIdClaim = claimAtPath(claims, config.userIdClaim);
   if (typeof userIdClaim !== "string" || userIdClaim.trim().length === 0) {
     throw new Error(
@@ -273,6 +297,7 @@ export async function authenticateOidcRequest(
       : typeof claims.client_id === "string"
         ? claims.client_id
         : undefined;
+
   return {
     userId: userIdClaim,
     role: distinctRoles[0],
