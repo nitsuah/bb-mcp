@@ -103,7 +103,7 @@ describe("assertSafeMcpAuthConfig (fail closed, CWE-306 + CWE-319)", () => {
     ).toThrow(/OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI are required/);
     expect(() =>
       assertSafeMcpAuthConfig({ host: "192.168.1.10", mcpApiKey: null, tlsConfigured: false }),
-    ).toThrow(/MCP_API_KEY is required/);
+    ).toThrow(/OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI are required/);
   });
 
   it("throws when bound beyond loopback with MCP_API_KEY but no TLS configured", () => {
