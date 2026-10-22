@@ -58,7 +58,7 @@ export interface McpAuthConfigCheck {
  * starts listening, not after — nothing here is enforced at request time.
  */
 export function assertSafeMcpAuthConfig(check: McpAuthConfigCheck): void {
-  const { host, mcpApiKey, tlsConfigured, oidcConfigured = false } = check;
+  const { host, tlsConfigured, oidcConfigured = false } = check;
   if (isLoopbackHost(host)) return;
 
   if (!oidcConfigured) {
@@ -101,7 +101,7 @@ export function isAuthorizedMcpRequest(
 
   return timingSafeEqual(provided, expected);
 }
- 
+
 /**
  * Optional second-factor shared key for OIDC deployments. OIDC uses the
  * Authorization bearer header, so the legacy transport key moves to a
