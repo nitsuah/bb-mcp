@@ -641,7 +641,8 @@ async function startHttpServer(): Promise<void> {
     );
   }
   if (
-    (config.oidc.mtlsMode === "optional" || config.oidc.mtlsMode === "required") &&
+    (config.oidc.mtlsMode === "optional" ||
+      config.oidc.mtlsMode === "required") &&
     (!tlsConfigured || !config.oidc.mtlsCaPath)
   ) {
     throw new Error(
@@ -830,9 +831,7 @@ async function startHttpServer(): Promise<void> {
       // Same gate as /mcp — this route builds caller_identity straight from
       // query parameters with no other verification, so without this check
       // it would accept forged identity claims from anyone who can reach it.
-      let verifiedIdentity:
-        | Awaited<ReturnType<typeof authenticateOidcRequest>>
-        | undefined;
+      let verifiedIdentity: Awaited<ReturnType<typeof authenticateOidcRequest>> | undefined;
       if (isOidcEnabled(config.oidc)) {
         try {
           verifiedIdentity = await authenticateOidcRequest(req, config.oidc);
@@ -863,7 +862,8 @@ async function startHttpServer(): Promise<void> {
         res.end(
           JSON.stringify({
             error: "unauthorized",
-            message: "Missing or invalid Authorization: Bearer <MCP_API_KEY> header.",
+            message:
+              "Missing or invalid Authorization: Bearer <MCP_API_KEY> header.",
           }),
         );
         return;
@@ -961,9 +961,7 @@ async function startHttpServer(): Promise<void> {
 
     // ── MCP endpoint ──
     if (url.pathname === "/mcp") {
-      let verifiedIdentity:
-        | Awaited<ReturnType<typeof authenticateOidcRequest>>
-        | undefined;
+      let verifiedIdentity: Awaited<ReturnType<typeof authenticateOidcRequest>> | undefined;
       if (isOidcEnabled(config.oidc)) {
         try {
           verifiedIdentity = await authenticateOidcRequest(req, {
@@ -997,7 +995,8 @@ async function startHttpServer(): Promise<void> {
         res.end(
           JSON.stringify({
             error: "unauthorized",
-            message: "Missing or invalid Authorization: Bearer <MCP_API_KEY> header.",
+            message:
+              "Missing or invalid Authorization: Bearer <MCP_API_KEY> header.",
           }),
         );
         return;
@@ -1092,9 +1091,17 @@ async function startHttpServer(): Promise<void> {
           cert: readFileSync(config.server.tls.certPath!),
           key: readFileSync(config.server.tls.keyPath!),
           ...(config.oidc.mtlsMode === "required"
-            ? { requestCert: true, rejectUnauthorized: true, ca: readFileSync(config.oidc.mtlsCaPath!) }
+            ? {
+                requestCert: true,
+                rejectUnauthorized: true,
+                ca: readFileSync(config.oidc.mtlsCaPath!),
+              }
             : config.oidc.mtlsMode === "optional"
-              ? { requestCert: true, rejectUnauthorized: false, ca: readFileSync(config.oidc.mtlsCaPath!) }
+              ? {
+                  requestCert: true,
+                  rejectUnauthorized: false,
+                  ca: readFileSync(config.oidc.mtlsCaPath!),
+                }
               : {}),
         },
         requestHandler,
