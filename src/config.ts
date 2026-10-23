@@ -86,8 +86,7 @@ export const config = {
     ferpaClaim: process.env.OIDC_FERPA_CLAIM ?? "ferpa_authorized",
     roleMap: Object.fromEntries(
       (
-        process.env.OIDC_ROLE_MAP ??
-        "student=student,instructor=instructor,admin=admin,parent=parent"
+        process.env.OIDC_ROLE_MAP ?? ""
       )
         .split(",")
         .map((entry) => entry.trim().split("="))
@@ -158,3 +157,12 @@ export const config = {
     },
   },
 } as const;
+
+if (
+  (config.oidc.issuer || config.oidc.audience || config.oidc.jwksUri) &&
+  Object.keys(config.oidc.roleMap).length === 0
+) {
+  throw new Error(
+    "OIDC_ROLE_MAP must explicitly map trusted issuer claim values to bb-mcp roles when OIDC is enabled.",
+  );
+}
