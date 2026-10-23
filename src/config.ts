@@ -85,9 +85,7 @@ export const config = {
     roleClaim: process.env.OIDC_ROLE_CLAIM ?? "role",
     ferpaClaim: process.env.OIDC_FERPA_CLAIM ?? "ferpa_authorized",
     roleMap: Object.fromEntries(
-      (
-        process.env.OIDC_ROLE_MAP ?? ""
-      )
+      (process.env.OIDC_ROLE_MAP ?? "")
         .split(",")
         .map((entry) => entry.trim().split("="))
         .filter(([claim, role]) => {
