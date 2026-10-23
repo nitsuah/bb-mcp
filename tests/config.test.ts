@@ -54,6 +54,11 @@ describe('config', () => {
     delete process.env.PORT;
     delete process.env.LOG_LEVEL;
     delete process.env.METRICS_PUSH_URL;
+    delete process.env.OIDC_ISSUER;
+    delete process.env.OIDC_AUDIENCE;
+    delete process.env.OIDC_JWKS_URI;
+    delete process.env.OIDC_ROLE_MAP;
+    delete process.env.OIDC_MTLS_MODE;
 
     const { config } = await loadConfig();
 
@@ -68,6 +73,7 @@ describe('config', () => {
     expect(config.server.logLevel).toBe('info');
     expect(config.server.publicBaseUrl).toBe('https://mcp.example.edu');
     expect(config.metrics.pushUrl).toBeNull();
+    expect(config.oidc.roleMap).toEqual({});
     // RESTRICTED_TOOLS only ever adds to the mandatory FERPA set below — it
     // cannot replace it. 'get_grade_distribution' is already mandatory, so
     // the env value contributes only 'draft_announcement' as a real addition.
