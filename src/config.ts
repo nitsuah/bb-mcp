@@ -3,16 +3,19 @@
  */
 import "dotenv/config";
 
-const MTLS_MODES = ["disabled", "optional", "required", "trusted-proxy"] as const;
+const MTLS_MODES = [
+  "disabled",
+  "optional",
+  "required",
+  "trusted-proxy",
+] as const;
 type ConfiguredMtlsMode = (typeof MTLS_MODES)[number];
 
 /** Parse the mTLS mode strictly so typos cannot silently disable certificate checks. */
 function parseMtlsMode(raw: string | undefined): ConfiguredMtlsMode {
   const value = (raw ?? "disabled").trim();
   if (!(MTLS_MODES as readonly string[]).includes(value)) {
-    throw new Error(
-      `OIDC_MTLS_MODE must be one of: ${MTLS_MODES.join(", ")}.`,
-    );
+    throw new Error(`OIDC_MTLS_MODE must be one of: ${MTLS_MODES.join(", ")}.`);
   }
   return value as ConfiguredMtlsMode;
 }
