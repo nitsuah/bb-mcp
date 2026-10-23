@@ -79,6 +79,7 @@ export class OidcProviderUnavailableError extends Error {
 }
 const CLOCK_SKEW_SECONDS = 60;
 
+/** Decode a JWT segment as JSON, rejecting malformed base64url/JSON data. */
 function decodeJsonSegment<T>(segment: string, name: string): T {
   try {
     return JSON.parse(Buffer.from(segment, "base64url").toString("utf8")) as T;
@@ -87,6 +88,7 @@ function decodeJsonSegment<T>(segment: string, name: string): T {
   }
 }
 
+/** Resolve an exact claim name first, then support dot-separated nested claim paths. */
 function claimAtPath(claims: JwtClaims, path: string): unknown {
   if (Object.hasOwn(claims, path)) return claims[path];
   return path.split(".").reduce<unknown>((value, part) => {
@@ -95,10 +97,12 @@ function claimAtPath(claims: JwtClaims, path: string): unknown {
   }, claims);
 }
 
+/** Check whether a JWT audience claim includes the configured API audience. */
 function audienceMatches(aud: unknown, expected: string): boolean {
   return aud === expected || (Array.isArray(aud) && aud.includes(expected));
 }
 
+/** Fetch and cache signing keys, coalescing concurrent requests and cooling down failures. */
 async function getJwks(uri: string, forceRefresh = false): Promise<JwkSet["keys"]> {
   if (
     !forceRefresh &&
@@ -173,6 +177,7 @@ async function getJwks(uri: string, forceRefresh = false): Promise<JwkSet["keys"
   }
 }
 
+/** Extract exactly one bearer token from the request Authorization header. */
 function getBearerToken(req: Pick<IncomingMessage, "headers">): string {
   const header = req.headers.authorization;
   const match =
@@ -183,6 +188,7 @@ function getBearerToken(req: Pick<IncomingMessage, "headers">): string {
   return match[1];
 }
 
+/** Enforce the configured direct or trusted-proxy client-certificate policy. */
 function assertMtls(req: IncomingMessage, config: OidcAuthConfig): void {
   if (config.mtlsMode === "disabled") return;
 
@@ -221,6 +227,7 @@ function assertMtls(req: IncomingMessage, config: OidcAuthConfig): void {
   }
 }
 
+/** Return true when any OIDC setting is present, allowing startup to reject partial configuration. */
 export function isOidcEnabled(config: OidcAuthConfig): boolean {
   return Boolean(config.issuer || config.audience || config.jwksUri);
 }
@@ -373,6 +380,7 @@ export async function authenticateOidcRequest(
   };
 }
 
+/** Clear verifier cache and throttling state between isolated authentication tests. */
 export function __resetOidcJwksCacheForTests(): void {
   cachedJwks = undefined;
   jwksFetchInFlight = undefined;
