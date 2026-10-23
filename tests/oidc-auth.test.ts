@@ -234,6 +234,10 @@ describe("authenticateOidcRequest", () => {
     await expect(
       authenticateOidcRequest(request(token()), config),
     ).rejects.toBeInstanceOf(OidcProviderUnavailableError);
+    await expect(
+      authenticateOidcRequest(request(token()), config),
+    ).rejects.toBeInstanceOf(OidcProviderUnavailableError);
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
 
     __resetOidcJwksCacheForTests();
     vi.mocked(fetch).mockResolvedValueOnce({
