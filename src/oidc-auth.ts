@@ -63,7 +63,18 @@ interface CachedJwks {
 }
 
 let cachedJwks: CachedJwks | undefined;
+let jwksFetchInFlight: Promise<JwkSet["keys"]> | undefined;
+let lastForcedRefreshAt = 0;
 const JWKS_CACHE_MS = 5 * 60_000;
+const JWKS_FORCED_REFRESH_COOLDOWN_MS = 30_000;
+
+/** Signals an identity-provider/JWKS availability problem, not an invalid token. */
+export class OidcProviderUnavailableError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "OidcProviderUnavailableError";
+  }
+}
 const CLOCK_SKEW_SECONDS = 60;
 
 function decodeJsonSegment<T>(segment: string, name: string): T {
@@ -75,6 +86,7 @@ function decodeJsonSegment<T>(segment: string, name: string): T {
 }
 
 function claimAtPath(claims: JwtClaims, path: string): unknown {
+  if (Object.hasOwn(claims, path)) return claims[path];
   return path.split(".").reduce<unknown>((value, part) => {
     if (!value || typeof value !== "object") return undefined;
     return (value as Record<string, unknown>)[part];
@@ -85,8 +97,9 @@ function audienceMatches(aud: unknown, expected: string): boolean {
   return aud === expected || (Array.isArray(aud) && aud.includes(expected));
 }
 
-async function getJwks(uri: string): Promise<JwkSet["keys"]> {
+async function getJwks(uri: string, forceRefresh = false): Promise<JwkSet["keys"]> {
   if (
+    !forceRefresh &&
     cachedJwks &&
     cachedJwks.uri === uri &&
     cachedJwks.expiresAt > Date.now()
@@ -94,25 +107,58 @@ async function getJwks(uri: string): Promise<JwkSet["keys"]> {
     return cachedJwks.keys;
   }
 
-  const response = await fetch(uri, {
-    headers: { accept: "application/json" },
-    signal: AbortSignal.timeout(5_000),
-  });
-  if (!response.ok) {
-    throw new Error(`OIDC JWKS endpoint returned HTTP ${response.status}.`);
-  }
+  // Coalesce concurrent cache misses/refreshes so bursts of requests cannot
+  // multiply outbound calls to the identity provider.
+  if (jwksFetchInFlight) return jwksFetchInFlight;
 
-  const data = (await response.json()) as JwkSet;
-  if (!Array.isArray(data.keys) || data.keys.length === 0) {
-    throw new Error("OIDC JWKS endpoint did not return signing keys.");
-  }
+  jwksFetchInFlight = (async () => {
+    let response: Response;
+    try {
+      response = await fetch(uri, {
+        headers: { accept: "application/json" },
+        signal: AbortSignal.timeout(5_000),
+      });
+    } catch (error) {
+      throw new OidcProviderUnavailableError(
+        "Unable to retrieve OIDC signing keys.",
+        { cause: error },
+      );
+    }
 
-  cachedJwks = {
-    uri,
-    keys: data.keys,
-    expiresAt: Date.now() + JWKS_CACHE_MS,
-  };
-  return data.keys;
+    if (!response.ok) {
+      throw new OidcProviderUnavailableError(
+        `OIDC signing-key endpoint returned HTTP ${response.status}.`,
+      );
+    }
+
+    let data: JwkSet;
+    try {
+      data = (await response.json()) as JwkSet;
+    } catch (error) {
+      throw new OidcProviderUnavailableError(
+        "OIDC signing-key endpoint returned invalid JSON.",
+        { cause: error },
+      );
+    }
+    if (!Array.isArray(data.keys) || data.keys.length === 0) {
+      throw new OidcProviderUnavailableError(
+        "OIDC signing-key endpoint returned no usable keys.",
+      );
+    }
+
+    cachedJwks = {
+      uri,
+      keys: data.keys,
+      expiresAt: Date.now() + JWKS_CACHE_MS,
+    };
+    return data.keys;
+  })();
+
+  try {
+    return await jwksFetchInFlight;
+  } finally {
+    jwksFetchInFlight = undefined;
+  }
 }
 
 function getBearerToken(req: Pick<IncomingMessage, "headers">): string {
@@ -233,10 +279,15 @@ export async function authenticateOidcRequest(
     (!key.alg || key.alg === "RS256");
 
   let jwk = keys?.find(isSigningKey);
-  if (!jwk) {
-    // A rotated signing key may have appeared since the last cache refresh.
+  if (
+    !jwk &&
+    Date.now() - lastForcedRefreshAt >= JWKS_FORCED_REFRESH_COOLDOWN_MS
+  ) {
+    // Allow key rotation, but cap forced refreshes so random kid values cannot
+    // evict the cache and turn each unauthenticated request into outbound I/O.
+    lastForcedRefreshAt = Date.now();
     cachedJwks = undefined;
-    const refreshed = await getJwks(config.jwksUri);
+    const refreshed = await getJwks(config.jwksUri, true);
     jwk = refreshed?.find(isSigningKey);
   }
   if (!jwk) {
@@ -303,4 +354,6 @@ export async function authenticateOidcRequest(
 
 export function __resetOidcJwksCacheForTests(): void {
   cachedJwks = undefined;
+  jwksFetchInFlight = undefined;
+  lastForcedRefreshAt = 0;
 }
