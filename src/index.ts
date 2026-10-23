@@ -632,10 +632,7 @@ function isTruthy(value: string | null): boolean {
  * Respond consistently to OIDC failures without disclosing provider details.
  * Provider/JWKS outages are service failures, not invalid bearer credentials.
  */
-function respondToOidcAuthFailure(
-  res: ServerResponse,
-  error: unknown,
-): void {
+function respondToOidcAuthFailure(res: ServerResponse, error: unknown): void {
   const unavailable = error instanceof OidcProviderUnavailableError;
   const detail = error instanceof Error ? error.message : "Unknown OIDC error";
   console.error(
