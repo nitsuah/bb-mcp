@@ -709,9 +709,9 @@ async function startHttpServer(): Promise<void> {
 
   // TRUST_PROXY_TLS isn't just an assertion — it forces the actual listen
   // host to loopback, since a configured HOST would otherwise remain a
-  // second, unprotected path straight to this plain-HTTP listener. Only a
-  // proxy sharing this process's network namespace can reach a loopback
-  // bind, which is what makes the "trust" meaningful.
+  // second, unprotected path straight to this plain-HTTP listener. Loopback
+  // blocks remote access, but every process in the same network namespace can
+  // still connect; trusted-proxy mode requires all such processes to be trusted.
   const listenHost = resolveListenHost(
     config.server.host,
     config.server.trustProxyTls,
@@ -720,9 +720,8 @@ async function startHttpServer(): Promise<void> {
     console.warn(
       `TRUST_PROXY_TLS=true overrides HOST ("${config.server.host}") — ` +
         `this server will bind to loopback ("${listenHost}") instead, so ` +
-        "only a reverse proxy sharing this process's network namespace " +
-        "(same container, Docker's network_mode: service:<name>, a " +
-        "Kubernetes sidecar, etc.) can reach it.",
+        "remote clients cannot reach it directly, but every process sharing " +
+        "the network namespace can connect, so all such processes must be trusted.",
     );
   }
 
