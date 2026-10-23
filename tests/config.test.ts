@@ -22,6 +22,29 @@ describe('config', () => {
     );
   });
 
+  it('requires an explicit OIDC role allowlist when OIDC is configured', async () => {
+    process.env.BB_CLIENT_ID = 'client-id';
+    process.env.BB_CLIENT_SECRET = 'client-secret';
+    process.env.OIDC_ISSUER = 'https://issuer.example.test/';
+    process.env.OIDC_AUDIENCE = 'bb-mcp-api';
+    process.env.OIDC_JWKS_URI = 'https://issuer.example.test/jwks';
+    delete process.env.OIDC_ROLE_MAP;
+
+    await expect(loadConfig()).rejects.toThrow(
+      'OIDC_ROLE_MAP must explicitly map trusted issuer claim values to bb-mcp roles',
+    );
+  });
+
+  it('rejects unknown OIDC mTLS modes instead of silently disabling mTLS', async () => {
+    process.env.BB_CLIENT_ID = 'client-id';
+    process.env.BB_CLIENT_SECRET = 'client-secret';
+    process.env.OIDC_MTLS_MODE = 'Required';
+
+    await expect(loadConfig()).rejects.toThrow(
+      'OIDC_MTLS_MODE must be one of: disabled, optional, required, trusted-proxy.',
+    );
+  });
+
   it('applies defaults and normalizes values from env', async () => {
     process.env.BB_CLIENT_ID = 'client-id';
     process.env.BB_CLIENT_SECRET = 'client-secret';
@@ -31,6 +54,11 @@ describe('config', () => {
     delete process.env.PORT;
     delete process.env.LOG_LEVEL;
     delete process.env.METRICS_PUSH_URL;
+    delete process.env.OIDC_ISSUER;
+    delete process.env.OIDC_AUDIENCE;
+    delete process.env.OIDC_JWKS_URI;
+    delete process.env.OIDC_ROLE_MAP;
+    delete process.env.OIDC_MTLS_MODE;
 
     const { config } = await loadConfig();
 
@@ -45,6 +73,7 @@ describe('config', () => {
     expect(config.server.logLevel).toBe('info');
     expect(config.server.publicBaseUrl).toBe('https://mcp.example.edu');
     expect(config.metrics.pushUrl).toBeNull();
+    expect(config.oidc.roleMap).toEqual({});
     // RESTRICTED_TOOLS only ever adds to the mandatory FERPA set below — it
     // cannot replace it. 'get_grade_distribution' is already mandatory, so
     // the env value contributes only 'draft_announcement' as a real addition.

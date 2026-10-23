@@ -39,8 +39,16 @@ import {
 import {
   assertSafeMcpAuthConfig,
   isAuthorizedMcpRequest,
+  isAuthorizedMcpApiKeyHeader,
   resolveListenHost,
 } from "./mcp-auth.js";
+import {
+  authenticateOidcRequest,
+  isOidcEnabled,
+  OidcProviderUnavailableError,
+} from "./oidc-auth.js";
+import { runWithVerifiedIdentity } from "./request-identity.js";
+import type { ServerResponse } from "node:http";
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -620,6 +628,44 @@ function isTruthy(value: string | null): boolean {
   return ["1", "true", "yes", "on"].includes(value.toLowerCase());
 }
 
+/**
+ * Respond consistently to OIDC failures without disclosing provider details.
+ * Provider/JWKS outages are service failures, not invalid bearer credentials.
+ */
+function respondToOidcAuthFailure(res: ServerResponse, error: unknown): void {
+  const unavailable = error instanceof OidcProviderUnavailableError;
+  const detail = error instanceof Error ? error.message : "Unknown OIDC error";
+  console.error(
+    JSON.stringify({
+      event: "oidc.authentication_failure",
+      category: unavailable ? "provider_unavailable" : "invalid_credentials",
+      detail,
+    }),
+  );
+
+  if (unavailable) {
+    res.writeHead(503, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        error: "temporarily_unavailable",
+        message: "The identity provider is temporarily unavailable.",
+      }),
+    );
+    return;
+  }
+
+  res.writeHead(401, {
+    "Content-Type": "application/json",
+    "WWW-Authenticate": 'Bearer realm="bb-mcp", error="invalid_token"',
+  });
+  res.end(
+    JSON.stringify({
+      error: "unauthorized",
+      message: "A valid OIDC access token is required.",
+    }),
+  );
+}
+
 // ── HTTP mode (default) ───────────────────────────────────────────────────
 
 async function startHttpServer(): Promise<void> {
@@ -629,11 +675,43 @@ async function startHttpServer(): Promise<void> {
     config.server.tls.certPath && config.server.tls.keyPath,
   );
 
+  if (config.oidc.mtlsMode !== "disabled" && !isOidcEnabled(config.oidc)) {
+    throw new Error(
+      "OIDC_MTLS_MODE requires OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI to be configured.",
+    );
+  }
+
+  if (
+    isOidcEnabled(config.oidc) &&
+    (!config.oidc.issuer || !config.oidc.audience || !config.oidc.jwksUri)
+  ) {
+    throw new Error(
+      "OIDC is partially configured. Set OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI together.",
+    );
+  }
+  if (
+    (config.oidc.mtlsMode === "optional" ||
+      config.oidc.mtlsMode === "required") &&
+    (!tlsConfigured || !config.oidc.mtlsCaPath)
+  ) {
+    throw new Error(
+      "OIDC_MTLS_MODE=optional|required requires TLS_CERT_PATH, TLS_KEY_PATH and MTLS_CA_PATH (the trusted client-certificate CA bundle). Use OIDC_MTLS_MODE=trusted-proxy with TRUST_PROXY_TLS=true when mTLS terminates at a trusted proxy.",
+    );
+  }
+  if (
+    config.oidc.mtlsMode === "trusted-proxy" &&
+    !config.server.trustProxyTls
+  ) {
+    throw new Error(
+      "OIDC_MTLS_MODE=trusted-proxy requires TRUST_PROXY_TLS=true so the listener is restricted to loopback.",
+    );
+  }
+
   // TRUST_PROXY_TLS isn't just an assertion — it forces the actual listen
   // host to loopback, since a configured HOST would otherwise remain a
-  // second, unprotected path straight to this plain-HTTP listener. Only a
-  // proxy sharing this process's network namespace can reach a loopback
-  // bind, which is what makes the "trust" meaningful.
+  // second, unprotected path straight to this plain-HTTP listener. Loopback
+  // blocks remote access, but every process in the same network namespace can
+  // still connect; trusted-proxy mode requires all such processes to be trusted.
   const listenHost = resolveListenHost(
     config.server.host,
     config.server.trustProxyTls,
@@ -642,9 +720,8 @@ async function startHttpServer(): Promise<void> {
     console.warn(
       `TRUST_PROXY_TLS=true overrides HOST ("${config.server.host}") — ` +
         `this server will bind to loopback ("${listenHost}") instead, so ` +
-        "only a reverse proxy sharing this process's network namespace " +
-        "(same container, Docker's network_mode: service:<name>, a " +
-        "Kubernetes sidecar, etc.) can reach it.",
+        "remote clients cannot reach it directly, but every process sharing " +
+        "the network namespace can connect, so all such processes must be trusted.",
     );
   }
 
@@ -658,9 +735,15 @@ async function startHttpServer(): Promise<void> {
     host: listenHost,
     mcpApiKey: config.security.mcpApiKey,
     tlsConfigured,
+    oidcConfigured:
+      isOidcEnabled(config.oidc) &&
+      Boolean(
+        config.oidc.issuer && config.oidc.audience && config.oidc.jwksUri,
+      ),
+    trustProxyTls: config.server.trustProxyTls,
   });
 
-  if (!config.security.mcpApiKey) {
+  if (!config.security.mcpApiKey && !isOidcEnabled(config.oidc)) {
     console.warn(
       "WARNING: MCP_API_KEY is not set. This is only safe because this " +
         `server is listening on loopback ("${listenHost}"); on any other ` +
@@ -797,7 +880,26 @@ async function startHttpServer(): Promise<void> {
       // Same gate as /mcp — this route builds caller_identity straight from
       // query parameters with no other verification, so without this check
       // it would accept forged identity claims from anyone who can reach it.
-      if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
+      let verifiedIdentity:
+        Awaited<ReturnType<typeof authenticateOidcRequest>> | undefined;
+      if (isOidcEnabled(config.oidc)) {
+        try {
+          verifiedIdentity = await authenticateOidcRequest(req, config.oidc);
+        } catch (authError) {
+          respondToOidcAuthFailure(res, authError);
+          return;
+        }
+        if (!isAuthorizedMcpApiKeyHeader(req, config.security.mcpApiKey)) {
+          res.writeHead(401, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error: "unauthorized",
+              message: "Missing or invalid X-MCP-API-Key header.",
+            }),
+          );
+          return;
+        }
+      } else if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
         res.writeHead(401, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
@@ -822,9 +924,15 @@ async function startHttpServer(): Promise<void> {
         return;
       }
 
-      const roleRaw = (url.searchParams.get("role") ?? "student").toLowerCase();
+      const roleRaw = (
+        verifiedIdentity?.role ??
+        url.searchParams.get("role") ??
+        "student"
+      ).toLowerCase();
       const role =
-        roleRaw === "instructor" || roleRaw === "admin" ? roleRaw : "student";
+        roleRaw === "instructor" || roleRaw === "admin" || roleRaw === "parent"
+          ? roleRaw
+          : "student";
 
       res.writeHead(200, {
         "Content-Type": "text/event-stream",
@@ -841,18 +949,22 @@ async function startHttpServer(): Promise<void> {
       try {
         writeSseEvent(res, "status", { step: "authorizing" });
 
-        const result = await searchCourseMaterialsHandler({
-          caller_identity: {
-            userId: url.searchParams.get("userId") ?? "sse-user",
-            role,
-            ferpa_authorized: isTruthy(
-              url.searchParams.get("ferpa_authorized"),
-            ),
-            clientApp: url.searchParams.get("clientApp") ?? "bb-mcp-sse",
-          },
-          query,
-          courseId: url.searchParams.get("courseId") ?? undefined,
-        });
+        const invoke = () =>
+          searchCourseMaterialsHandler({
+            caller_identity: verifiedIdentity ?? {
+              userId: url.searchParams.get("userId") ?? "sse-user",
+              role,
+              ferpa_authorized: isTruthy(
+                url.searchParams.get("ferpa_authorized"),
+              ),
+              clientApp: url.searchParams.get("clientApp") ?? "bb-mcp-sse",
+            },
+            query,
+            courseId: url.searchParams.get("courseId") ?? undefined,
+          });
+        const result = verifiedIdentity
+          ? await runWithVerifiedIdentity(verifiedIdentity, invoke)
+          : await invoke();
 
         const textResult =
           result.content[0]?.type === "text"
@@ -891,7 +1003,29 @@ async function startHttpServer(): Promise<void> {
 
     // ── MCP endpoint ──
     if (url.pathname === "/mcp") {
-      if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
+      let verifiedIdentity:
+        Awaited<ReturnType<typeof authenticateOidcRequest>> | undefined;
+      if (isOidcEnabled(config.oidc)) {
+        try {
+          verifiedIdentity = await authenticateOidcRequest(req, {
+            ...config.oidc,
+            trustProxyTls: config.server.trustProxyTls,
+          });
+        } catch (authError) {
+          respondToOidcAuthFailure(res, authError);
+          return;
+        }
+        if (!isAuthorizedMcpApiKeyHeader(req, config.security.mcpApiKey)) {
+          res.writeHead(401, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error: "unauthorized",
+              message: "Missing or invalid X-MCP-API-Key header.",
+            }),
+          );
+          return;
+        }
+      } else if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
         res.writeHead(401, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
@@ -912,7 +1046,13 @@ async function startHttpServer(): Promise<void> {
           return;
         }
         const transport = transports.get(sessionId)!;
-        await transport.handleRequest(req, res);
+        if (verifiedIdentity) {
+          await runWithVerifiedIdentity(verifiedIdentity, () =>
+            transport.handleRequest(req, res),
+          );
+        } else {
+          await transport.handleRequest(req, res);
+        }
         return;
       }
 
@@ -936,7 +1076,13 @@ async function startHttpServer(): Promise<void> {
         if (sessionId && transports.has(sessionId)) {
           // Existing session
           const transport = transports.get(sessionId)!;
-          await transport.handleRequest(req, res);
+          if (verifiedIdentity) {
+            await runWithVerifiedIdentity(verifiedIdentity, () =>
+              transport.handleRequest(req, res),
+            );
+          } else {
+            await transport.handleRequest(req, res);
+          }
           return;
         }
 
@@ -955,7 +1101,13 @@ async function startHttpServer(): Promise<void> {
 
         const mcpServer = buildServer();
         await mcpServer.connect(transport);
-        await transport.handleRequest(req, res);
+        if (verifiedIdentity) {
+          await runWithVerifiedIdentity(verifiedIdentity, () =>
+            transport.handleRequest(req, res),
+          );
+        } else {
+          await transport.handleRequest(req, res);
+        }
         return;
       }
 
@@ -973,6 +1125,19 @@ async function startHttpServer(): Promise<void> {
         {
           cert: readFileSync(config.server.tls.certPath!),
           key: readFileSync(config.server.tls.keyPath!),
+          ...(config.oidc.mtlsMode === "required"
+            ? {
+                requestCert: true,
+                rejectUnauthorized: true,
+                ca: readFileSync(config.oidc.mtlsCaPath!),
+              }
+            : config.oidc.mtlsMode === "optional"
+              ? {
+                  requestCert: true,
+                  rejectUnauthorized: false,
+                  ca: readFileSync(config.oidc.mtlsCaPath!),
+                }
+              : {}),
         },
         requestHandler,
       )

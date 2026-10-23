@@ -215,9 +215,15 @@ Copy `.env.example` to `.env` and set:
 | `HOST` | — | Bind address (default `0.0.0.0`, all interfaces — unchanged from before `MCP_API_KEY` existed, so `docker compose`'s `-p 3100:3100` port publishing keeps working). Set to `127.0.0.1` for a genuinely local-only deployment; see `MCP_API_KEY` below. |
 | `LOG_LEVEL` | — | `info` or `debug` (default `info`) |
 | `PUBLIC_BASE_URL` | — | Publicly reachable base URL of this server (e.g. `https://mcp.example.com`); used in manifest generation and as the OAuth redirect base; defaults to `http://localhost:<PORT>` |
-| `MCP_API_KEY` | Required unless `HOST` is loopback | Shared secret required as `Authorization: Bearer <MCP_API_KEY>` on every `/mcp` request. **The server refuses to start without it on any non-loopback `HOST`** (fails closed — see [Identity & access control](#identity--access-control)); only `HOST=127.0.0.1`/`localhost`/`::1` may skip it, since nothing outside the machine can reach a loopback bind. |
+| `MCP_API_KEY` | Optional second factor | If set with OIDC, send it as `X-MCP-API-Key`; `Authorization: Bearer` carries the end-user OIDC access token. Non-loopback deployments require OIDC regardless of this key. |
 | `TLS_CERT_PATH`, `TLS_KEY_PATH` | — | Paths to a PEM cert chain and matching private key. Set both to serve HTTPS directly instead of plain HTTP. |
-| `TRUST_PROXY_TLS` | Alternative to `TLS_CERT_PATH`/`TLS_KEY_PATH` | Set to `true` when a trusted TLS-terminating reverse proxy (nginx, Traefik, Caddy, etc.) shares this process's network namespace. **This overrides `HOST` and forces the server to actually bind to loopback** rather than merely asserting a proxy exists — a configured `HOST` would otherwise remain a second, unprotected path straight to this plain-HTTP listener. Only a proxy in the same namespace (same container, Docker's `network_mode: service:<name>`, a Kubernetes sidecar, etc.) can then reach it; nothing routes to it from outside that boundary. Without this or `TLS_CERT_PATH`/`TLS_KEY_PATH`, the server refuses to start on a non-loopback `HOST`. |
+| `TRUST_PROXY_TLS` | Alternative to `TLS_CERT_PATH`/`TLS_KEY_PATH` | Set to `true` when a trusted TLS-terminating reverse proxy (nginx, Traefik, Caddy, etc.) shares this process's network namespace. **This overrides `HOST` and forces the server to actually bind to loopback** rather than merely asserting a proxy exists — a configured `HOST` would otherwise remain a second, unprotected path straight to this plain-HTTP listener. Remote clients cannot reach the loopback listener directly. **Loopback is not process-level isolation**: any process in the same network namespace can connect, so use this mode only when every process in that namespace is trusted and the proxy strips/replaces the client-certificate header. Without this or `TLS_CERT_PATH`/`TLS_KEY_PATH`, the server refuses to start on a non-loopback `HOST`. |
+| `OIDC_ISSUER`, `OIDC_AUDIENCE`, `OIDC_JWKS_URI` | Required for non-loopback deployments | Validate signed RS256 bearer access tokens against the configured issuer, API audience, and JWKS endpoint. Set all three together; provider-specific SDKs are not required. |
+| `OIDC_USER_ID_CLAIM` | — | Claim path for stable end-user ID (default `sub`). |
+| `OIDC_ROLE_CLAIM` | — | Claim path containing the role or group values (default `role`). |
+| `OIDC_ROLE_MAP` | Required when OIDC is enabled | Explicit comma-separated allowlist mapping institution-controlled claim/group values to `student`, `instructor`, `admin`, or `parent`. There is no permissive default; a token must resolve to exactly one configured role. Never map user-editable metadata to privileged roles. |
+| `OIDC_FERPA_CLAIM` | — | Signed claim that must be boolean `true` to satisfy FERPA authorization (default `ferpa_authorized`). |
+| `OIDC_MTLS_MODE` | — | `disabled`, `optional`, `required`, or `trusted-proxy`. Direct mTLS modes require HTTPS plus `MTLS_CA_PATH` pointing to the trusted client-certificate CA bundle; proxy mode requires `TRUST_PROXY_TLS=true` and a trusted proxy that rewrites `X-Client-Cert-Verified`. |
 | `METRICS_PUSH_URL` | — | Prometheus push gateway URL (optional) |
 | `RESTRICTED_TOOLS` | — | Comma-separated tool names requiring FERPA auth (default: `get_at_risk_students,get_grade_distribution,get_submission_status,get_grades,list_users,get_user,list_enrollments,list_audit_logs`) |
 | `RATE_LIMIT_STUDENT_PER_MINUTE` | — | Max tool calls per minute for student role (default `60`) |
@@ -349,19 +355,26 @@ All require admin role. This is subscription *registration* only — receiving i
 
 ## Identity & access control
 
-**Transport gate (`MCP_API_KEY`)** — the `/mcp` endpoint itself has no other credential check, so without `MCP_API_KEY` configured, anyone who can reach the port can call any tool asserting any `caller_identity`. The server fails closed on whatever host it actually ends up listening on (`127.0.0.1`/`localhost`/`::1` is the only one that may skip it): it refuses to start without a key, **and** it refuses to start without `TLS_CERT_PATH`/`TLS_KEY_PATH` configured (serve HTTPS directly) — this server speaks plain HTTP on its own, and a bearer token sent that way can be captured and replayed by an on-path attacker. `TRUST_PROXY_TLS=true` is the other option, but it isn't a separate escape hatch from that requirement: it overrides `HOST` and forces an actual loopback bind, so the fail-closed check sees a loopback host either way — see [Configuration](#configuration).
+**Remote end-user authentication (OIDC)** — every non-loopback deployment must configure `OIDC_ISSUER`, `OIDC_AUDIENCE`, and `OIDC_JWKS_URI`. A shared `MCP_API_KEY` authenticates a client application, not the person represented by `caller_identity`. The HTTP boundary verifies the RS256 signature against the configured JWKS, exact issuer, audience, expiration, and time claims, then derives the principal from signed claims. Client-supplied identity values must match the verified principal and cannot elevate role or FERPA authorization. Entra ID, Okta, and other OIDC providers are supported through configuration. The existing Blackboard OAuth authorization-code flow remains separate because it creates Blackboard API sessions, not general-purpose institutional identity tokens.
 
-Once past the transport gate, the auth layer enforces the following before any Blackboard API call is made:
+When OIDC is enabled, send the user's access token as `Authorization: Bearer <OIDC_ACCESS_TOKEN>`. If `MCP_API_KEY` is also configured, send it as `X-MCP-API-Key`. Do not send access tokens over plain HTTP.
 
-1. **`caller_identity` is required** on every tool call — the client asserts who is asking. This identity is trusted at face value (bb-mcp does not itself verify end-user identity); `MCP_API_KEY` establishes that the *client* is one the operator issued a key to, not that the claimed `userId`/`role` is truthful — the calling application (e.g. agent-board) is responsible for that.
-2. **Rate gate** — per-role, per-minute call limits prevent bulk data extraction; 429 responses include a retry-after interval
-3. **Role gate** — instructor-only tools reject `role: "student"` callers
-4. **FERPA gate** — tools that access protected student data require `ferpa_authorized: true`; this covers the instructor at-risk/grade/submission tools and the full admin directory surface (`list_users`, `get_user`, `list_enrollments`, `list_audit_logs`)
-5. **Course entitlement gate** — the grade write-back tools (`create_assignment`, `create_grade_column`, `update_grade`, `delete_grade`, `exempt_grade`, `get_grade_column`) additionally verify the caller is enrolled in the target `courseId` as Instructor, TeachingAssistant, or CourseBuilder — role=instructor alone does not authorize writing grades in an arbitrary course. `role: "admin"` bypasses this course-scoped check (already trusted org-wide).
+**mTLS** — `OIDC_MTLS_MODE=required` requires a trusted client certificate and OIDC. `optional` permits OIDC without a certificate but rejects an explicitly presented untrusted certificate. Both direct modes require `TLS_CERT_PATH` and `TLS_KEY_PATH`. `trusted-proxy` is for mTLS terminated at a trusted gateway/service mesh; it requires `TRUST_PROXY_TLS=true`, which forces a loopback bind, and the proxy must strip/rewrite `X-Client-Cert-Verified` to `SUCCESS` only after certificate verification. The proxy must strip/rewrite the client-certificate header, and every process sharing the listener's network namespace must be trusted; loopback prevents remote direct access but does not isolate the listener from other local processes.
 
-Every access attempt (granted or denied) is written to stdout as structured JSON, and kept in a bounded in-memory ring buffer — bb-mcp's own **local audit trail**. User identifiers in this local trail are SHA-256 hashed before emission or storage; raw user IDs are never written to bb-mcp's own logs or returned in the `localAuditTrail` portion of `list_audit_logs`'s response. This hashing does *not* apply to the separate `logs` field in that same response, which passes through the Blackboard instance's own `/audit/logs` entries (when available) unmodified, including whatever raw user identifiers Blackboard itself records — the same identifiers an admin caller can already resolve directly via `get_user`/`list_users` under the same role+FERPA gate, so this is consistent with, not a bypass of, that authorization boundary.
+Loopback-only deployments can still use the legacy local-client flow without OIDC. It is not permitted on network-reachable binds.
 
-On top of the audit-log scrubbing above, every tool response is separately scrubbed before it reaches the MCP client — `src/output-scrub.ts` strips email addresses (by field name and by pattern) out of the actual `get_my_grades` / `list_roster` / `list_users` / etc. payloads, applied centrally via `withMetrics()` so no individual tool can skip it.
+Once authenticated, the authorization layer enforces:
+1. **Verified identity** — in OIDC mode, `caller_identity.userId`, `role`, and `ferpa_authorized` cannot override signed claims. Contradictory user/role claims and forged FERPA elevation are rejected.
+2. **Rate gate** — per-role, per-minute call limits prevent bulk data extraction; 429 responses include a retry-after interval.
+3. **Role gate** — instructor-only tools reject student callers; unknown tools are denied by default.
+4. **FERPA gate** — protected student-data tools require a signed, server-verified `ferpa_authorized: true` claim in OIDC mode.
+5. **Course entitlement gate** — grade write-back tools verify that the caller is enrolled in the target course as Instructor, TeachingAssistant, or CourseBuilder. The admin role retains its documented org-wide bypass.
+
+Every access attempt (granted or denied) is written to stdout as structured JSON and kept in a bounded in-memory ring buffer. User identifiers in bb-mcp's local audit trail are SHA-256 hashed before emission or storage. The separate Blackboard `/audit/logs` response is passed through as Blackboard provides it.
+
+Every tool response is also scrubbed before it reaches the MCP client — `src/output-scrub.ts` strips email addresses from tool payloads centrally via `withMetrics()`.
+
+Example local audit event:
 
 ```json
 {
@@ -377,9 +390,7 @@ On top of the audit-log scrubbing above, every tool response is separately scrub
 }
 ```
 
-This format is suitable for ingestion by any log aggregator (Datadog, CloudWatch, Loki, etc.).
-
----
+This format is suitable for ingestion by log aggregators such as Datadog, CloudWatch, and Loki.
 
 ## Metrics
 

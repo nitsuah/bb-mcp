@@ -1,25 +1,8 @@
 /**
- * Transport-level authentication for the /mcp HTTP endpoint.
- *
- * Every tool call trusts the client-supplied `caller_identity` (userId,
- * role, ferpa_authorized) with no other identity verification — see
- * auth.ts's module docstring. This is the one gate standing between
- * "anyone who can reach this port" and "a client the operator has actually
- * issued a key to."
- *
- * mcpApiKey is unset ("opt-in") only for a server actually listening on
- * loopback — index.ts's startHttpServer refuses to start otherwise
- * (assertSafeMcpAuthConfig below), so isAuthorizedMcpRequest allowing every
- * request when mcpApiKey is unset never actually happens on a
- * network-reachable bind (CWE-306: Missing Authentication for Critical
- * Function). A non-loopback bind additionally requires real TLS, since a
- * bearer token sent over plain HTTP can be captured and replayed (CWE-319:
- * Cleartext Transmission of Sensitive Information) — trusting an external
- * reverse proxy (TRUST_PROXY_TLS) only means anything without direct
- * network access to this process, so resolveListenHost forces the actual
- * bind to loopback in that mode rather than merely asserting a proxy
- * exists: an operator claim can't be verified from inside this process,
- * but an unreachable port can be.
+ * Transport authentication boundary for HTTP MCP and the dedicated SSE route.
+ * Network-reachable deployments require OIDC end-user identity validation;
+ * MCP_API_KEY can be layered on as an additional client/service credential.
+ * Legacy bearer-key authentication remains available only on loopback binds.
  */
 import { timingSafeEqual } from "crypto";
 import type { IncomingMessage } from "http";
@@ -37,10 +20,9 @@ export function isLoopbackHost(host: string): boolean {
  * that assertion is only meaningful if this process is *unreachable* any
  * other way — a configured HOST is otherwise still a second, unprotected
  * path straight to the plain-HTTP listener. So trustProxyTls overrides
- * whatever HOST was configured and forces a loopback bind: only a proxy
- * sharing this process's network namespace (same container, Docker's
- * `network_mode: service:<name>`, a Kubernetes sidecar, etc.) can reach it,
- * and nothing routes to it from outside that boundary.
+ * whatever HOST was configured and forces a loopback bind. This blocks remote
+ * direct access but is not process-level isolation: every process sharing the
+ * network namespace can connect, so all such processes must be trusted.
  */
 export function resolveListenHost(
   host: string,
@@ -55,6 +37,10 @@ export interface McpAuthConfigCheck {
   mcpApiKey: string | null;
   /** True when both TLS_CERT_PATH and TLS_KEY_PATH are configured. */
   tlsConfigured: boolean;
+  /** A fully configured OIDC validator may replace the shared API key. */
+  oidcConfigured?: boolean;
+  /** True when TLS terminates at a trusted proxy and this listener is loopback-only. */
+  trustProxyTls?: boolean;
 }
 
 /**
@@ -73,23 +59,25 @@ export interface McpAuthConfigCheck {
  * starts listening, not after — nothing here is enforced at request time.
  */
 export function assertSafeMcpAuthConfig(check: McpAuthConfigCheck): void {
-  const { host, mcpApiKey, tlsConfigured } = check;
-  if (isLoopbackHost(host)) return;
+  const {
+    host,
+    tlsConfigured,
+    oidcConfigured = false,
+    trustProxyTls = false,
+  } = check;
+  if (isLoopbackHost(host) && !trustProxyTls) return;
 
-  if (!mcpApiKey) {
+  if (!oidcConfigured) {
     throw new Error(
-      `MCP_API_KEY is required when HOST ("${host}") is not loopback — ` +
-        "the /mcp endpoint would otherwise accept unauthenticated requests " +
-        "from anything that can reach this port. Set MCP_API_KEY, or set " +
-        "HOST=127.0.0.1 for a genuinely local-only deployment.",
+      `OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI are required when HOST ("${host}") is not loopback — a shared API key authenticates the client application but cannot verify caller_identity.userId, role, or FERPA authorization. Configure OIDC for end-user authentication, or bind to loopback for local-only use.`,
     );
   }
 
-  if (!tlsConfigured) {
+  if (!trustProxyTls && !tlsConfigured) {
     throw new Error(
       `HOST ("${host}") is not loopback, and this server speaks plain ` +
-        "HTTP — an on-path attacker could capture and replay the " +
-        "MCP_API_KEY bearer token. Set TLS_CERT_PATH and TLS_KEY_PATH to " +
+        "HTTP — an on-path attacker could capture and replay an access token. " +
+        "Set TLS_CERT_PATH and TLS_KEY_PATH to " +
         "serve HTTPS directly, or set TRUST_PROXY_TLS=true and run a " +
         "TLS-terminating reverse proxy sharing this process's network " +
         "namespace (which forces this server itself to bind to loopback, " +
@@ -117,5 +105,23 @@ export function isAuthorizedMcpRequest(
   const expected = Buffer.from(mcpApiKey);
   if (provided.length !== expected.length) return false;
 
+  return timingSafeEqual(provided, expected);
+}
+
+/**
+ * Optional second-factor shared key for OIDC deployments. OIDC uses the
+ * Authorization bearer header, so the legacy transport key moves to a
+ * dedicated header whenever OIDC is enabled.
+ */
+export function isAuthorizedMcpApiKeyHeader(
+  req: Pick<IncomingMessage, "headers">,
+  mcpApiKey: string | null,
+): boolean {
+  if (!mcpApiKey) return true;
+  const header = req.headers["x-mcp-api-key"];
+  if (typeof header !== "string" || header.length === 0) return false;
+  const provided = Buffer.from(header);
+  const expected = Buffer.from(mcpApiKey);
+  if (provided.length !== expected.length) return false;
   return timingSafeEqual(provided, expected);
 }

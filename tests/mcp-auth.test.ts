@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   assertSafeMcpAuthConfig,
   isAuthorizedMcpRequest,
+  isAuthorizedMcpApiKeyHeader,
   isLoopbackHost,
   resolveListenHost,
 } from "../src/mcp-auth.js";
@@ -39,6 +40,23 @@ describe("isAuthorizedMcpRequest (transport-level auth gate, CWE-862)", () => {
 
   it("rejects an empty bearer token", () => {
     expect(isAuthorizedMcpRequest(reqWith("Bearer "), "secret-key")).toBe(false);
+  });
+});
+
+describe("isAuthorizedMcpApiKeyHeader", () => {
+  it("accepts the configured key in the dedicated header", () => {
+    expect(isAuthorizedMcpApiKeyHeader({ headers: { "x-mcp-api-key": "secret-key" } }, "secret-key")).toBe(true);
+  });
+
+  it("rejects a missing or incorrect dedicated key", () => {
+    expect(isAuthorizedMcpApiKeyHeader({ headers: {} }, "secret-key")).toBe(false);
+    expect(isAuthorizedMcpApiKeyHeader({ headers: { "x-mcp-api-key": "wrong-key" } }, "secret-key")).toBe(false);
+    expect(isAuthorizedMcpApiKeyHeader({ headers: { "x-mcp-api-key": "secret-kex" } }, "secret-key")).toBe(false);
+    expect(isAuthorizedMcpApiKeyHeader({ headers: { "x-mcp-api-key": "" } }, "secret-key")).toBe(false);
+  });
+
+  it("does not require the second factor when no key is configured", () => {
+    expect(isAuthorizedMcpApiKeyHeader({ headers: {} }, null)).toBe(true);
   });
 });
 
@@ -84,21 +102,66 @@ describe("assertSafeMcpAuthConfig (fail closed, CWE-306 + CWE-319)", () => {
   it("throws when bound beyond loopback with no MCP_API_KEY configured", () => {
     expect(() =>
       assertSafeMcpAuthConfig({ host: "0.0.0.0", mcpApiKey: null, tlsConfigured: false }),
-    ).toThrow(/MCP_API_KEY is required/);
+    ).toThrow(/OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI are required/);
     expect(() =>
       assertSafeMcpAuthConfig({ host: "192.168.1.10", mcpApiKey: null, tlsConfigured: false }),
-    ).toThrow(/MCP_API_KEY is required/);
+    ).toThrow(/OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI are required/);
   });
 
   it("throws when bound beyond loopback with MCP_API_KEY but no TLS configured", () => {
     expect(() =>
       assertSafeMcpAuthConfig({ host: "0.0.0.0", mcpApiKey: "secret-key", tlsConfigured: false }),
+    ).toThrow(/OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI are required/);
+  });
+
+  it("requires OIDC even when a shared API key and TLS are configured remotely", () => {
+    expect(() =>
+      assertSafeMcpAuthConfig({ host: "0.0.0.0", mcpApiKey: "secret-key", tlsConfigured: true }),
+    ).toThrow(/OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI are required/);
+  });
+
+  it("allows a remote deployment with OIDC and TLS, without requiring a shared key", () => {
+    expect(() =>
+      assertSafeMcpAuthConfig({
+        host: "0.0.0.0",
+        mcpApiKey: null,
+        tlsConfigured: true,
+        oidcConfigured: true,
+      }),
+    ).not.toThrow();
+  });
+
+  it("still requires TLS for remote OIDC deployments", () => {
+    expect(() =>
+      assertSafeMcpAuthConfig({
+        host: "0.0.0.0",
+        mcpApiKey: null,
+        tlsConfigured: false,
+        oidcConfigured: true,
+      }),
     ).toThrow(/plain HTTP/);
   });
 
-  it("does not throw when bound beyond loopback with MCP_API_KEY and TLS configured", () => {
+  it("requires OIDC when a loopback listener is exposed through a trusted TLS proxy", () => {
     expect(() =>
-      assertSafeMcpAuthConfig({ host: "0.0.0.0", mcpApiKey: "secret-key", tlsConfigured: true }),
+      assertSafeMcpAuthConfig({
+        host: "127.0.0.1",
+        mcpApiKey: null,
+        tlsConfigured: false,
+        trustProxyTls: true,
+      }),
+    ).toThrow(/OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI are required/);
+  });
+
+  it("allows OIDC behind a trusted TLS proxy without direct TLS on the listener", () => {
+    expect(() =>
+      assertSafeMcpAuthConfig({
+        host: "127.0.0.1",
+        mcpApiKey: null,
+        tlsConfigured: false,
+        oidcConfigured: true,
+        trustProxyTls: true,
+      }),
     ).not.toThrow();
   });
 

@@ -3,6 +3,23 @@
  */
 import "dotenv/config";
 
+const MTLS_MODES = [
+  "disabled",
+  "optional",
+  "required",
+  "trusted-proxy",
+] as const;
+type ConfiguredMtlsMode = (typeof MTLS_MODES)[number];
+
+/** Parse the mTLS mode strictly so typos cannot silently disable certificate checks. */
+function parseMtlsMode(raw: string | undefined): ConfiguredMtlsMode {
+  const value = (raw ?? "disabled").trim();
+  if (!(MTLS_MODES as readonly string[]).includes(value)) {
+    throw new Error(`OIDC_MTLS_MODE must be one of: ${MTLS_MODES.join(", ")}.`);
+  }
+  return value as ConfiguredMtlsMode;
+}
+
 function required(key: string): string {
   const val = process.env[key];
   if (!val) throw new Error(`Missing required environment variable: ${key}`);
@@ -60,6 +77,35 @@ export const config = {
     // Falls back to http://localhost:<PORT> when not set.
     publicBaseUrl: process.env.PUBLIC_BASE_URL ?? null,
   },
+  oidc: {
+    issuer: process.env.OIDC_ISSUER ?? null,
+    audience: process.env.OIDC_AUDIENCE ?? null,
+    jwksUri: process.env.OIDC_JWKS_URI ?? null,
+    userIdClaim: process.env.OIDC_USER_ID_CLAIM ?? "sub",
+    roleClaim: process.env.OIDC_ROLE_CLAIM ?? "role",
+    ferpaClaim: process.env.OIDC_FERPA_CLAIM ?? "ferpa_authorized",
+    roleMap: Object.fromEntries(
+      (process.env.OIDC_ROLE_MAP ?? "")
+        .split(",")
+        .map((entry) => entry.trim().split("="))
+        .filter(([claim, role]) => {
+          const validRole = Boolean(
+            role &&
+            ["student", "instructor", "admin", "parent"].includes(
+              role.toLowerCase(),
+            ),
+          );
+          return Boolean(claim && role && validRole);
+        })
+        .map(([claim, role]) => [
+          claim,
+          role.toLowerCase() as "student" | "instructor" | "admin" | "parent",
+        ]),
+    ),
+    mtlsMode: parseMtlsMode(process.env.OIDC_MTLS_MODE),
+    mtlsCaPath: process.env.MTLS_CA_PATH ?? null,
+    trustProxyTls: process.env.TRUST_PROXY_TLS === "true",
+  },
   metrics: {
     pushUrl: process.env.METRICS_PUSH_URL ?? null,
   },
@@ -109,3 +155,12 @@ export const config = {
     },
   },
 } as const;
+
+if (
+  (config.oidc.issuer || config.oidc.audience || config.oidc.jwksUri) &&
+  Object.keys(config.oidc.roleMap).length === 0
+) {
+  throw new Error(
+    "OIDC_ROLE_MAP must explicitly map trusted issuer claim values to bb-mcp roles when OIDC is enabled.",
+  );
+}
