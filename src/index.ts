@@ -42,8 +42,13 @@ import {
   isAuthorizedMcpApiKeyHeader,
   resolveListenHost,
 } from "./mcp-auth.js";
-import { authenticateOidcRequest, isOidcEnabled } from "./oidc-auth.js";
+import {
+  authenticateOidcRequest,
+  isOidcEnabled,
+  OidcProviderUnavailableError,
+} from "./oidc-auth.js";
 import { runWithVerifiedIdentity } from "./request-identity.js";
+import type { ServerResponse } from "node:http";
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -623,6 +628,47 @@ function isTruthy(value: string | null): boolean {
   return ["1", "true", "yes", "on"].includes(value.toLowerCase());
 }
 
+/**
+ * Respond consistently to OIDC failures without disclosing provider details.
+ * Provider/JWKS outages are service failures, not invalid bearer credentials.
+ */
+function respondToOidcAuthFailure(
+  res: ServerResponse,
+  error: unknown,
+): void {
+  const unavailable = error instanceof OidcProviderUnavailableError;
+  const detail = error instanceof Error ? error.message : "Unknown OIDC error";
+  console.error(
+    JSON.stringify({
+      event: "oidc.authentication_failure",
+      category: unavailable ? "provider_unavailable" : "invalid_credentials",
+      detail,
+    }),
+  );
+
+  if (unavailable) {
+    res.writeHead(503, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        error: "temporarily_unavailable",
+        message: "The identity provider is temporarily unavailable.",
+      }),
+    );
+    return;
+  }
+
+  res.writeHead(401, {
+    "Content-Type": "application/json",
+    "WWW-Authenticate": 'Bearer realm="bb-mcp", error="invalid_token"',
+  });
+  res.end(
+    JSON.stringify({
+      error: "unauthorized",
+      message: "A valid OIDC access token is required.",
+    }),
+  );
+}
+
 // ── HTTP mode (default) ───────────────────────────────────────────────────
 
 async function startHttpServer(): Promise<void> {
@@ -631,6 +677,12 @@ async function startHttpServer(): Promise<void> {
   const tlsConfigured = Boolean(
     config.server.tls.certPath && config.server.tls.keyPath,
   );
+
+  if (config.oidc.mtlsMode !== "disabled" && !isOidcEnabled(config.oidc)) {
+    throw new Error(
+      "OIDC_MTLS_MODE requires OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI to be configured.",
+    );
+  }
 
   if (
     isOidcEnabled(config.oidc) &&
@@ -838,15 +890,7 @@ async function startHttpServer(): Promise<void> {
         try {
           verifiedIdentity = await authenticateOidcRequest(req, config.oidc);
         } catch (authError) {
-          const message =
-            authError instanceof Error
-              ? authError.message
-              : "OIDC authentication failed.";
-          res.writeHead(401, {
-            "Content-Type": "application/json",
-            "WWW-Authenticate": 'Bearer realm="bb-mcp", error="invalid_token"',
-          });
-          res.end(JSON.stringify({ error: "unauthorized", message }));
+          respondToOidcAuthFailure(res, authError);
           return;
         }
         if (!isAuthorizedMcpApiKeyHeader(req, config.security.mcpApiKey)) {
@@ -972,15 +1016,7 @@ async function startHttpServer(): Promise<void> {
             trustProxyTls: config.server.trustProxyTls,
           });
         } catch (authError) {
-          const message =
-            authError instanceof Error
-              ? authError.message
-              : "OIDC authentication failed.";
-          res.writeHead(401, {
-            "Content-Type": "application/json",
-            "WWW-Authenticate": 'Bearer realm="bb-mcp", error="invalid_token"',
-          });
-          res.end(JSON.stringify({ error: "unauthorized", message }));
+          respondToOidcAuthFailure(res, authError);
           return;
         }
         if (!isAuthorizedMcpApiKeyHeader(req, config.security.mcpApiKey)) {
