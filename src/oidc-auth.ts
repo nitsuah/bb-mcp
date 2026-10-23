@@ -65,8 +65,10 @@ interface CachedJwks {
 let cachedJwks: CachedJwks | undefined;
 let jwksFetchInFlight: Promise<JwkSet["keys"]> | undefined;
 let lastForcedRefreshAt = 0;
+let jwksFetchFailureUntil = 0;
 const JWKS_CACHE_MS = 5 * 60_000;
 const JWKS_FORCED_REFRESH_COOLDOWN_MS = 30_000;
+const JWKS_FAILURE_COOLDOWN_MS = 5_000;
 
 /** Signals an identity-provider/JWKS availability problem, not an invalid token. */
 export class OidcProviderUnavailableError extends Error {
@@ -110,6 +112,11 @@ async function getJwks(uri: string, forceRefresh = false): Promise<JwkSet["keys"
   // Coalesce concurrent cache misses/refreshes so bursts of requests cannot
   // multiply outbound calls to the identity provider.
   if (jwksFetchInFlight) return jwksFetchInFlight;
+  if (jwksFetchFailureUntil > Date.now()) {
+    throw new OidcProviderUnavailableError(
+      "OIDC signing-key retrieval is temporarily unavailable.",
+    );
+  }
 
   jwksFetchInFlight = (async () => {
     let response: Response;
@@ -155,7 +162,12 @@ async function getJwks(uri: string, forceRefresh = false): Promise<JwkSet["keys"
   })();
 
   try {
-    return await jwksFetchInFlight;
+    const keys = await jwksFetchInFlight;
+    jwksFetchFailureUntil = 0;
+    return keys;
+  } catch (error) {
+    jwksFetchFailureUntil = Date.now() + JWKS_FAILURE_COOLDOWN_MS;
+    throw error;
   } finally {
     jwksFetchInFlight = undefined;
   }
@@ -281,13 +293,24 @@ export async function authenticateOidcRequest(
   let jwk = keys?.find(isSigningKey);
   if (
     !jwk &&
-    Date.now() - lastForcedRefreshAt >= JWKS_FORCED_REFRESH_COOLDOWN_MS
+    (lastForcedRefreshAt === 0 ||
+      Date.now() - lastForcedRefreshAt >= JWKS_FORCED_REFRESH_COOLDOWN_MS)
   ) {
     // Allow key rotation, but cap forced refreshes so random kid values cannot
     // evict the cache and turn each unauthenticated request into outbound I/O.
     lastForcedRefreshAt = Date.now();
-    const refreshed = await getJwks(config.jwksUri, true);
-    jwk = refreshed?.find(isSigningKey);
+    try {
+      const refreshed = await getJwks(config.jwksUri, true);
+      jwk = refreshed?.find(isSigningKey);
+    } catch (error) {
+      if (error instanceof OidcProviderUnavailableError) throw error;
+      throw error;
+    }
+  }
+  if (!jwk && jwksFetchFailureUntil > Date.now()) {
+    throw new OidcProviderUnavailableError(
+      "OIDC signing-key refresh is temporarily unavailable.",
+    );
   }
   if (!jwk) {
     throw new Error("OIDC signing key was not found in the configured JWKS.");
@@ -359,4 +382,5 @@ export function __resetOidcJwksCacheForTests(): void {
   cachedJwks = undefined;
   jwksFetchInFlight = undefined;
   lastForcedRefreshAt = 0;
+  jwksFetchFailureUntil = 0;
 }
