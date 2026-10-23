@@ -299,13 +299,8 @@ export async function authenticateOidcRequest(
     // Allow key rotation, but cap forced refreshes so random kid values cannot
     // evict the cache and turn each unauthenticated request into outbound I/O.
     lastForcedRefreshAt = Date.now();
-    try {
-      const refreshed = await getJwks(config.jwksUri, true);
-      jwk = refreshed?.find(isSigningKey);
-    } catch (error) {
-      if (error instanceof OidcProviderUnavailableError) throw error;
-      throw error;
-    }
+    const refreshed = await getJwks(config.jwksUri, true);
+    jwk = refreshed?.find(isSigningKey);
   }
   if (!jwk && jwksFetchFailureUntil > Date.now()) {
     throw new OidcProviderUnavailableError(
