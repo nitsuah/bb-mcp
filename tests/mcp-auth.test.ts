@@ -51,6 +51,8 @@ describe("isAuthorizedMcpApiKeyHeader", () => {
   it("rejects a missing or incorrect dedicated key", () => {
     expect(isAuthorizedMcpApiKeyHeader({ headers: {} }, "secret-key")).toBe(false);
     expect(isAuthorizedMcpApiKeyHeader({ headers: { "x-mcp-api-key": "wrong-key" } }, "secret-key")).toBe(false);
+    expect(isAuthorizedMcpApiKeyHeader({ headers: { "x-mcp-api-key": "secret-kex" } }, "secret-key")).toBe(false);
+    expect(isAuthorizedMcpApiKeyHeader({ headers: { "x-mcp-api-key": "" } }, "secret-key")).toBe(false);
   });
 
   it("does not require the second factor when no key is configured", () => {
