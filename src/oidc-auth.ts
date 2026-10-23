@@ -286,7 +286,6 @@ export async function authenticateOidcRequest(
     // Allow key rotation, but cap forced refreshes so random kid values cannot
     // evict the cache and turn each unauthenticated request into outbound I/O.
     lastForcedRefreshAt = Date.now();
-    cachedJwks = undefined;
     const refreshed = await getJwks(config.jwksUri, true);
     jwk = refreshed?.find(isSigningKey);
   }
@@ -324,9 +323,13 @@ export async function authenticateOidcRequest(
   const roleValues = Array.isArray(rawRole) ? rawRole : [rawRole];
   const mappedRoles = roleValues
     .filter((value): value is string => typeof value === "string")
-    .map(
-      (value) => config.roleMap[value] ?? config.roleMap[value.toLowerCase()],
-    )
+    .map((value) => {
+      if (Object.hasOwn(config.roleMap, value)) return config.roleMap[value];
+      const lower = value.toLowerCase();
+      return Object.hasOwn(config.roleMap, lower)
+        ? config.roleMap[lower]
+        : undefined;
+    })
     .filter((role): role is VerifiedRole => Boolean(role));
   const distinctRoles = [...new Set(mappedRoles)];
   if (distinctRoles.length !== 1) {
