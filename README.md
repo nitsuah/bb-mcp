@@ -221,7 +221,7 @@ Copy `.env.example` to `.env` and set:
 | `OIDC_ISSUER`, `OIDC_AUDIENCE`, `OIDC_JWKS_URI` | Required for non-loopback deployments | Validate signed RS256 bearer access tokens against the configured issuer, API audience, and JWKS endpoint. Set all three together; provider-specific SDKs are not required. |
 | `OIDC_USER_ID_CLAIM` | — | Claim path for stable end-user ID (default `sub`). |
 | `OIDC_ROLE_CLAIM` | — | Claim path containing the role or group values (default `role`). |
-| `OIDC_ROLE_MAP` | — | Comma-separated provider-claim-to-bb-mcp-role mapping. A token must resolve to exactly one role. |
+| `OIDC_ROLE_MAP` | Required when OIDC is enabled | Explicit comma-separated allowlist mapping institution-controlled claim/group values to `student`, `instructor`, `admin`, or `parent`. There is no permissive default; a token must resolve to exactly one configured role. Never map user-editable metadata to privileged roles. |
 | `OIDC_FERPA_CLAIM` | — | Signed claim that must be boolean `true` to satisfy FERPA authorization (default `ferpa_authorized`). |
 | `OIDC_MTLS_MODE` | — | `disabled`, `optional`, `required`, or `trusted-proxy`. Direct mTLS modes require HTTPS plus `MTLS_CA_PATH` pointing to the trusted client-certificate CA bundle; proxy mode requires `TRUST_PROXY_TLS=true` and a trusted proxy that rewrites `X-Client-Cert-Verified`. |
 | `METRICS_PUSH_URL` | — | Prometheus push gateway URL (optional) |
