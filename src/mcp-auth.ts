@@ -20,10 +20,9 @@ export function isLoopbackHost(host: string): boolean {
  * that assertion is only meaningful if this process is *unreachable* any
  * other way — a configured HOST is otherwise still a second, unprotected
  * path straight to the plain-HTTP listener. So trustProxyTls overrides
- * whatever HOST was configured and forces a loopback bind: only a proxy
- * sharing this process's network namespace (same container, Docker's
- * `network_mode: service:<name>`, a Kubernetes sidecar, etc.) can reach it,
- * and nothing routes to it from outside that boundary.
+ * whatever HOST was configured and forces a loopback bind. This blocks remote
+ * direct access but is not process-level isolation: every process sharing the
+ * network namespace can connect, so all such processes must be trusted.
  */
 export function resolveListenHost(
   host: string,
