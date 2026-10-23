@@ -22,6 +22,16 @@ describe('config', () => {
     );
   });
 
+  it('rejects unknown OIDC mTLS modes instead of silently disabling mTLS', async () => {
+    process.env.BB_CLIENT_ID = 'client-id';
+    process.env.BB_CLIENT_SECRET = 'client-secret';
+    process.env.OIDC_MTLS_MODE = 'Required';
+
+    await expect(loadConfig()).rejects.toThrow(
+      'OIDC_MTLS_MODE must be one of: disabled, optional, required, trusted-proxy.',
+    );
+  });
+
   it('applies defaults and normalizes values from env', async () => {
     process.env.BB_CLIENT_ID = 'client-id';
     process.env.BB_CLIENT_SECRET = 'client-secret';
