@@ -103,7 +103,10 @@ function audienceMatches(aud: unknown, expected: string): boolean {
 }
 
 /** Fetch and cache signing keys, coalescing concurrent requests and cooling down failures. */
-async function getJwks(uri: string, forceRefresh = false): Promise<JwkSet["keys"]> {
+async function getJwks(
+  uri: string,
+  forceRefresh = false,
+): Promise<JwkSet["keys"]> {
   if (
     !forceRefresh &&
     cachedJwks &&
