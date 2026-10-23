@@ -22,6 +22,19 @@ describe('config', () => {
     );
   });
 
+  it('requires an explicit OIDC role allowlist when OIDC is configured', async () => {
+    process.env.BB_CLIENT_ID = 'client-id';
+    process.env.BB_CLIENT_SECRET = 'client-secret';
+    process.env.OIDC_ISSUER = 'https://issuer.example.test/';
+    process.env.OIDC_AUDIENCE = 'bb-mcp-api';
+    process.env.OIDC_JWKS_URI = 'https://issuer.example.test/jwks';
+    delete process.env.OIDC_ROLE_MAP;
+
+    await expect(loadConfig()).rejects.toThrow(
+      'OIDC_ROLE_MAP must explicitly map trusted issuer claim values to bb-mcp roles',
+    );
+  });
+
   it('rejects unknown OIDC mTLS modes instead of silently disabling mTLS', async () => {
     process.env.BB_CLIENT_ID = 'client-id';
     process.env.BB_CLIENT_SECRET = 'client-secret';
