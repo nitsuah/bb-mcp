@@ -2,7 +2,7 @@
 
 > 🧭 [bb-mcp](../README.md) · [Features](./FEATURES.md) · [Roadmap](./ROADMAP.md) · **Tasks** · [Changelog](./CHANGELOG.md) · [Metrics](./METRICS.md) <!-- nav -->
 
-Last Updated: 2026-10-15
+Last Updated: 2026-10-24
 
 ## Done
 
@@ -21,10 +21,6 @@ _All completed foundation, 2026 Q2, and 2026 Q3 work is shipped and condensed in
 
 ### P2 - Medium
 
-- [ ] **[2027-Q1]** Bind `caller_identity` to real end-user authentication instead of trusting the client's claim.
-  - Priority: P2
-  - Context: implementation is underway on `feat/oidc-verified-caller-identity`: provider-neutral RS256 JWT verification against configured issuer, audience and JWKS; verified identity bound to each HTTP request; signed role/FERPA claims; mandatory OIDC on non-loopback deployments; and direct or trusted-proxy mTLS modes. The existing Blackboard OAuth flow remains separate because it yields Blackboard API sessions, not institutional end-user identity tokens. Keep this task open until the implementation and CI checks are reviewed and green.
-  - Acceptance Criteria: a request's `caller_identity` claims are checked against some server-verifiable proof of the actual end user, not accepted as-is from the request body.
 
 ### P3 - Exploratory
 
