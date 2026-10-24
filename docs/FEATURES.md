@@ -22,6 +22,7 @@
 - **OAuth2 Authentication** - Secure handling of Blackboard REST API tokens and session management.
 - **Secure Proxy Layer** - Masks sensitive Blackboard infrastructure details from the LLM client through a controlled middleware.
 - **Credential Isolation** - Environment-based configuration to prevent API keys from being exposed in the client-side context.
+- **Verified HTTP Caller Identity** - Provider-neutral OIDC RS256 access-token verification against configured issuer, audience and JWKS, with request-bound user identity and explicit role/FERPA claim mapping; non-loopback deployments require OIDC, and direct or trusted-proxy mTLS is supported. Blackboard OAuth remains separate for Blackboard API sessions.
 
 ## Shipped Tools
 
