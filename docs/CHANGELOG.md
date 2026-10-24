@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Verified HTTP caller identity for remote deployments: OIDC RS256/JWKS validation, explicit role and FERPA claim mapping, request-bound identity, and direct or trusted-proxy mTLS modes. Blackboard OAuth remains a separate API-session flow.
 - Generated visuals (no web UI to screenshot): `scripts/visual-docs.mjs` draws a tool catalog, an RBAC matrix and a `get_my_grades` chat turn from the real manifest and policy into `docs/screenshots/`; `docs/diagrams/{architecture,tool-call-flow}.mmd` show the real mechanism. The new `.github/workflows/visual-docs.yml` regenerates both and opens a bot PR. `promo/spots.json` now sets `"frontend": false` and links features to these visuals and the 21 s spot.
 - Visual showcase ([standard](https://github.com/nitsuah/.github/blob/main/showcase/STANDARD.md)): `promo/spots.json` lists every shipped FEATURES.md entry and records the existing launch video(s); feature-to-video and screenshot links are still empty and get filled in on the next `/promo` run; the Pages site loads the shared expand kit (click-to-expand images, fullscreen button on videos). Open Graph/Twitter media tags now use absolute URLs so link previews unfurl, and the Twitter card is `summary_large_image` with the poster (a player card needs an HTML player page, not a raw MP4).
 - **Admin tools** (`src/tools/admin.ts`): `list_users`, `get_user`, `list_enrollments`, `create_enrollment`, `update_enrollment`, `delete_enrollment`, `list_audit_logs`.
