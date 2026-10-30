@@ -1,0 +1,18 @@
+name: Repo health
+
+# Copy to .github/workflows/repo-health.yml. Weekly, no model. See nitsuah/.github repo-health/README.md.
+on:
+  schedule:
+    - cron: "0 15 * * 4" # Thu 15:00 UTC (old week-vuln slot)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  health:
+    uses: nitsuah/.github/.github/workflows/repo-health.yml@main
+    permissions:
+      contents: read
+      issues: write
