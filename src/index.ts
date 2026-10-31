@@ -18,6 +18,7 @@ import { randomUUID } from "crypto";
 import { readFileSync } from "fs";
 import http from "http";
 import https from "https";
+import tls from "tls";
 import { getMetricsText, getMetricsSummary, pushMetrics } from "./metrics.js";
 import { buildProviderManifest } from "./manifest.js";
 import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
@@ -759,6 +760,22 @@ async function startHttpServer(): Promise<void> {
   const transports = new Map<string, StreamableHTTPServerTransport>();
 
   const requestHandler: http.RequestListener = async (req, res) => {
+    // Optional mTLS permits clients with no certificate, but a presented
+    // certificate must chain to the configured CA. rejectUnauthorized:false
+    // is needed for the optional handshake; enforce authorization here.
+    if (config.oidc.mtlsMode === "optional" && req.socket instanceof tls.TLSSocket) {
+      const peerCertificate = req.socket.getPeerCertificate();
+      const certificatePresented = Boolean(peerCertificate && Object.keys(peerCertificate).length > 0);
+      if (certificatePresented && !req.socket.authorized) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          error: "unauthorized_client_certificate",
+          message: "The presented client certificate is not trusted.",
+        }));
+        return;
+      }
+    }
+
     const url = new URL(
       req.url ?? "/",
       `http://localhost:${config.server.port}`,
