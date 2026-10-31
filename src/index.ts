@@ -763,15 +763,22 @@ async function startHttpServer(): Promise<void> {
     // Optional mTLS permits clients with no certificate, but a presented
     // certificate must chain to the configured CA. rejectUnauthorized:false
     // is needed for the optional handshake; enforce authorization here.
-    if (config.oidc.mtlsMode === "optional" && req.socket instanceof tls.TLSSocket) {
+    if (
+      config.oidc.mtlsMode === "optional" &&
+      req.socket instanceof tls.TLSSocket
+    ) {
       const peerCertificate = req.socket.getPeerCertificate();
-      const certificatePresented = Boolean(peerCertificate && Object.keys(peerCertificate).length > 0);
+      const certificatePresented = Boolean(
+        peerCertificate && Object.keys(peerCertificate).length > 0,
+      );
       if (certificatePresented && !req.socket.authorized) {
         res.writeHead(401, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({
-          error: "unauthorized_client_certificate",
-          message: "The presented client certificate is not trusted.",
-        }));
+        res.end(
+          JSON.stringify({
+            error: "unauthorized_client_certificate",
+            message: "The presented client certificate is not trusted.",
+          }),
+        );
         return;
       }
     }
