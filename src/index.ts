@@ -863,10 +863,15 @@ async function startHttpServer(): Promise<void> {
           }),
         );
       } catch (oauthError) {
-        const message =
-          oauthError instanceof Error ? oauthError.message : String(oauthError);
+        // Do not expose internal error details (CodeQL: stack trace exposure)
+        void oauthError;
         res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "oauth_exchange_failed", message }));
+        res.end(
+          JSON.stringify({
+            error: "oauth_exchange_failed",
+            message: "Failed to complete OAuth flow. Please try again.",
+          }),
+        );
       }
 
       return;
@@ -1134,6 +1139,10 @@ async function startHttpServer(): Promise<void> {
             : config.oidc.mtlsMode === "optional"
               ? {
                   requestCert: true,
+                  // Optional mTLS: request client cert but don't reject
+                  // unauthorized connections. This is intentional for
+                  // mutual TLS where certificate presence is optional.
+                  // CodeQL: certificate-validation
                   rejectUnauthorized: false,
                   ca: readFileSync(config.oidc.mtlsCaPath!),
                 }
