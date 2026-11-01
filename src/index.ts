@@ -1135,6 +1135,7 @@ async function startHttpServer(): Promise<void> {
                   // rejectUnauthorized: false is intentional for optional mTLS mode.
                   // Connection proceeds regardless of client cert; application-level
                   // validation in assertMtls() handles untrusted certs.
+                  // codeql[js/disabling-certificate-validation]: Optional mTLS mode intentionally allows unverified certs; validated at application layer
                   rejectUnauthorized: false,
                   ca: readFileSync(config.oidc.mtlsCaPath!),
                 }
