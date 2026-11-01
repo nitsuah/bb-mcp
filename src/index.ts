@@ -863,10 +863,8 @@ async function startHttpServer(): Promise<void> {
           }),
         );
       } catch (oauthError) {
-        const message =
-          oauthError instanceof Error ? oauthError.message : String(oauthError);
         res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "oauth_exchange_failed", message }));
+        res.end(JSON.stringify({ error: "oauth_exchange_failed" }));
       }
 
       return;
@@ -1134,6 +1132,9 @@ async function startHttpServer(): Promise<void> {
             : config.oidc.mtlsMode === "optional"
               ? {
                   requestCert: true,
+                  // rejectUnauthorized: false is intentional for optional mTLS mode.
+                  // Connection proceeds regardless of client cert; application-level
+                  // validation in assertMtls() handles untrusted certs.
                   rejectUnauthorized: false,
                   ca: readFileSync(config.oidc.mtlsCaPath!),
                 }
