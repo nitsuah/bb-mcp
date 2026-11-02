@@ -760,27 +760,6 @@ async function startHttpServer(): Promise<void> {
   const transports = new Map<string, StreamableHTTPServerTransport>();
 
   const requestHandler: http.RequestListener = async (req, res) => {
-    // Optional mode permits the TLS handshake to complete so clients receive
-    // a useful HTTP error. It still requires a trusted client certificate;
-    // neither an absent nor an unauthorized certificate may reach handlers.
-    if (
-      config.oidc.mtlsMode === "optional" &&
-      req.socket instanceof tls.TLSSocket
-    ) {
-      const peerCertificate = req.socket.getPeerCertificate();
-      if (!peerCertificate.raw || !req.socket.authorized) {
-        res.writeHead(401, { "Content-Type": "application/json" });
-        res.end(
-          JSON.stringify({
-            error: "client_certificate_required",
-            message:
-              "A trusted client certificate is required because mTLS is enabled.",
-          }),
-        );
-        return;
-      }
-    }
-
     const url = new URL(
       req.url ?? "/",
       `http://localhost:${config.server.port}`,
