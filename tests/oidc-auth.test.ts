@@ -85,6 +85,11 @@ describe("direct mTLS listener options", () => {
     expect(getDirectMtlsTlsOptions("optional", ca)).not.toHaveProperty("rejectUnauthorized");
   });
 
+  it("does not request a direct client certificate in trusted-proxy mode", () => {
+    const ca = Buffer.from("trusted-ca");
+    expect(getDirectMtlsTlsOptions("trusted-proxy", ca)).toEqual({});
+  });
+
   it("requests and validates client certificates in required mode", () => {
     const ca = Buffer.from("trusted-ca");
     expect(getDirectMtlsTlsOptions("required", ca)).toEqual({
