@@ -667,8 +667,6 @@ function respondToOidcAuthFailure(res: ServerResponse, error: unknown): void {
   );
 }
 
-
-
 // ── HTTP mode (default) ───────────────────────────────────────────────────
 
 async function startHttpServer(): Promise<void> {
