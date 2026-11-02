@@ -21,6 +21,7 @@ import https from "https";
 import { getMetricsText, getMetricsSummary, pushMetrics } from "./metrics.js";
 import { buildProviderManifest } from "./manifest.js";
 import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
+import { getDirectMtlsTlsOptions } from "./mtls-tls-options.js";
 import {
   buildDoctorReport,
   formatDoctorReport,
@@ -666,26 +667,7 @@ function respondToOidcAuthFailure(res: ServerResponse, error: unknown): void {
   );
 }
 
-/**
- * Build direct mTLS listener options. Optional mode does not request client
- * certificates; required mode requests and validates them against the configured CA.
- */
-export function getDirectMtlsTlsOptions(
-  mode: "disabled" | "optional" | "required" | "trusted-proxy",
-  ca?: Buffer,
-): { requestCert?: boolean; rejectUnauthorized?: boolean; ca?: Buffer } {
-  if (mode === "required") {
-    return {
-      requestCert: true,
-      rejectUnauthorized: true,
-      ...(ca ? { ca } : {}),
-    };
-  }
-  if (mode === "optional") return ca ? { ca } : {};
-  // trusted-proxy terminates mTLS upstream; this listener must not request a
-  // direct client certificate in that mode.
-  return {};
-}
+
 
 // ── HTTP mode (default) ───────────────────────────────────────────────────
 
