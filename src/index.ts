@@ -862,9 +862,7 @@ async function startHttpServer(): Promise<void> {
             ),
           }),
         );
-      } catch (oauthError) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const _ = oauthError;
+      } catch {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "oauth_exchange_failed" }));
       }
@@ -1137,7 +1135,7 @@ async function startHttpServer(): Promise<void> {
                   // rejectUnauthorized: false is intentional for optional mTLS mode.
                   // Connection proceeds regardless of client cert; application-level
                   // validation in assertMtls() handles untrusted certs.
-                  // codeql[js/disabling-certificate-validation]: Optional mTLS mode intentionally allows unverified certs; validated at application layer
+                  // codeql[js/disabling-certificate-validation] optional mTLS: cert inspected in assertMtls()
                   rejectUnauthorized: false,
                   ca: readFileSync(config.oidc.mtlsCaPath!),
                 }
