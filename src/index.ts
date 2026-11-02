@@ -675,7 +675,11 @@ export function getDirectMtlsTlsOptions(
   ca?: Buffer,
 ): { requestCert?: boolean; rejectUnauthorized?: boolean; ca?: Buffer } {
   if (mode === "required") {
-    return { requestCert: true, rejectUnauthorized: true, ...(ca ? { ca } : {}) };
+    return {
+      requestCert: true,
+      rejectUnauthorized: true,
+      ...(ca ? { ca } : {}),
+    };
   }
   if (mode === "optional") return ca ? { ca } : {};
   // trusted-proxy terminates mTLS upstream; this listener must not request a
