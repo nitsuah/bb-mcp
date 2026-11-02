@@ -666,6 +666,21 @@ function respondToOidcAuthFailure(res: ServerResponse, error: unknown): void {
   );
 }
 
+/**
+ * Build direct mTLS listener options. Optional mode does not request client
+ * certificates; required mode requests and validates them against the configured CA.
+ */
+export function getDirectMtlsTlsOptions(
+  mode: "disabled" | "optional" | "required",
+  ca?: Buffer,
+): { requestCert?: boolean; rejectUnauthorized?: boolean; ca?: Buffer } {
+  if (mode === "required") {
+    return { requestCert: true, rejectUnauthorized: true, ...(ca ? { ca } : {}) };
+  }
+  if (mode === "optional") return ca ? { ca } : {};
+  return {};
+}
+
 // ── HTTP mode (default) ───────────────────────────────────────────────────
 
 async function startHttpServer(): Promise<void> {
@@ -1123,20 +1138,12 @@ async function startHttpServer(): Promise<void> {
         {
           cert: readFileSync(config.server.tls.certPath!),
           key: readFileSync(config.server.tls.keyPath!),
-          ...(config.oidc.mtlsMode === "required"
-            ? {
-                requestCert: true,
-                rejectUnauthorized: true,
-                ca: readFileSync(config.oidc.mtlsCaPath!),
-              }
-            : config.oidc.mtlsMode === "optional"
-              ? {
-                  // Keep Node's default certificate authorization enabled.
-                  // Optional mode does not request a client certificate, so it
-                  // cannot require one without changing its documented contract.
-                  ca: readFileSync(config.oidc.mtlsCaPath!),
-                }
-              : {}),
+          ...getDirectMtlsTlsOptions(
+            config.oidc.mtlsMode,
+            config.oidc.mtlsCaPath
+              ? readFileSync(config.oidc.mtlsCaPath)
+              : undefined,
+          ),
         },
         requestHandler,
       )
