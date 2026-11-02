@@ -1,7 +1,7 @@
 import { generateKeyPairSync, sign } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { getDirectMtlsTlsOptions } from "../src/index.js";
+import { getDirectMtlsTlsOptions } from "../src/mtls-tls-options.js";
 import {
   __resetOidcJwksCacheForTests,
   authenticateOidcRequest,
