@@ -280,6 +280,16 @@ describe("authenticateOidcRequest", () => {
     ).rejects.toThrow(/client certificate is not trusted/);
     await expect(
       authenticateOidcRequest(request(token()), optional),
+    ).rejects.toThrow(/client certificate is required/);
+    await expect(
+      authenticateOidcRequest(
+        request(token(), {}, {
+          encrypted: true,
+          authorized: true,
+          getPeerCertificate: () => ({ raw: Buffer.from("trusted") }),
+        }),
+        optional,
+      ),
     ).resolves.toMatchObject({ userId: "user-123" });
   });
 
