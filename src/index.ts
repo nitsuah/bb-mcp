@@ -862,6 +862,7 @@ async function startHttpServer(): Promise<void> {
             ),
           }),
         );
+<<<<<<< HEAD
       } catch (_oauthError) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         res.writeHead(400, { "Content-Type": "application/json" });
