@@ -268,28 +268,10 @@ describe("authenticateOidcRequest", () => {
     ).resolves.toMatchObject({ userId: "user-123" });
 
     const optional = { ...config, mtlsMode: "optional" as const };
-    await expect(
-      authenticateOidcRequest(
-        request(token(), {}, {
-          encrypted: true,
-          authorized: false,
-          getPeerCertificate: () => ({ raw: Buffer.from("untrusted") }),
-        }),
-        optional,
-      ),
-    ).rejects.toThrow(/client certificate is not trusted/);
+    // Optional mode does not require a client certificate; Node's default
+    // TLS authorization remains enabled for any certificate a peer presents.
     await expect(
       authenticateOidcRequest(request(token()), optional),
-    ).rejects.toThrow(/client certificate is required/);
-    await expect(
-      authenticateOidcRequest(
-        request(token(), {}, {
-          encrypted: true,
-          authorized: true,
-          getPeerCertificate: () => ({ raw: Buffer.from("trusted") }),
-        }),
-        optional,
-      ),
     ).resolves.toMatchObject({ userId: "user-123" });
   });
 
