@@ -862,8 +862,7 @@ async function startHttpServer(): Promise<void> {
             ),
           }),
         );
-      } catch (_oauthError) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "oauth_exchange_failed" }));
       }
