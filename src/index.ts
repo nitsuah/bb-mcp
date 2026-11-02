@@ -18,6 +18,7 @@ import { randomUUID } from "crypto";
 import { readFileSync } from "fs";
 import http from "http";
 import https from "https";
+import tls from "tls";
 import { getMetricsText, getMetricsSummary, pushMetrics } from "./metrics.js";
 import { buildProviderManifest } from "./manifest.js";
 import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
