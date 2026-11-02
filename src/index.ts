@@ -18,6 +18,7 @@ import { randomUUID } from "crypto";
 import { readFileSync } from "fs";
 import http from "http";
 import https from "https";
+import tls from "tls";
 import { getMetricsText, getMetricsSummary, pushMetrics } from "./metrics.js";
 import { buildProviderManifest } from "./manifest.js";
 import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
@@ -759,6 +760,27 @@ async function startHttpServer(): Promise<void> {
   const transports = new Map<string, StreamableHTTPServerTransport>();
 
   const requestHandler: http.RequestListener = async (req, res) => {
+    // Optional mode permits the TLS handshake to complete so clients receive
+    // a useful HTTP error. It still requires a trusted client certificate;
+    // neither an absent nor an unauthorized certificate may reach handlers.
+    if (
+      config.oidc.mtlsMode === "optional" &&
+      req.socket instanceof tls.TLSSocket
+    ) {
+      const peerCertificate = req.socket.getPeerCertificate();
+      if (!peerCertificate.raw || !req.socket.authorized) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: "client_certificate_required",
+            message:
+              "A trusted client certificate is required because mTLS is enabled.",
+          }),
+        );
+        return;
+      }
+    }
+
     const url = new URL(
       req.url ?? "/",
       `http://localhost:${config.server.port}`,
@@ -1132,10 +1154,9 @@ async function startHttpServer(): Promise<void> {
             : config.oidc.mtlsMode === "optional"
               ? {
                   requestCert: true,
-                  // rejectUnauthorized: false is intentional for optional mTLS mode.
-                  // Connection proceeds regardless of client cert; application-level
-                  // validation in assertMtls() handles untrusted certs.
-                  // codeql[js/disabling-certificate-validation]: optional mTLS — cert inspected in assertMtls()
+                  // Complete the TLS handshake only to return a sanitized HTTP 401
+                  // for absent/untrusted client certificates in requestHandler.
+                  // codeql[js/disabling-certificate-validation]: certificate authorization is enforced before routes
                   rejectUnauthorized: false,
                   ca: readFileSync(config.oidc.mtlsCaPath!),
                 }
