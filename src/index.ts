@@ -1153,11 +1153,9 @@ async function startHttpServer(): Promise<void> {
               }
             : config.oidc.mtlsMode === "optional"
               ? {
-                  requestCert: true,
-                  // Complete the TLS handshake only to return a sanitized HTTP 401
-                  // for absent/untrusted client certificates in requestHandler.
-                  // codeql[js/disabling-certificate-validation]: certificate authorization is enforced before routes
-                  rejectUnauthorized: false,
+                  // Keep Node's default certificate authorization enabled.
+                  // Optional mode does not request a client certificate, so it
+                  // cannot require one without changing its documented contract.
                   ca: readFileSync(config.oidc.mtlsCaPath!),
                 }
               : {}),
