@@ -1,6 +1,7 @@
 import { generateKeyPairSync, sign } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { getDirectMtlsTlsOptions } from "../src/index.js";
 import {
   __resetOidcJwksCacheForTests,
   authenticateOidcRequest,
@@ -74,6 +75,24 @@ beforeAll(() => {
 afterEach(() => {
   __resetOidcJwksCacheForTests();
   vi.clearAllMocks();
+});
+
+describe("direct mTLS listener options", () => {
+  it("does not request or disable validation for optional client certificates", () => {
+    const ca = Buffer.from("trusted-ca");
+    expect(getDirectMtlsTlsOptions("optional", ca)).toEqual({ ca });
+    expect(getDirectMtlsTlsOptions("optional", ca)).not.toHaveProperty("requestCert");
+    expect(getDirectMtlsTlsOptions("optional", ca)).not.toHaveProperty("rejectUnauthorized");
+  });
+
+  it("requests and validates client certificates in required mode", () => {
+    const ca = Buffer.from("trusted-ca");
+    expect(getDirectMtlsTlsOptions("required", ca)).toEqual({
+      requestCert: true,
+      rejectUnauthorized: true,
+      ca,
+    });
+  });
 });
 
 describe("authenticateOidcRequest", () => {
