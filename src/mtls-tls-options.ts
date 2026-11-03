@@ -2,7 +2,8 @@
  * Build direct mTLS listener options. Optional mode does not request client
  * certificates; required mode requests and validates them against the configured CA.
  */
-export type DirectMtlsMode = "disabled" | "optional" | "required" | "trusted-proxy";
+export type DirectMtlsMode =
+  "disabled" | "optional" | "required" | "trusted-proxy";
 
 export function getDirectMtlsTlsOptions(
   mode: DirectMtlsMode,
