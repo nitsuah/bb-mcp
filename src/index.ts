@@ -21,7 +21,7 @@ import https from "https";
 import { getMetricsText, getMetricsSummary, pushMetrics } from "./metrics.js";
 import { buildProviderManifest } from "./manifest.js";
 import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
-import { getDirectMtlsTlsOptions } from "./mtls-tls-options.js";
+import { buildHttpsServerOptions } from "./mtls-tls-options.js";
 import {
   buildDoctorReport,
   formatDoctorReport,
@@ -1121,16 +1121,13 @@ async function startHttpServer(): Promise<void> {
 
   const httpServer = tlsConfigured
     ? https.createServer(
-        {
-          cert: readFileSync(config.server.tls.certPath!),
-          key: readFileSync(config.server.tls.keyPath!),
-          ...getDirectMtlsTlsOptions(
-            config.oidc.mtlsMode,
-            config.oidc.mtlsCaPath
-              ? readFileSync(config.oidc.mtlsCaPath)
-              : undefined,
-          ),
-        },
+        buildHttpsServerOptions(
+          config.oidc.mtlsMode,
+          config.server.tls.certPath!,
+          config.server.tls.keyPath!,
+          config.oidc.mtlsCaPath,
+          (path) => readFileSync(path),
+        ),
         requestHandler,
       )
     : http.createServer(requestHandler);

@@ -1,7 +1,7 @@
 import { generateKeyPairSync, sign } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { getDirectMtlsTlsOptions } from "../src/mtls-tls-options.js";
+import { buildHttpsServerOptions } from "../src/mtls-tls-options.js";
 import {
   __resetOidcJwksCacheForTests,
   authenticateOidcRequest,
@@ -78,25 +78,63 @@ afterEach(() => {
 });
 
 describe("direct mTLS listener options", () => {
-  it("does not request or disable validation for optional client certificates", () => {
-    const ca = Buffer.from("trusted-ca");
-    expect(getDirectMtlsTlsOptions("optional", ca)).toEqual({ ca });
-    expect(getDirectMtlsTlsOptions("optional", ca)).not.toHaveProperty("requestCert");
-    expect(getDirectMtlsTlsOptions("optional", ca)).not.toHaveProperty("rejectUnauthorized");
-  });
+  it.each(["disabled", "trusted-proxy"] as const)(
+    "does not read or pass a CA in %s mode",
+    (mode) => {
+      const readFile = vi.fn((path: string) => Buffer.from(path));
+      expect(
+        buildHttpsServerOptions(
+          mode,
+          "server-cert.pem",
+          "server-key.pem",
+          "unused-ca.pem",
+          readFile,
+        ),
+      ).toEqual({
+        cert: Buffer.from("server-cert.pem"),
+        key: Buffer.from("server-key.pem"),
+      });
+      expect(readFile).toHaveBeenCalledTimes(2);
+      expect(readFile).not.toHaveBeenCalledWith("unused-ca.pem");
+    },
+  );
 
-  it("does not request a direct client certificate in trusted-proxy mode", () => {
-    const ca = Buffer.from("trusted-ca");
-    expect(getDirectMtlsTlsOptions("trusted-proxy", ca)).toEqual({});
+  it("passes the configured CA without requesting a client certificate in optional mode", () => {
+    const readFile = vi.fn((path: string) => Buffer.from(path));
+    expect(
+      buildHttpsServerOptions(
+        "optional",
+        "server-cert.pem",
+        "server-key.pem",
+        "trusted-ca.pem",
+        readFile,
+      ),
+    ).toEqual({
+      cert: Buffer.from("server-cert.pem"),
+      key: Buffer.from("server-key.pem"),
+      ca: Buffer.from("trusted-ca.pem"),
+    });
+    expect(readFile).toHaveBeenCalledWith("trusted-ca.pem");
   });
 
   it("requests and validates client certificates in required mode", () => {
-    const ca = Buffer.from("trusted-ca");
-    expect(getDirectMtlsTlsOptions("required", ca)).toEqual({
+    const readFile = vi.fn((path: string) => Buffer.from(path));
+    expect(
+      buildHttpsServerOptions(
+        "required",
+        "server-cert.pem",
+        "server-key.pem",
+        "trusted-ca.pem",
+        readFile,
+      ),
+    ).toEqual({
+      cert: Buffer.from("server-cert.pem"),
+      key: Buffer.from("server-key.pem"),
       requestCert: true,
       rejectUnauthorized: true,
-      ca,
+      ca: Buffer.from("trusted-ca.pem"),
     });
+    expect(readFile).toHaveBeenCalledWith("trusted-ca.pem");
   });
 });
 
