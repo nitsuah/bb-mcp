@@ -21,7 +21,10 @@ import https from "https";
 import { getMetricsText, getMetricsSummary, pushMetrics } from "./metrics.js";
 import { buildProviderManifest } from "./manifest.js";
 import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
-import { buildHttpsServerOptions } from "./mtls-tls-options.js";
+import {
+  assertDirectMtlsStartupConfig,
+  buildHttpsServerOptions,
+} from "./mtls-tls-options.js";
 import {
   buildDoctorReport,
   formatDoctorReport,
@@ -690,15 +693,11 @@ async function startHttpServer(): Promise<void> {
       "OIDC is partially configured. Set OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI together.",
     );
   }
-  if (
-    (config.oidc.mtlsMode === "optional" ||
-      config.oidc.mtlsMode === "required") &&
-    (!tlsConfigured || !config.oidc.mtlsCaPath)
-  ) {
-    throw new Error(
-      "OIDC_MTLS_MODE=optional|required requires TLS_CERT_PATH, TLS_KEY_PATH and MTLS_CA_PATH (the trusted client-certificate CA bundle). Use OIDC_MTLS_MODE=trusted-proxy with TRUST_PROXY_TLS=true when mTLS terminates at a trusted proxy.",
-    );
-  }
+  assertDirectMtlsStartupConfig(
+    config.oidc.mtlsMode,
+    tlsConfigured,
+    config.oidc.mtlsCaPath,
+  );
   if (
     config.oidc.mtlsMode === "trusted-proxy" &&
     !config.server.trustProxyTls
