@@ -5,6 +5,28 @@
 export type DirectMtlsMode =
   "disabled" | "optional" | "required" | "trusted-proxy";
 
+/**
+ * Validate the startup requirements for direct mTLS modes.
+ * Optional mode uses OIDC over HTTPS but does not request or verify client
+ * certificates, so it needs the server certificate/key but no client CA.
+ */
+export function assertDirectMtlsStartupConfig(
+  mode: DirectMtlsMode,
+  tlsConfigured: boolean,
+  caPath: string | null | undefined,
+): void {
+  if (mode === "optional" && !tlsConfigured) {
+    throw new Error(
+      "OIDC_MTLS_MODE=optional requires TLS_CERT_PATH and TLS_KEY_PATH.",
+    );
+  }
+  if (mode === "required" && (!tlsConfigured || !caPath)) {
+    throw new Error(
+      "OIDC_MTLS_MODE=required requires TLS_CERT_PATH, TLS_KEY_PATH and MTLS_CA_PATH (the trusted client-certificate CA bundle).",
+    );
+  }
+}
+
 export function getDirectMtlsTlsOptions(
   mode: DirectMtlsMode,
   ca?: Buffer,
@@ -16,7 +38,7 @@ export function getDirectMtlsTlsOptions(
       ...(ca ? { ca } : {}),
     };
   }
-  if (mode === "optional") return ca ? { ca } : {};
+  if (mode === "optional") return {};
   // trusted-proxy terminates mTLS upstream; this listener must not request a
   // direct client certificate in that mode.
   return {};
@@ -24,8 +46,8 @@ export function getDirectMtlsTlsOptions(
 
 /**
  * Assemble the exact options passed to https.createServer. Read the client CA
- * only in direct modes that use it; disabled/trusted-proxy must not fail
- * startup because an irrelevant CA path is missing or unreadable.
+ * only in required mode; optional mode does not request or verify client
+ * certificates, and disabled/trusted-proxy do not use a client CA.
  */
 export function buildHttpsServerOptions(
   mode: DirectMtlsMode,
@@ -40,10 +62,7 @@ export function buildHttpsServerOptions(
   rejectUnauthorized?: boolean;
   ca?: Buffer;
 } {
-  const ca =
-    (mode === "optional" || mode === "required") && caPath
-      ? readFile(caPath)
-      : undefined;
+  const ca = mode === "required" && caPath ? readFile(caPath) : undefined;
 
   return {
     cert: readFile(certPath),
