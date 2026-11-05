@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   health:
-    uses: nitsuah/.github/.github/workflows/repo-health.yml@9e95eeb3472f100f7e08a2bcf527f58160a803c4 # main
+    uses: nitsuah/.github/.github/workflows/repo-health.yml@7d3c243537bee244895fb38f01e01e3deb25f4ec # main
     permissions:
       contents: read
       issues: write
