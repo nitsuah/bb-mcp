@@ -223,7 +223,7 @@ Copy `.env.example` to `.env` and set:
 | `OIDC_ROLE_CLAIM` | — | Claim path containing the role or group values (default `role`). |
 | `OIDC_ROLE_MAP` | Required when OIDC is enabled | Explicit comma-separated allowlist mapping institution-controlled claim/group values to `student`, `instructor`, `admin`, or `parent`. There is no permissive default; a token must resolve to exactly one configured role. Never map user-editable metadata to privileged roles. |
 | `OIDC_FERPA_CLAIM` | — | Signed claim that must be boolean `true` to satisfy FERPA authorization (default `ferpa_authorized`). |
-| `OIDC_MTLS_MODE` | — | `disabled`, `optional`, `required`, or `trusted-proxy`. Direct mTLS modes require HTTPS plus `MTLS_CA_PATH` pointing to the trusted client-certificate CA bundle; proxy mode requires `TRUST_PROXY_TLS=true` and a trusted proxy that rewrites `X-Client-Cert-Verified`. |
+| `OIDC_MTLS_MODE` | — | `disabled`, `optional`, `required`, or `trusted-proxy`. Both direct modes require HTTPS; only `required` mode needs `MTLS_CA_PATH` to validate client certificates. `optional` mode does not request or verify client certificates. Proxy mode requires `TRUST_PROXY_TLS=true` and a trusted proxy that rewrites `X-Client-Cert-Verified`. |
 | `METRICS_PUSH_URL` | — | Prometheus push gateway URL (optional) |
 | `RESTRICTED_TOOLS` | — | Comma-separated tool names requiring FERPA auth (default: `get_at_risk_students,get_grade_distribution,get_submission_status,get_grades,list_users,get_user,list_enrollments,list_audit_logs`) |
 | `RATE_LIMIT_STUDENT_PER_MINUTE` | — | Max tool calls per minute for student role (default `60`) |
@@ -359,7 +359,7 @@ All require admin role. This is subscription *registration* only — receiving i
 
 When OIDC is enabled, send the user's access token as `Authorization: Bearer <OIDC_ACCESS_TOKEN>`. If `MCP_API_KEY` is also configured, send it as `X-MCP-API-Key`. Do not send access tokens over plain HTTP.
 
-**mTLS** — `OIDC_MTLS_MODE=required` requires a trusted client certificate and OIDC. `optional` permits OIDC without a certificate but rejects an explicitly presented untrusted certificate. Both direct modes require `TLS_CERT_PATH` and `TLS_KEY_PATH`. `trusted-proxy` is for mTLS terminated at a trusted gateway/service mesh; it requires `TRUST_PROXY_TLS=true`, which forces a loopback bind, and the proxy must strip/rewrite `X-Client-Cert-Verified` to `SUCCESS` only after certificate verification. The proxy must strip/rewrite the client-certificate header, and every process sharing the listener's network namespace must be trusted; loopback prevents remote direct access but does not isolate the listener from other local processes.
+**mTLS** — `OIDC_MTLS_MODE=required` requires a trusted client certificate and OIDC. `optional` does not request or verify client certificates; use `required` when client-certificate authentication is needed. Both direct modes require `TLS_CERT_PATH` and `TLS_KEY_PATH`. `trusted-proxy` is for mTLS terminated at a trusted gateway/service mesh; it requires `TRUST_PROXY_TLS=true`, which forces a loopback bind, and the proxy must strip/rewrite `X-Client-Cert-Verified` to `SUCCESS` only after certificate verification. The proxy must strip/rewrite the client-certificate header, and every process sharing the listener's network namespace must be trusted; loopback prevents remote direct access but does not isolate the listener from other local processes.
 
 Loopback-only deployments can still use the legacy local-client flow without OIDC. It is not permitted on network-reachable binds.
 

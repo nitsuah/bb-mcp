@@ -18,10 +18,13 @@ import { randomUUID } from "crypto";
 import { readFileSync } from "fs";
 import http from "http";
 import https from "https";
-import tls from "tls";
 import { getMetricsText, getMetricsSummary, pushMetrics } from "./metrics.js";
 import { buildProviderManifest } from "./manifest.js";
 import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
+import {
+  assertDirectMtlsStartupConfig,
+  buildHttpsServerOptions,
+} from "./mtls-tls-options.js";
 import {
   buildDoctorReport,
   formatDoctorReport,
@@ -690,15 +693,11 @@ async function startHttpServer(): Promise<void> {
       "OIDC is partially configured. Set OIDC_ISSUER, OIDC_AUDIENCE and OIDC_JWKS_URI together.",
     );
   }
-  if (
-    (config.oidc.mtlsMode === "optional" ||
-      config.oidc.mtlsMode === "required") &&
-    (!tlsConfigured || !config.oidc.mtlsCaPath)
-  ) {
-    throw new Error(
-      "OIDC_MTLS_MODE=optional|required requires TLS_CERT_PATH, TLS_KEY_PATH and MTLS_CA_PATH (the trusted client-certificate CA bundle). Use OIDC_MTLS_MODE=trusted-proxy with TRUST_PROXY_TLS=true when mTLS terminates at a trusted proxy.",
-    );
-  }
+  assertDirectMtlsStartupConfig(
+    config.oidc.mtlsMode,
+    tlsConfigured,
+    config.oidc.mtlsCaPath,
+  );
   if (
     config.oidc.mtlsMode === "trusted-proxy" &&
     !config.server.trustProxyTls
@@ -760,27 +759,6 @@ async function startHttpServer(): Promise<void> {
   const transports = new Map<string, StreamableHTTPServerTransport>();
 
   const requestHandler: http.RequestListener = async (req, res) => {
-    // Optional mode permits the TLS handshake to complete so clients receive
-    // a useful HTTP error. It still requires a trusted client certificate;
-    // neither an absent nor an unauthorized certificate may reach handlers.
-    if (
-      config.oidc.mtlsMode === "optional" &&
-      req.socket instanceof tls.TLSSocket
-    ) {
-      const peerCertificate = req.socket.getPeerCertificate();
-      if (!peerCertificate.raw || !req.socket.authorized) {
-        res.writeHead(401, { "Content-Type": "application/json" });
-        res.end(
-          JSON.stringify({
-            error: "client_certificate_required",
-            message:
-              "A trusted client certificate is required because mTLS is enabled.",
-          }),
-        );
-        return;
-      }
-    }
-
     const url = new URL(
       req.url ?? "/",
       `http://localhost:${config.server.port}`,
@@ -1142,26 +1120,13 @@ async function startHttpServer(): Promise<void> {
 
   const httpServer = tlsConfigured
     ? https.createServer(
-        {
-          cert: readFileSync(config.server.tls.certPath!),
-          key: readFileSync(config.server.tls.keyPath!),
-          ...(config.oidc.mtlsMode === "required"
-            ? {
-                requestCert: true,
-                rejectUnauthorized: true,
-                ca: readFileSync(config.oidc.mtlsCaPath!),
-              }
-            : config.oidc.mtlsMode === "optional"
-              ? {
-                  requestCert: true,
-                  // Complete the TLS handshake only to return a sanitized HTTP 401
-                  // for absent/untrusted client certificates in requestHandler.
-                  // codeql[js/disabling-certificate-validation]: certificate authorization is enforced before routes
-                  rejectUnauthorized: false,
-                  ca: readFileSync(config.oidc.mtlsCaPath!),
-                }
-              : {}),
-        },
+        buildHttpsServerOptions(
+          config.oidc.mtlsMode,
+          config.server.tls.certPath!,
+          config.server.tls.keyPath!,
+          config.oidc.mtlsCaPath,
+          (path) => readFileSync(path),
+        ),
         requestHandler,
       )
     : http.createServer(requestHandler);

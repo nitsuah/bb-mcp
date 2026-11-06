@@ -2,6 +2,10 @@ import { generateKeyPairSync, sign } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
+  assertDirectMtlsStartupConfig,
+  buildHttpsServerOptions,
+} from "../src/mtls-tls-options.js";
+import {
   __resetOidcJwksCacheForTests,
   authenticateOidcRequest,
   type OidcAuthConfig,
@@ -74,6 +78,96 @@ beforeAll(() => {
 afterEach(() => {
   __resetOidcJwksCacheForTests();
   vi.clearAllMocks();
+});
+
+describe("direct mTLS startup configuration", () => {
+  it("allows optional mode with TLS but no client CA", () => {
+    expect(() =>
+      assertDirectMtlsStartupConfig("optional", true, null),
+    ).not.toThrow();
+  });
+
+  it("requires server TLS for optional mode", () => {
+    expect(() =>
+      assertDirectMtlsStartupConfig("optional", false, null),
+    ).toThrow(/TLS_CERT_PATH and TLS_KEY_PATH/);
+  });
+
+  it("requires both server TLS and a client CA for required mode", () => {
+    expect(() =>
+      assertDirectMtlsStartupConfig("required", true, null),
+    ).toThrow(/MTLS_CA_PATH/);
+    expect(() =>
+      assertDirectMtlsStartupConfig("required", false, "trusted-ca.pem"),
+    ).toThrow(/TLS_CERT_PATH, TLS_KEY_PATH and MTLS_CA_PATH/);
+  });
+
+  it("allows required mode with server TLS and a client CA", () => {
+    expect(() =>
+      assertDirectMtlsStartupConfig("required", true, "trusted-ca.pem"),
+    ).not.toThrow();
+  });
+});
+
+describe("direct mTLS listener options", () => {
+  it.each(["disabled", "trusted-proxy"] as const)(
+    "does not read or pass a CA in %s mode",
+    (mode) => {
+      const readFile = vi.fn((path: string) => Buffer.from(path));
+      expect(
+        buildHttpsServerOptions(
+          mode,
+          "server-cert.pem",
+          "server-key.pem",
+          "unused-ca.pem",
+          readFile,
+        ),
+      ).toEqual({
+        cert: Buffer.from("server-cert.pem"),
+        key: Buffer.from("server-key.pem"),
+      });
+      expect(readFile).toHaveBeenCalledTimes(2);
+      expect(readFile).not.toHaveBeenCalledWith("unused-ca.pem");
+    },
+  );
+
+  it("does not request or load a client CA in optional mode", () => {
+    const readFile = vi.fn((path: string) => Buffer.from(path));
+    expect(
+      buildHttpsServerOptions(
+        "optional",
+        "server-cert.pem",
+        "server-key.pem",
+        "unused-ca.pem",
+        readFile,
+      ),
+    ).toEqual({
+      cert: Buffer.from("server-cert.pem"),
+      key: Buffer.from("server-key.pem"),
+    });
+    expect(readFile).toHaveBeenCalledTimes(2);
+    expect(readFile).not.toHaveBeenCalledWith("unused-ca.pem");
+  });
+
+  it("requests and validates client certificates in required mode", () => {
+    const readFile = vi.fn((path: string) => Buffer.from(path));
+    expect(
+      buildHttpsServerOptions(
+        "required",
+        "server-cert.pem",
+        "server-key.pem",
+        "trusted-ca.pem",
+        readFile,
+      ),
+    ).toEqual({
+      cert: Buffer.from("server-cert.pem"),
+      key: Buffer.from("server-key.pem"),
+      requestCert: true,
+      rejectUnauthorized: true,
+      ca: Buffer.from("trusted-ca.pem"),
+    });
+    expect(readFile).toHaveBeenCalledWith("trusted-ca.pem");
+  });
 });
 
 describe("authenticateOidcRequest", () => {
@@ -268,28 +362,10 @@ describe("authenticateOidcRequest", () => {
     ).resolves.toMatchObject({ userId: "user-123" });
 
     const optional = { ...config, mtlsMode: "optional" as const };
-    await expect(
-      authenticateOidcRequest(
-        request(token(), {}, {
-          encrypted: true,
-          authorized: false,
-          getPeerCertificate: () => ({ raw: Buffer.from("untrusted") }),
-        }),
-        optional,
-      ),
-    ).rejects.toThrow(/client certificate is not trusted/);
+    // Optional mode does not require a client certificate; Node's default
+    // TLS authorization remains enabled for any certificate a peer presents.
     await expect(
       authenticateOidcRequest(request(token()), optional),
-    ).rejects.toThrow(/client certificate is required/);
-    await expect(
-      authenticateOidcRequest(
-        request(token(), {}, {
-          encrypted: true,
-          authorized: true,
-          getPeerCertificate: () => ({ raw: Buffer.from("trusted") }),
-        }),
-        optional,
-      ),
     ).resolves.toMatchObject({ userId: "user-123" });
   });
 

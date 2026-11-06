@@ -195,20 +195,7 @@ function getBearerToken(req: Pick<IncomingMessage, "headers">): string {
 function assertMtls(req: IncomingMessage, config: OidcAuthConfig): void {
   if (config.mtlsMode === "disabled") return;
 
-  if (config.mtlsMode === "optional") {
-    const socket = req.socket as TLSSocket;
-    if (!socket.encrypted) {
-      throw new Error("A client certificate is required (mTLS).");
-    }
-    const certificate = socket.getPeerCertificate();
-    if (!certificate.raw) {
-      throw new Error("A client certificate is required (mTLS).");
-    }
-    if (!socket.authorized) {
-      throw new Error("The presented client certificate is not trusted.");
-    }
-    return;
-  }
+  if (config.mtlsMode === "optional") return;
 
   if (config.mtlsMode === "trusted-proxy") {
     // TRUST_PROXY_TLS forces the listener to loopback. This header is safe to
