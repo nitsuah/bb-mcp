@@ -39,12 +39,12 @@ jobs:
     uses: nitsuah/.github/.github/workflows/journeys.yml@03aa622645df326946d42abf3c4ab7919b044495
     with:
       # Keep in step with @playwright/test in package.json.
-      image: mcr.microsoft.com/playwright:v1.64.1-jammy
+      image: mcr.microsoft.com/playwright:v1.65.0-jammy
       command: npm run test:journeys
       features: promo/spots.json
       kit-ref: 03aa622645df326946d42abf3c4ab7919b044495
       repro: |
-        docker run --rm -v "$PWD:/w" -w /w -e CI=true mcr.microsoft.com/playwright:v1.64.1-jammy \
+        docker run --rm -v "$PWD:/w" -w /w -e CI=true mcr.microsoft.com/playwright:v1.65.0-jammy \
           sh -c "npm ci && npm run test:journeys"
 
   # Nightly and manual runs file and close bot:journey issues and update the
@@ -56,10 +56,10 @@ jobs:
       issues: write
     uses: nitsuah/.github/.github/workflows/journeys.yml@03aa622645df326946d42abf3c4ab7919b044495
     with:
-      image: mcr.microsoft.com/playwright:v1.64.1-jammy
+      image: mcr.microsoft.com/playwright:v1.65.0-jammy
       command: JOURNEYS_EXTERNAL_LINKS=1 npm run test:journeys
       features: promo/spots.json
       kit-ref: 03aa622645df326946d42abf3c4ab7919b044495
       repro: |
-        docker run --rm -v "$PWD:/w" -w /w -e CI=true mcr.microsoft.com/playwright:v1.64.1-jammy \
+        docker run --rm -v "$PWD:/w" -w /w -e CI=true mcr.microsoft.com/playwright:v1.65.0-jammy \
           sh -c "npm ci && npm run test:journeys"

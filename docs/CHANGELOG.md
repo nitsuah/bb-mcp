@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Dependencies: Playwright 1.65 (journeys workflow image bumped to `v1.65.0-jammy` to match), Vitest 5.1, MCP Inspector 2.15, `@hono/node-server` 2.1.8, and an in-range lockfile refresh.
 - `npm audit fix`: follow-redirects, vite and hono bumped in the lockfile to clear the high-severity audit gate.
 - Visual docs: the manifest-drawn screenshots now come from `npm run capture:screenshots` (still `scripts/visual-docs.mjs`), a step vigil's workflow-content check recognises: `npm run showcase -- audit` grades them `ci` now, and the dashboard will once nitsuah/vigil#317 (sync reads workflow contents) is merged and deployed.
 
