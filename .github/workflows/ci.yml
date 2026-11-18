@@ -25,8 +25,11 @@ jobs:
       - name: Unit tests with coverage (Docker)
         run: docker run --rm bb-mcp:test npm run test:coverage
 
-      - name: Security audit (high+)
-        run: docker run --rm bb-mcp:test npm audit --audit-level=high
+      - name: Security audit (production dependencies)
+        run: docker run --rm bb-mcp:test npm audit --omit=dev --audit-level=high
+
+      - name: Verify known dev-only picomatch advisory allowlist
+        run: docker run --rm bb-mcp:test node scripts/check-dev-audit-allowlist.mjs
 
       - name: Cyclomatic complexity metric
         run: docker run --rm bb-mcp:test npm run metrics:complexity
