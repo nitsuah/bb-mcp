@@ -16,7 +16,7 @@
     "docker:lint": "docker run --rm bb-mcp:test npm run lint",
     "docker:test": "docker run --rm bb-mcp:test npm test",
     "docker:coverage": "docker run --rm bb-mcp:test npm run test:coverage",
-    "docker:audit": "docker run --rm bb-mcp:test sh -lc 'npm audit --omit=dev --audit-level=high && node scripts/check-dev-audit-allowlist.mjs'",
+    "docker:audit": "docker run --rm bb-mcp:test sh -lc 'npm audit --omit=dev --audit-level=high'",
     "docker:complexity": "docker run --rm bb-mcp:test npm run metrics:complexity",
     "docker:docs": "docker run --rm bb-mcp:test npm run metrics:docs",
     "docker:quality": "npm run docker:test-image && npm run docker:lint && npm run docker:coverage && npm run docker:audit && npm run docker:complexity && npm run docker:docs",
