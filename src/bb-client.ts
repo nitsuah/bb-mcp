@@ -331,7 +331,7 @@ export class BlackboardClient {
       const res = await this.http.get<{
         userId: string;
         courseRoleId: string;
-      }>(`/courses/${courseId}/users/${userId}`, {
+      }>(`/courses/${encodeURIComponent(courseId)}/users/${encodeURIComponent(userId)}`, {
         params: { fields: "userId,courseRoleId" },
       });
       return res.data;

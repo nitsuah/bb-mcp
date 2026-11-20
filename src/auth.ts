@@ -246,6 +246,9 @@ const GRADE_MANAGING_COURSE_ROLES = new Set([
   "CourseBuilder",
 ]);
 
+/** Blackboard course identifiers: internal (_123_1) or externalId:value forms. */
+const COURSE_ID_PATTERN = /^[A-Za-z0-9_.:-]{1,128}$/;
+
 export interface CourseMembershipLookup {
   getCourseMembership(
     courseId: string,
@@ -277,6 +280,11 @@ export async function checkCourseEntitlement(
     );
   }
 
+  if (!COURSE_ID_PATTERN.test(courseId)) {
+    auditLog("access.denied", ctx, "malformed course id");
+    throw new AuthorizationError("courseId has an invalid format.");
+  }
+
   const membership = await client.getCourseMembership(
     courseId,
     identity.userId,
@@ -284,6 +292,8 @@ export async function checkCourseEntitlement(
 
   if (
     !membership ||
+    typeof membership.courseRoleId !== "string" ||
+    membership.courseRoleId.length === 0 ||
     (allowedCourseRoles !== "any" &&
       !allowedCourseRoles.has(membership.courseRoleId))
   ) {
