@@ -13,6 +13,15 @@ afterEach(() => {
 });
 
 describe('config', () => {
+  it('binds to loopback unless HOST is set', async () => {
+    process.env.BB_CLIENT_ID = 'client-id';
+    process.env.BB_CLIENT_SECRET = 'client-secret';
+    delete process.env.HOST;
+
+    const { config } = await loadConfig();
+    expect(config.server.host).toBe('127.0.0.1');
+  });
+
   it('throws when required Blackboard credentials are missing', async () => {
     process.env.BB_CLIENT_ID = '';
     process.env.BB_CLIENT_SECRET = '';

@@ -21,7 +21,7 @@ services:
     init: true
     restart: unless-stopped
     ports:
-      - "3100:3100"
+      - "${BIND_ADDRESS:-127.0.0.1}:3100:3100"
     env_file:
       - ../.env
     environment:

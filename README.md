@@ -212,7 +212,7 @@ Copy `.env.example` to `.env` and set:
 | `BB_OAUTH_AUTHORIZATION_PATH` | — | Override Blackboard authorization endpoint path |
 | `BB_OAUTH_TOKEN_PATH` | — | Override Blackboard token endpoint path |
 | `PORT` | — | HTTP port (default `3100`) |
-| `HOST` | — | Bind address (default `0.0.0.0`, all interfaces — unchanged from before `MCP_API_KEY` existed, so `docker compose`'s `-p 3100:3100` port publishing keeps working). Set to `127.0.0.1` for a genuinely local-only deployment; see `MCP_API_KEY` below. |
+| `HOST` | — | Bind address (default `127.0.0.1`, loopback only). The Docker image sets `HOST=0.0.0.0` inside the container and `config/docker-compose.yml` publishes the port on `${BIND_ADDRESS:-127.0.0.1}`. Non-loopback binds require OIDC and TLS (or `TRUST_PROXY_TLS`); see `MCP_API_KEY` below. |
 | `LOG_LEVEL` | — | `info` or `debug` (default `info`) |
 | `PUBLIC_BASE_URL` | — | Publicly reachable base URL of this server (e.g. `https://mcp.example.com`); used in manifest generation and as the OAuth redirect base; defaults to `http://localhost:<PORT>` |
 | `MCP_API_KEY` | Optional second factor | If set with OIDC, send it as `X-MCP-API-Key`; `Authorization: Bearer` carries the end-user OIDC access token. Non-loopback deployments require OIDC regardless of this key. |

@@ -19,7 +19,7 @@ import { readFileSync } from "fs";
 import http from "http";
 import https from "https";
 import tls from "tls";
-import { getMetricsText, getMetricsSummary, pushMetrics } from "./metrics.js";
+import { getMetricsText, pushMetrics } from "./metrics.js";
 import { buildProviderManifest } from "./manifest.js";
 import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
 import {
@@ -35,12 +35,14 @@ import {
 import {
   completeAuthorizationCodeFlow,
   getOAuthSession,
+  OAuthFlowLimitError,
   startAuthorizationCodeFlow,
 } from "./oauth.js";
 import {
   assertSafeMcpAuthConfig,
   isAuthorizedMcpRequest,
   isAuthorizedMcpApiKeyHeader,
+  isLoopbackHost,
   resolveListenHost,
 } from "./mcp-auth.js";
 import {
@@ -786,23 +788,47 @@ async function startHttpServer(): Promise<void> {
       `http://localhost:${config.server.port}`,
     );
 
+    // On network-reachable deployments, operational and OAuth-initiation
+    // routes require the same credentials as /mcp. Loopback-only deployments
+    // keep them open for local tooling.
+    const gateUtilityRoute = async (): Promise<boolean> => {
+      if (isLoopbackHost(config.server.host) && !config.server.trustProxyTls) {
+        return true;
+      }
+      if (isOidcEnabled(config.oidc)) {
+        try {
+          await authenticateOidcRequest(req, config.oidc);
+        } catch (authError) {
+          respondToOidcAuthFailure(res, authError);
+          return false;
+        }
+        if (!isAuthorizedMcpApiKeyHeader(req, config.security.mcpApiKey)) {
+          res.writeHead(401, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "unauthorized" }));
+          return false;
+        }
+        return true;
+      }
+      if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "unauthorized" }));
+        return false;
+      }
+      return true;
+    };
+
     // ── Health ──
     if (req.method === "GET" && url.pathname === "/health") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(
-        JSON.stringify({
-          status: "ok",
-          name: SERVER_NAME,
-          version: SERVER_VERSION,
-          uptime: process.uptime(),
-          metrics: getMetricsSummary(),
-        }),
+        JSON.stringify({ status: "ok" }),
       );
       return;
     }
 
     // ── Prometheus metrics ──
     if (req.method === "GET" && url.pathname === "/metrics") {
+      if (!(await gateUtilityRoute())) return;
       res.writeHead(200, { "Content-Type": "text/plain; version=0.0.4" });
       res.end(getMetricsText());
       return;
@@ -810,6 +836,7 @@ async function startHttpServer(): Promise<void> {
 
     // ── Provider manifest ──
     if (req.method === "GET" && url.pathname === "/manifest") {
+      if (!(await gateUtilityRoute())) return;
       const baseUrl =
         config.server.publicBaseUrl ?? `http://localhost:${config.server.port}`;
       const manifest = buildProviderManifest(baseUrl);
@@ -820,7 +847,21 @@ async function startHttpServer(): Promise<void> {
 
     // ── OAuth authorization code flow ──
     if (req.method === "GET" && url.pathname === "/oauth/authorize") {
-      const flow = startAuthorizationCodeFlow();
+      if (!(await gateUtilityRoute())) return;
+      let flow: ReturnType<typeof startAuthorizationCodeFlow>;
+      try {
+        flow = startAuthorizationCodeFlow();
+      } catch (flowError) {
+        if (flowError instanceof OAuthFlowLimitError) {
+          res.writeHead(429, {
+            "Content-Type": "application/json",
+            "Retry-After": "60",
+          });
+          res.end(JSON.stringify({ error: "too_many_requests" }));
+          return;
+        }
+        throw flowError;
+      }
       const format = url.searchParams.get("format");
 
       if (format === "json") {

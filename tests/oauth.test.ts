@@ -85,3 +85,19 @@ describe('oauth authorization code flow', () => {
     ).rejects.toThrow(/Invalid or expired OAuth state/);
   });
 });
+describe("oauth pending flow cap", () => {
+  it("refuses new flows once too many are pending", async () => {
+    process.env.PUBLIC_BASE_URL = "https://mcp.example.edu";
+    const { startAuthorizationCodeFlow, OAuthFlowLimitError } = await import("../src/oauth.js");
+    let thrown: unknown;
+    for (let i = 0; i < 150; i++) {
+      try {
+        startAuthorizationCodeFlow();
+      } catch (error) {
+        thrown = error;
+        break;
+      }
+    }
+    expect(thrown).toBeInstanceOf(OAuthFlowLimitError);
+  });
+});
