@@ -182,7 +182,9 @@ export class BlackboardClient {
   // ── Courses ──────────────────────────────────────────────────────────────
 
   async getCourses(userId?: string): Promise<BbCourse[]> {
-    const url = userId ? `/users/${userId}/courses` : "/courses";
+    const url = userId
+      ? `/users/${encodeURIComponent(userId)}/courses`
+      : "/courses";
     const res = await this.http.get<{ results: BbCourse[] }>(url, {
       params: {
         limit: 100,
@@ -200,7 +202,9 @@ export class BlackboardClient {
   }
 
   async getCourse(courseId: string): Promise<BbCourse> {
-    const res = await this.http.get<BbCourse>(`/courses/${courseId}`);
+    const res = await this.http.get<BbCourse>(
+      `/courses/${encodeURIComponent(courseId)}`,
+    );
     return res.data;
   }
 
@@ -208,7 +212,7 @@ export class BlackboardClient {
 
   async getAssignments(courseId: string): Promise<BbAssignment[]> {
     const res = await this.http.get<{ results: BbAssignment[] }>(
-      `/courses/${courseId}/gradebook/columns`,
+      `/courses/${encodeURIComponent(courseId)}/gradebook/columns`,
       { params: { limit: 200 } },
     );
     return res.data.results ?? [];
@@ -218,7 +222,7 @@ export class BlackboardClient {
 
   async getGrades(courseId: string, userId: string): Promise<BbGrade[]> {
     const res = await this.http.get<{ results: BbGrade[] }>(
-      `/courses/${courseId}/gradebook/users/${userId}`,
+      `/courses/${encodeURIComponent(courseId)}/gradebook/users/${encodeURIComponent(userId)}`,
     );
     return res.data.results ?? [];
   }
@@ -228,7 +232,7 @@ export class BlackboardClient {
     columnId: string,
   ): Promise<BbGrade[]> {
     const res = await this.http.get<{ results: BbGrade[] }>(
-      `/courses/${courseId}/gradebook/columns/${columnId}/users`,
+      `/courses/${encodeURIComponent(courseId)}/gradebook/columns/${encodeURIComponent(columnId)}/users`,
       { params: { limit: 500 } },
     );
     return res.data.results ?? [];
@@ -236,7 +240,7 @@ export class BlackboardClient {
 
   async getAttempts(courseId: string, columnId: string): Promise<BbAttempt[]> {
     const res = await this.http.get<{ results: BbAttempt[] }>(
-      `/courses/${courseId}/gradebook/columns/${columnId}/attempts`,
+      `/courses/${encodeURIComponent(courseId)}/gradebook/columns/${encodeURIComponent(columnId)}/attempts`,
       { params: { limit: 500 } },
     );
     return res.data.results ?? [];
@@ -254,7 +258,7 @@ export class BlackboardClient {
       payload.studentComments = studentComments;
     }
     const res = await this.http.post<BbAttempt>(
-      `/courses/${courseId}/gradebook/columns/${columnId}/attempts`,
+      `/courses/${encodeURIComponent(courseId)}/gradebook/columns/${encodeURIComponent(columnId)}/attempts`,
       payload,
     );
     return res.data;
@@ -264,7 +268,7 @@ export class BlackboardClient {
 
   async getAnnouncements(courseId: string): Promise<BbAnnouncement[]> {
     const res = await this.http.get<{ results: BbAnnouncement[] }>(
-      `/courses/${courseId}/announcements`,
+      `/courses/${encodeURIComponent(courseId)}/announcements`,
       { params: { limit: 50 } },
     );
     return res.data.results ?? [];
@@ -276,7 +280,7 @@ export class BlackboardClient {
     body: string,
   ): Promise<BbAnnouncement> {
     const res = await this.http.post<BbAnnouncement>(
-      `/courses/${courseId}/announcements`,
+      `/courses/${encodeURIComponent(courseId)}/announcements`,
       { title, body, availability: { duration: { type: "Permanent" } } },
     );
     return res.data;
@@ -288,7 +292,7 @@ export class BlackboardClient {
     courseId: string,
     parentId?: string,
   ): Promise<BbContent[]> {
-    const base = `/courses/${courseId}/contents`;
+    const base = `/courses/${encodeURIComponent(courseId)}/contents`;
     const url = parentId ? `${base}/${parentId}/children` : base;
     const res = await this.http.get<{ results: BbContent[] }>(url, {
       params: { limit: 100 },
@@ -301,7 +305,7 @@ export class BlackboardClient {
   async getEnrolledUsers(courseId: string): Promise<BbUser[]> {
     const res = await this.http.get<{
       results: Array<{ userId: string; user?: BbUser }>;
-    }>(`/courses/${courseId}/users`, {
+    }>(`/courses/${encodeURIComponent(courseId)}/users`, {
       params: { limit: 1000, fields: "userId,user" },
     });
     return (res.data.results ?? []).map(
@@ -310,7 +314,9 @@ export class BlackboardClient {
   }
 
   async getUser(userId: string): Promise<BbUser> {
-    const res = await this.http.get<BbUser>(`/users/${userId}`);
+    const res = await this.http.get<BbUser>(
+      `/users/${encodeURIComponent(userId)}`,
+    );
     return res.data;
   }
 
@@ -331,9 +337,12 @@ export class BlackboardClient {
       const res = await this.http.get<{
         userId: string;
         courseRoleId: string;
-      }>(`/courses/${encodeURIComponent(courseId)}/users/${encodeURIComponent(userId)}`, {
-        params: { fields: "userId,courseRoleId" },
-      });
+      }>(
+        `/courses/${encodeURIComponent(courseId)}/users/${encodeURIComponent(userId)}`,
+        {
+          params: { fields: "userId,courseRoleId" },
+        },
+      );
       return res.data;
     } catch (error) {
       if (error instanceof BbApiError && error.status === 404) {
@@ -350,7 +359,7 @@ export class BlackboardClient {
     threadId: string,
   ): Promise<BbDiscussionPost[]> {
     const res = await this.http.get<{ results: BbDiscussionPost[] }>(
-      `/courses/${courseId}/discussions/${threadId}/posts`,
+      `/courses/${encodeURIComponent(courseId)}/discussions/${encodeURIComponent(threadId)}/posts`,
       { params: { limit: 200 } },
     );
     return res.data.results ?? [];
@@ -390,7 +399,7 @@ export class BlackboardClient {
     payload: BbAttemptUpdatePayload,
   ): Promise<BbAttempt> {
     const res = await this.http.patch<BbAttempt>(
-      `/courses/${courseId}/gradebook/columns/${columnId}/attempts/${attemptId}`,
+      `/courses/${encodeURIComponent(courseId)}/gradebook/columns/${encodeURIComponent(columnId)}/attempts/${encodeURIComponent(attemptId)}`,
       payload,
     );
     return res.data;
@@ -402,7 +411,7 @@ export class BlackboardClient {
     attemptId: string,
   ): Promise<void> {
     await this.http.delete(
-      `/courses/${courseId}/gradebook/columns/${columnId}/attempts/${attemptId}`,
+      `/courses/${encodeURIComponent(courseId)}/gradebook/columns/${encodeURIComponent(columnId)}/attempts/${encodeURIComponent(attemptId)}`,
     );
   }
 }

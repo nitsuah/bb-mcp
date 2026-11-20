@@ -239,6 +239,23 @@ describe('BlackboardClient', () => {
     );
   });
 
+  it('encodes ids as single path segments', async () => {
+    const { BlackboardClient } = await import('../src/bb-client.js');
+    const client = new BlackboardClient();
+
+    httpGet.mockResolvedValue({ data: { id: 'x', userId: 'u', courseRoleId: 'Student' } });
+
+    await client.getCourse('a/b?c');
+    await client.getCourseMembership('a/b?c', 'u/1');
+
+    expect(httpGet).toHaveBeenNthCalledWith(1, '/courses/a%2Fb%3Fc');
+    expect(httpGet).toHaveBeenNthCalledWith(
+      2,
+      '/courses/a%2Fb%3Fc/users/u%2F1',
+      expect.anything(),
+    );
+  });
+
   it('gets a single course and user by id', async () => {
     const { BlackboardClient } = await import('../src/bb-client.js');
     const client = new BlackboardClient();
