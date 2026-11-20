@@ -5,7 +5,11 @@
 
 import { z } from "zod";
 import { bbClient } from "../bb-client.js";
-import { checkAuthorization, parseIdentity } from "../auth.js";
+import {
+  checkAuthorization,
+  checkCourseStaffEntitlement,
+  parseIdentity,
+} from "../auth.js";
 import { withMetrics } from "../metrics.js";
 
 // ── list_roster ───────────────────────────────────────────────────────────
@@ -19,11 +23,13 @@ export const listRosterHandler = withMetrics(
   "list_roster",
   async (args: z.infer<typeof ListRosterInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "list_roster",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    await checkCourseStaffEntitlement(authCtx, bbClient);
 
     const enrolled = await bbClient.getEnrolledUsers(args.courseId);
 
@@ -81,11 +87,13 @@ export const getGradesHandler = withMetrics(
   "get_grades",
   async (args: z.infer<typeof GetGradesInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "get_grades",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    await checkCourseStaffEntitlement(authCtx, bbClient);
 
     const enrolled = await bbClient.getEnrolledUsers(args.courseId);
     const enrolledMap = new Map(enrolled.map((user) => [user.id, user]));
@@ -202,11 +210,13 @@ export const getSubmissionStatusHandler = withMetrics(
   "get_submission_status",
   async (args: z.infer<typeof GetSubmissionStatusInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "get_submission_status",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    await checkCourseStaffEntitlement(authCtx, bbClient);
 
     const [attempts, enrolled] = await Promise.all([
       bbClient.getAttempts(args.courseId, args.columnId),
@@ -274,11 +284,13 @@ export const getGradeDistributionHandler = withMetrics(
   "get_grade_distribution",
   async (args: z.infer<typeof GetGradeDistributionInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "get_grade_distribution",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    await checkCourseStaffEntitlement(authCtx, bbClient);
 
     const grades = await bbClient.getColumnGrades(args.courseId, args.columnId);
     const scores = grades.map((g) => g.score ?? 0).filter((s) => s > 0);
@@ -362,11 +374,13 @@ export const getDiscussionSummaryHandler = withMetrics(
   "get_discussion_summary",
   async (args: z.infer<typeof GetDiscussionSummaryInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "get_discussion_summary",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    await checkCourseStaffEntitlement(authCtx, bbClient);
 
     const posts = await bbClient.getDiscussionPosts(
       args.courseId,
@@ -428,11 +442,13 @@ export const getAtRiskStudentsHandler = withMetrics(
   "get_at_risk_students",
   async (args: z.infer<typeof GetAtRiskStudentsInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "get_at_risk_students",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    await checkCourseStaffEntitlement(authCtx, bbClient);
 
     const [enrolled, columns] = await Promise.all([
       bbClient.getEnrolledUsers(args.courseId),
@@ -508,11 +524,13 @@ export const draftAnnouncementHandler = withMetrics(
   "draft_announcement",
   async (args: z.infer<typeof DraftAnnouncementInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "draft_announcement",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    await checkCourseStaffEntitlement(authCtx, bbClient);
 
     const toneGuide: Record<string, string> = {
       friendly:
