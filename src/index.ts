@@ -42,7 +42,7 @@ import {
   assertSafeMcpAuthConfig,
   isAuthorizedMcpRequest,
   isAuthorizedMcpApiKeyHeader,
-  isLoopbackHost,
+  isUtilityRouteAuthorized,
   resolveListenHost,
 } from "./mcp-auth.js";
 import {
@@ -792,37 +792,29 @@ async function startHttpServer(): Promise<void> {
     // routes require the same credentials as /mcp. Loopback-only deployments
     // keep them open for local tooling.
     const gateUtilityRoute = async (): Promise<boolean> => {
-      if (isLoopbackHost(config.server.host) && !config.server.trustProxyTls) {
-        return true;
-      }
-      if (isOidcEnabled(config.oidc)) {
-        try {
-          await authenticateOidcRequest(req, config.oidc);
-        } catch (authError) {
-          respondToOidcAuthFailure(res, authError);
-          return false;
-        }
-        if (!isAuthorizedMcpApiKeyHeader(req, config.security.mcpApiKey)) {
+      try {
+        const allowed = await isUtilityRouteAuthorized(req, {
+          host: config.server.host,
+          trustProxyTls: config.server.trustProxyTls,
+          mcpApiKey: config.security.mcpApiKey,
+          oidcEnabled: isOidcEnabled(config.oidc),
+          authenticateOidc: (r) => authenticateOidcRequest(r, config.oidc),
+        });
+        if (!allowed) {
           res.writeHead(401, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "unauthorized" }));
-          return false;
         }
-        return true;
-      }
-      if (!isAuthorizedMcpRequest(req, config.security.mcpApiKey)) {
-        res.writeHead(401, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "unauthorized" }));
+        return allowed;
+      } catch (authError) {
+        respondToOidcAuthFailure(res, authError);
         return false;
       }
-      return true;
     };
 
     // ── Health ──
     if (req.method === "GET" && url.pathname === "/health") {
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(
-        JSON.stringify({ status: "ok" }),
-      );
+      res.end(JSON.stringify({ status: "ok" }));
       return;
     }
 
@@ -847,7 +839,15 @@ async function startHttpServer(): Promise<void> {
 
     // ── OAuth authorization code flow ──
     if (req.method === "GET" && url.pathname === "/oauth/authorize") {
-      if (!(await gateUtilityRoute())) return;
+      // The browser redirect flow must work for real users without API
+      // headers, so it stays open (pending flows are capped). The JSON
+      // variant is programmatic and follows the utility-route gate.
+      if (
+        url.searchParams.get("format") === "json" &&
+        !(await gateUtilityRoute())
+      ) {
+        return;
+      }
       let flow: ReturnType<typeof startAuthorizationCodeFlow>;
       try {
         flow = startAuthorizationCodeFlow();

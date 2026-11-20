@@ -26,6 +26,9 @@ services:
       - ../.env
     environment:
       - PORT=3100
+      # Listen on all container interfaces; the published port is bound by
+      # BIND_ADDRESS below. Overrides any HOST in ../.env.
+      - HOST=0.0.0.0
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:3100}
     read_only: true
