@@ -37,6 +37,7 @@ interface OAuthTokenResponse {
 }
 
 const AUTH_FLOW_TTL_MS = 10 * 60 * 1000;
+const MAX_PENDING_FLOWS = 100;
 const pendingFlows = new Map<string, OAuthPendingFlow>();
 const oauthSessions = new Map<string, OAuthSessionRecord>();
 
@@ -90,6 +91,13 @@ function mapTokenResponse(data: OAuthTokenResponse): OAuthTokenSet {
   };
 }
 
+export class OAuthFlowLimitError extends Error {
+  constructor() {
+    super("Too many pending authorization flows. Retry later.");
+    this.name = "OAuthFlowLimitError";
+  }
+}
+
 export function isOAuthConfigured(): boolean {
   return Boolean(config.oauth.redirectUri || config.server.publicBaseUrl);
 }
@@ -100,6 +108,9 @@ export function startAuthorizationCodeFlow(): {
   redirectUri: string;
 } {
   cleanupExpiredPendingFlows();
+  if (pendingFlows.size >= MAX_PENDING_FLOWS) {
+    throw new OAuthFlowLimitError();
+  }
 
   const state = toBase64Url(randomBytes(24));
   const codeVerifier = toBase64Url(randomBytes(48));

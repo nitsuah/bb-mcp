@@ -42,6 +42,9 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 
+# The container listens on all of its own interfaces; the published port is
+# bound to loopback by default in config/docker-compose.yml.
+ENV HOST=0.0.0.0
 EXPOSE 3100
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \

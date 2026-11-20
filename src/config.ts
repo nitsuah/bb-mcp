@@ -56,7 +56,7 @@ export const config = {
     // requires real TLS (below) — a bare MCP_API_KEY alone doesn't satisfy
     // the startup check, since a key sent over plain HTTP can still be
     // captured and replayed by an on-path attacker.
-    host: process.env.HOST ?? "0.0.0.0",
+    host: process.env.HOST ?? "127.0.0.1",
     // Optional: serve HTTPS directly instead of plain HTTP. Both must be
     // set together (a PEM cert chain and its matching private key file).
     tls: {
