@@ -5,7 +5,11 @@
 
 import { z } from "zod";
 import { bbClient } from "../bb-client.js";
-import { checkAuthorization, parseIdentity } from "../auth.js";
+import {
+  checkAuthorization,
+  checkCourseMemberEntitlement,
+  parseIdentity,
+} from "../auth.js";
 import { withMetrics } from "../metrics.js";
 import type { BbAssignment } from "../types.js";
 
@@ -94,7 +98,15 @@ export const getUpcomingAssignmentsHandler = withMetrics(
   "get_upcoming_assignments",
   async (args: z.infer<typeof GetUpcomingAssignmentsInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({ identity, toolName: "get_upcoming_assignments" });
+    const authCtx = {
+      identity,
+      toolName: "get_upcoming_assignments",
+      courseId: args.courseId,
+    };
+    checkAuthorization(authCtx);
+    if (authCtx.courseId) {
+      await checkCourseMemberEntitlement(authCtx, bbClient);
+    }
 
     const courses = args.courseId
       ? [await bbClient.getCourse(args.courseId)]
@@ -183,11 +195,15 @@ export const getMyGradesHandler = withMetrics(
   "get_my_grades",
   async (args: z.infer<typeof GetMyGradesInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "get_my_grades",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    if (authCtx.courseId) {
+      await checkCourseMemberEntitlement(authCtx, bbClient);
+    }
 
     const courses = args.courseId
       ? [await bbClient.getCourse(args.courseId)]
@@ -248,11 +264,15 @@ export const getCourseContentHandler = withMetrics(
   "get_course_content",
   async (args: z.infer<typeof GetCourseContentInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "get_course_content",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    if (authCtx.courseId) {
+      await checkCourseMemberEntitlement(authCtx, bbClient);
+    }
 
     const content = await bbClient.getCourseContent(args.courseId);
 
@@ -329,11 +349,15 @@ export const getAssignmentFeedbackHandler = withMetrics(
   "get_assignment_feedback",
   async (args: z.infer<typeof GetAssignmentFeedbackInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "get_assignment_feedback",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    if (authCtx.courseId) {
+      await checkCourseMemberEntitlement(authCtx, bbClient);
+    }
 
     const grades = await bbClient.getGrades(args.courseId, identity.userId);
     const grade = grades.find((g) => g.columnId === args.columnId);
@@ -398,11 +422,15 @@ export const getAnnouncementsHandler = withMetrics(
   "get_announcements",
   async (args: z.infer<typeof GetAnnouncementsInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "get_announcements",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    if (authCtx.courseId) {
+      await checkCourseMemberEntitlement(authCtx, bbClient);
+    }
 
     const announcements = await bbClient.getAnnouncements(args.courseId);
 
@@ -455,11 +483,15 @@ export const createAssignmentSubmissionHandler = withMetrics(
   "create_assignment_submission",
   async (args: z.infer<typeof CreateAssignmentSubmissionInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "create_assignment_submission",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    if (authCtx.courseId) {
+      await checkCourseMemberEntitlement(authCtx, bbClient);
+    }
 
     const attempt = await bbClient.createAttempt(
       args.courseId,

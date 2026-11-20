@@ -7,6 +7,7 @@ beforeAll(() => {
 
 const parseIdentityMock = vi.fn((raw: unknown) => raw as any);
 const checkAuthorizationMock = vi.fn();
+const entitlementMock = vi.fn();
 
 const bbClientMock = {
   getCourses: vi.fn(),
@@ -21,6 +22,7 @@ const bbClientMock = {
 vi.mock("../src/auth.js", () => ({
   parseIdentity: parseIdentityMock,
   checkAuthorization: checkAuthorizationMock,
+  checkCourseMemberEntitlement: entitlementMock,
 }));
 
 vi.mock("../src/bb-client.js", () => ({
@@ -288,5 +290,20 @@ describe("student tools", () => {
     const parsed = parseToolText(result);
     expect(parsed.id).toBe("attempt-1");
     expect(parsed.score).toBe(100);
+  });
+});
+
+describe("student read entitlement", () => {
+  it("get_course_content does not fetch content when course entitlement fails", async () => {
+    const { getCourseContentHandler } = await import("../src/tools/student.js");
+    entitlementMock.mockRejectedValueOnce(new Error("not entitled"));
+
+    await expect(
+      getCourseContentHandler({
+        caller_identity: { userId: "s1", role: "student" },
+        courseId: "course-x",
+      } as any),
+    ).rejects.toThrow("not entitled");
+    expect((bbClientMock as any).getCourseContent).not.toHaveBeenCalled();
   });
 });

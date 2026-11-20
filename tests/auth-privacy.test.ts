@@ -276,3 +276,34 @@ describe('checkCourseEntitlement (IDOR guard, CWE-639)', () => {
     expect(client.getCourseMembership).not.toHaveBeenCalled();
   });
 });
+
+describe('course read entitlement', () => {
+  const ctx = { identity: { userId: 'u1', role: 'student' as const }, toolName: 'get_course_content', courseId: 'course-a' };
+
+  it('allows any enrolled member for member checks', async () => {
+    const { checkCourseMemberEntitlement } = await import('../src/auth.js');
+    const client = { getCourseMembership: vi.fn().mockResolvedValue({ userId: 'u1', courseRoleId: 'Student' }) };
+    await expect(checkCourseMemberEntitlement(ctx, client)).resolves.toBeUndefined();
+  });
+
+  it('denies a caller who is not enrolled', async () => {
+    const { checkCourseMemberEntitlement } = await import('../src/auth.js');
+    const client = { getCourseMembership: vi.fn().mockResolvedValue(null) };
+    await expect(checkCourseMemberEntitlement(ctx, client)).rejects.toThrow(/not entitled to access course/);
+  });
+
+  it('denies a student-role enrollment for staff checks', async () => {
+    const { checkCourseStaffEntitlement } = await import('../src/auth.js');
+    const client = { getCourseMembership: vi.fn().mockResolvedValue({ userId: 'u1', courseRoleId: 'Student' }) };
+    await expect(
+      checkCourseStaffEntitlement({ ...ctx, identity: { userId: 'u1', role: 'instructor' } }, client),
+    ).rejects.toThrow(/not entitled/);
+  });
+
+  it('exempts admins', async () => {
+    const { checkCourseStaffEntitlement } = await import('../src/auth.js');
+    const client = { getCourseMembership: vi.fn() };
+    await checkCourseStaffEntitlement({ ...ctx, identity: { userId: 'a1', role: 'admin' } }, client);
+    expect(client.getCourseMembership).not.toHaveBeenCalled();
+  });
+});

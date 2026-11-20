@@ -7,6 +7,7 @@ beforeAll(() => {
 
 const parseIdentityMock = vi.fn((raw: unknown) => raw as any);
 const checkAuthorizationMock = vi.fn();
+const entitlementMock = vi.fn();
 
 const bbClientMock = {
   getEnrolledUsers: vi.fn(),
@@ -21,6 +22,7 @@ const bbClientMock = {
 vi.mock("../src/auth.js", () => ({
   parseIdentity: parseIdentityMock,
   checkAuthorization: checkAuthorizationMock,
+  checkCourseStaffEntitlement: entitlementMock,
 }));
 
 vi.mock("../src/bb-client.js", () => ({
@@ -338,5 +340,20 @@ describe("instructor tools", () => {
     expect(dryRunParsed.draftPrompt).toContain("professionally and formally");
     expect(postedParsed.posted.id).toBe("ann-1");
     expect(postedParsed.draftPrompt).toContain("Write with urgency");
+  });
+});
+
+describe("instructor read entitlement", () => {
+  it("list_roster does not fetch the roster when course entitlement fails", async () => {
+    const { listRosterHandler } = await import("../src/tools/instructor.js");
+    entitlementMock.mockRejectedValueOnce(new Error("not entitled"));
+
+    await expect(
+      listRosterHandler({
+        caller_identity: { userId: "i1", role: "instructor" },
+        courseId: "course-x",
+      } as any),
+    ).rejects.toThrow("not entitled");
+    expect(bbClientMock.getEnrolledUsers).not.toHaveBeenCalled();
   });
 });

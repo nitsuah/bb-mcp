@@ -267,6 +267,7 @@ export interface CourseMembershipLookup {
 export async function checkCourseEntitlement(
   ctx: AuthContext,
   client: CourseMembershipLookup,
+  allowedCourseRoles: ReadonlySet<string> | "any" = GRADE_MANAGING_COURSE_ROLES,
 ): Promise<void> {
   const { identity, courseId } = ctx;
   if (identity.role === "admin") return;
@@ -283,7 +284,8 @@ export async function checkCourseEntitlement(
 
   if (
     !membership ||
-    !GRADE_MANAGING_COURSE_ROLES.has(membership.courseRoleId)
+    (allowedCourseRoles !== "any" &&
+      !allowedCourseRoles.has(membership.courseRoleId))
   ) {
     auditLog(
       "access.denied",
@@ -291,10 +293,28 @@ export async function checkCourseEntitlement(
       `not entitled in course ${courseId} (courseRoleId=${membership?.courseRoleId ?? "none"})`,
     );
     throw new AuthorizationError(
-      `Caller is not entitled to manage grades in course "${courseId}". ` +
-        "The caller_identity.userId must be enrolled in this course as Instructor, TeachingAssistant, or CourseBuilder.",
+      allowedCourseRoles === GRADE_MANAGING_COURSE_ROLES
+        ? `Caller is not entitled to manage grades in course "${courseId}". ` +
+            "The caller_identity.userId must be enrolled in this course as Instructor, TeachingAssistant, or CourseBuilder."
+        : `Caller is not entitled to access course "${courseId}".`,
     );
   }
+}
+
+/** Course read access for any enrolled member (student-facing read tools). */
+export function checkCourseMemberEntitlement(
+  ctx: AuthContext,
+  client: CourseMembershipLookup,
+): Promise<void> {
+  return checkCourseEntitlement(ctx, client, "any");
+}
+
+/** Course read access for course staff (instructor-facing read tools). */
+export function checkCourseStaffEntitlement(
+  ctx: AuthContext,
+  client: CourseMembershipLookup,
+): Promise<void> {
+  return checkCourseEntitlement(ctx, client, GRADE_MANAGING_COURSE_ROLES);
 }
 
 /**

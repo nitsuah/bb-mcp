@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Course-scoped read tools and the `course://{courseId}` resource now check course membership (any member for student-facing reads, course staff for instructor-facing reads; admins exempt) and write audit entries. The resource requires a verified caller identity.
+
 ### Changed
 
 - CI: repo-health shared kit pinned to `nitsuah/.github@a0df883` (was `7d3c243`), which no longer ships the stale `msgpack` advisory row.
