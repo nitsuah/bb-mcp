@@ -126,13 +126,13 @@ export function isAuthorizedMcpApiKeyHeader(
   return timingSafeEqual(provided, expected);
 }
 
-export interface UtilityRouteAuthOptions {
+export interface UtilityRouteAuthOptions<R = IncomingMessage> {
   host: string;
   trustProxyTls: boolean;
   mcpApiKey: string | null;
   oidcEnabled: boolean;
-  /** Rejects when the request carries no valid OIDC access token. */
-  authenticateOidc: (req: IncomingMessage) => Promise<unknown>;
+  /** Rejects when the request carries no valid OIDC access token. Receives the caller's request as-is. */
+  authenticateOidc: (req: R) => Promise<unknown>;
 }
 
 /**
@@ -141,13 +141,12 @@ export interface UtilityRouteAuthOptions {
  * proxy, they need the same credentials as /mcp. OIDC failures reject so the
  * caller can map them to the usual 401/503 responses.
  */
-export async function isUtilityRouteAuthorized(
-  req: Pick<IncomingMessage, "headers">,
-  opts: UtilityRouteAuthOptions,
-): Promise<boolean> {
+export async function isUtilityRouteAuthorized<
+  R extends Pick<IncomingMessage, "headers">,
+>(req: R, opts: UtilityRouteAuthOptions<R>): Promise<boolean> {
   if (isLoopbackHost(opts.host) && !opts.trustProxyTls) return true;
   if (opts.oidcEnabled) {
-    await opts.authenticateOidc(req as IncomingMessage);
+    await opts.authenticateOidc(req);
     return isAuthorizedMcpApiKeyHeader(req, opts.mcpApiKey);
   }
   return isAuthorizedMcpRequest(req, opts.mcpApiKey);
