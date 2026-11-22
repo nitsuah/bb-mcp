@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+// Keep a developer's local .env out of these tests (it could set HOST).
+vi.mock('dotenv/config', () => ({}));
+
 const ORIGINAL_ENV = { ...process.env };
 
 async function loadConfig() {
@@ -13,6 +16,15 @@ afterEach(() => {
 });
 
 describe('config', () => {
+  it('binds to loopback unless HOST is set', async () => {
+    process.env.BB_CLIENT_ID = 'client-id';
+    process.env.BB_CLIENT_SECRET = 'client-secret';
+    delete process.env.HOST;
+
+    const { config } = await loadConfig();
+    expect(config.server.host).toBe('127.0.0.1');
+  });
+
   it('throws when required Blackboard credentials are missing', async () => {
     process.env.BB_CLIENT_ID = '';
     process.env.BB_CLIENT_SECRET = '';

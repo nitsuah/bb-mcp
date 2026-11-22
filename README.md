@@ -212,7 +212,7 @@ Copy `.env.example` to `.env` and set:
 | `BB_OAUTH_AUTHORIZATION_PATH` | — | Override Blackboard authorization endpoint path |
 | `BB_OAUTH_TOKEN_PATH` | — | Override Blackboard token endpoint path |
 | `PORT` | — | HTTP port (default `3100`) |
-| `HOST` | — | Bind address (default `0.0.0.0`, all interfaces — unchanged from before `MCP_API_KEY` existed, so `docker compose`'s `-p 3100:3100` port publishing keeps working). Set to `127.0.0.1` for a genuinely local-only deployment; see `MCP_API_KEY` below. |
+| `HOST` | — | Bind address (default `127.0.0.1`, loopback only). The Docker image and `config/docker-compose.yml` set `HOST=0.0.0.0` inside the container, so a containerized server is a network-reachable bind: it still refuses to start without OIDC (`OIDC_ISSUER`, `OIDC_AUDIENCE`, `OIDC_JWKS_URI`, `OIDC_ROLE_MAP`) plus TLS (`TLS_CERT_PATH`/`TLS_KEY_PATH`), or a `TRUST_PROXY_TLS` proxy sharing its network namespace. Compose publishes the port on `${BIND_ADDRESS:-127.0.0.1}`. Compose reads `BIND_ADDRESS` from its project directory (`config/.env`), the shell environment, or an explicit `docker compose --env-file .env -f config/docker-compose.yml up -d` run from the repo root; the root `.env` is not read for compose interpolation otherwise. See `MCP_API_KEY` below. |
 | `LOG_LEVEL` | — | `info` or `debug` (default `info`) |
 | `PUBLIC_BASE_URL` | — | Publicly reachable base URL of this server (e.g. `https://mcp.example.com`); used in manifest generation and as the OAuth redirect base; defaults to `http://localhost:<PORT>` |
 | `MCP_API_KEY` | Optional second factor | If set with OIDC, send it as `X-MCP-API-Key`; `Authorization: Bearer` carries the end-user OIDC access token. Non-loopback deployments require OIDC regardless of this key. |

@@ -174,3 +174,43 @@ describe("assertSafeMcpAuthConfig (fail closed, CWE-306 + CWE-319)", () => {
     ).not.toThrow();
   });
 });
+
+describe("isUtilityRouteAuthorized", () => {
+  const base = {
+    host: "0.0.0.0",
+    trustProxyTls: false,
+    mcpApiKey: "secret-key",
+    oidcEnabled: false,
+    authenticateOidc: async () => ({}),
+  };
+  const none = { headers: {} };
+  const withKey = { headers: { authorization: "Bearer secret-key" } };
+
+  it("stays open on loopback", async () => {
+    const { isUtilityRouteAuthorized } = await import("../src/mcp-auth.js");
+    expect(await isUtilityRouteAuthorized(none, { ...base, host: "127.0.0.1" })).toBe(true);
+  });
+
+  it("requires credentials on a non-loopback host", async () => {
+    const { isUtilityRouteAuthorized } = await import("../src/mcp-auth.js");
+    expect(await isUtilityRouteAuthorized(none, base)).toBe(false);
+    expect(await isUtilityRouteAuthorized(withKey, base)).toBe(true);
+  });
+
+  it("requires credentials behind a trusted proxy even on loopback", async () => {
+    const { isUtilityRouteAuthorized } = await import("../src/mcp-auth.js");
+    const opts = { ...base, host: "127.0.0.1", trustProxyTls: true };
+    expect(await isUtilityRouteAuthorized(none, opts)).toBe(false);
+    expect(await isUtilityRouteAuthorized(withKey, opts)).toBe(true);
+  });
+
+  it("with OIDC, needs a valid token and the API key header", async () => {
+    const { isUtilityRouteAuthorized } = await import("../src/mcp-auth.js");
+    const oidc = { ...base, oidcEnabled: true };
+    expect(await isUtilityRouteAuthorized({ headers: { "x-mcp-api-key": "secret-key" } }, oidc)).toBe(true);
+    expect(await isUtilityRouteAuthorized(none, oidc)).toBe(false);
+    await expect(
+      isUtilityRouteAuthorized(withKey, { ...oidc, authenticateOidc: async () => { throw new Error("bad token"); } }),
+    ).rejects.toThrow("bad token");
+  });
+});

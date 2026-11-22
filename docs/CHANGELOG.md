@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Network defaults: `HOST` now defaults to loopback, the Docker image sets `HOST=0.0.0.0` inside the container, and compose publishes the port on `${BIND_ADDRESS:-127.0.0.1}`. `/health` returns only `{"status":"ok"}`; on network-reachable binds `/metrics`, `/manifest` and the JSON form of `/oauth/authorize` require the same credentials as `/mcp` (the browser redirect form stays open), and pending OAuth authorization flows are capped.
 - CI: removed the dev-only audit allowlist check; the advisory it covered no longer appears in the audit report.
 - Course-scoped read tools and the `course://{courseId}` resource now check course membership (any member for student-facing reads, course staff for instructor-facing reads; admins exempt) and write audit entries. The `course://` resource now requires a verified (OIDC) caller identity; stdio and loopback sessions without OIDC cannot read it. Membership lookups URL-encode path segments and reject malformed course ids.
 

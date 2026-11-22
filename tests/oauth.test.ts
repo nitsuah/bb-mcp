@@ -85,3 +85,28 @@ describe('oauth authorization code flow', () => {
     ).rejects.toThrow(/Invalid or expired OAuth state/);
   });
 });
+describe("oauth pending flow cap", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("admits exactly 100 pending flows and recovers once they expire", async () => {
+    vi.useFakeTimers();
+    const { startAuthorizationCodeFlow, OAuthFlowLimitError } = await import("../src/oauth.js");
+    for (let i = 0; i < 100; i++) {
+      expect(() => startAuthorizationCodeFlow(`10.0.${i >> 8}.${i & 255}`)).not.toThrow();
+    }
+    expect(() => startAuthorizationCodeFlow("10.9.9.9")).toThrow(OAuthFlowLimitError);
+    vi.advanceTimersByTime(10 * 60 * 1000 + 1);
+    expect(() => startAuthorizationCodeFlow("10.9.9.9")).not.toThrow();
+  });
+
+  it("caps pending flows per client without blocking other clients", async () => {
+    const { startAuthorizationCodeFlow, OAuthFlowLimitError } = await import("../src/oauth.js");
+    for (let i = 0; i < 10; i++) {
+      expect(() => startAuthorizationCodeFlow("203.0.113.7")).not.toThrow();
+    }
+    expect(() => startAuthorizationCodeFlow("203.0.113.7")).toThrow(OAuthFlowLimitError);
+    expect(() => startAuthorizationCodeFlow("203.0.113.8")).not.toThrow();
+  });
+});
