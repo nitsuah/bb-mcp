@@ -10,6 +10,8 @@ export interface OAuthPendingFlow {
   codeVerifier: string;
   createdAt: number;
   redirectUri: string;
+  /** Who started the flow (client address); used for the per-client cap. */
+  client?: string;
 }
 
 export interface OAuthTokenSet {
@@ -38,6 +40,9 @@ interface OAuthTokenResponse {
 
 const AUTH_FLOW_TTL_MS = 10 * 60 * 1000;
 const MAX_PENDING_FLOWS = 100;
+// One client may not hold more than this many pending flows, so it cannot
+// use up the global capacity on its own.
+const MAX_PENDING_FLOWS_PER_CLIENT = 10;
 const pendingFlows = new Map<string, OAuthPendingFlow>();
 const oauthSessions = new Map<string, OAuthSessionRecord>();
 
@@ -102,7 +107,7 @@ export function isOAuthConfigured(): boolean {
   return Boolean(config.oauth.redirectUri || config.server.publicBaseUrl);
 }
 
-export function startAuthorizationCodeFlow(): {
+export function startAuthorizationCodeFlow(client?: string): {
   authorizationUrl: string;
   state: string;
   redirectUri: string;
@@ -110,6 +115,15 @@ export function startAuthorizationCodeFlow(): {
   cleanupExpiredPendingFlows();
   if (pendingFlows.size >= MAX_PENDING_FLOWS) {
     throw new OAuthFlowLimitError();
+  }
+  if (client) {
+    let mine = 0;
+    for (const flow of pendingFlows.values()) {
+      if (flow.client === client) mine += 1;
+    }
+    if (mine >= MAX_PENDING_FLOWS_PER_CLIENT) {
+      throw new OAuthFlowLimitError();
+    }
   }
 
   const state = toBase64Url(randomBytes(24));
@@ -122,6 +136,7 @@ export function startAuthorizationCodeFlow(): {
     codeVerifier,
     createdAt: now(),
     redirectUri,
+    client,
   });
 
   const url = new URL(getAuthorizationEndpoint());

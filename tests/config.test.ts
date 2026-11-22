@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+// Keep a developer's local .env out of these tests (it could set HOST).
+vi.mock('dotenv/config', () => ({}));
+
 const ORIGINAL_ENV = { ...process.env };
 
 async function loadConfig() {

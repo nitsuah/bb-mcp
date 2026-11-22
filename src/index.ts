@@ -52,7 +52,7 @@ import {
 } from "./oidc-auth.js";
 import { runWithVerifiedIdentity } from "./request-identity.js";
 import { readCourseResource } from "./course-resource.js";
-import type { ServerResponse } from "node:http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 
 // ── Tool imports ─────────────────────────────────────────────────────────
 
@@ -662,6 +662,23 @@ function respondToOidcAuthFailure(res: ServerResponse, error: unknown): void {
 
 // ── HTTP mode (default) ───────────────────────────────────────────────────
 
+// Identifies who started an OAuth flow, for the per-client pending cap.
+// Behind the trusted TLS proxy every socket is the proxy, so use the address
+// it appended last to X-Forwarded-For; otherwise the socket address.
+function oauthClientKey(req: IncomingMessage, trustProxyTls: boolean): string {
+  if (trustProxyTls) {
+    const forwarded = req.headers["x-forwarded-for"];
+    const list = (
+      Array.isArray(forwarded) ? forwarded.join(",") : (forwarded ?? "")
+    )
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (list.length) return list[list.length - 1];
+  }
+  return req.socket.remoteAddress ?? "unknown";
+}
+
 async function startHttpServer(): Promise<void> {
   const { config } = await import("./config.js");
 
@@ -841,7 +858,9 @@ async function startHttpServer(): Promise<void> {
       }
       let flow: ReturnType<typeof startAuthorizationCodeFlow>;
       try {
-        flow = startAuthorizationCodeFlow();
+        flow = startAuthorizationCodeFlow(
+          oauthClientKey(req, config.server.trustProxyTls),
+        );
       } catch (flowError) {
         if (flowError instanceof OAuthFlowLimitError) {
           res.writeHead(429, {

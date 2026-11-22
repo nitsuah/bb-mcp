@@ -86,18 +86,27 @@ describe('oauth authorization code flow', () => {
   });
 });
 describe("oauth pending flow cap", () => {
-  it("refuses new flows once too many are pending", async () => {
-    process.env.PUBLIC_BASE_URL = "https://mcp.example.edu";
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("admits exactly 100 pending flows and recovers once they expire", async () => {
+    vi.useFakeTimers();
     const { startAuthorizationCodeFlow, OAuthFlowLimitError } = await import("../src/oauth.js");
-    let thrown: unknown;
-    for (let i = 0; i < 150; i++) {
-      try {
-        startAuthorizationCodeFlow();
-      } catch (error) {
-        thrown = error;
-        break;
-      }
+    for (let i = 0; i < 100; i++) {
+      expect(() => startAuthorizationCodeFlow(`10.0.${i >> 8}.${i & 255}`)).not.toThrow();
     }
-    expect(thrown).toBeInstanceOf(OAuthFlowLimitError);
+    expect(() => startAuthorizationCodeFlow("10.9.9.9")).toThrow(OAuthFlowLimitError);
+    vi.advanceTimersByTime(10 * 60 * 1000 + 1);
+    expect(() => startAuthorizationCodeFlow("10.9.9.9")).not.toThrow();
+  });
+
+  it("caps pending flows per client without blocking other clients", async () => {
+    const { startAuthorizationCodeFlow, OAuthFlowLimitError } = await import("../src/oauth.js");
+    for (let i = 0; i < 10; i++) {
+      expect(() => startAuthorizationCodeFlow("203.0.113.7")).not.toThrow();
+    }
+    expect(() => startAuthorizationCodeFlow("203.0.113.7")).toThrow(OAuthFlowLimitError);
+    expect(() => startAuthorizationCodeFlow("203.0.113.8")).not.toThrow();
   });
 });
