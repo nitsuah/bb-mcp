@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- CI: removed the dev-only audit allowlist check; the advisory it covered no longer appears in the audit report.
+- Course-scoped read tools and the `course://{courseId}` resource now check course membership (any member for student-facing reads, course staff for instructor-facing reads; admins exempt) and write audit entries. The `course://` resource now requires a verified (OIDC) caller identity; stdio and loopback sessions without OIDC cannot read it. Membership lookups URL-encode path segments and reject malformed course ids.
+
 ### Changed
 
 - CI: repo-health shared kit pinned to `nitsuah/.github@a0df883` (was `7d3c243`), which no longer ships the stale `msgpack` advisory row.
