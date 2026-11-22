@@ -21,6 +21,7 @@ export const TOOL_ROLE_RULES: Readonly<Record<string, readonly Role[]>> = {
   get_at_risk_students: ["instructor", "admin"],
   draft_announcement: ["instructor", "admin"],
   search_course_materials: ["student", "instructor", "admin"],
+  course_resource: ["student", "instructor", "admin"],
   // Admin tools
   list_users: ["admin"],
   get_user: ["admin"],

@@ -7,6 +7,7 @@ beforeAll(() => {
 
 const parseIdentityMock = vi.fn((raw: unknown) => raw as any);
 const checkAuthorizationMock = vi.fn();
+const entitlementMock = vi.fn();
 
 const bbClientMock = {
   getCourses: vi.fn(),
@@ -17,6 +18,7 @@ const bbClientMock = {
 vi.mock("../src/auth.js", () => ({
   parseIdentity: parseIdentityMock,
   checkAuthorization: checkAuthorizationMock,
+  checkCourseMemberEntitlement: entitlementMock,
 }));
 
 vi.mock("../src/bb-client.js", () => ({

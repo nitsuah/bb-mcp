@@ -51,6 +51,7 @@ import {
   OidcProviderUnavailableError,
 } from "./oidc-auth.js";
 import { runWithVerifiedIdentity } from "./request-identity.js";
+import { readCourseResource } from "./course-resource.js";
 import type { ServerResponse } from "node:http";
 
 // ── Tool imports ─────────────────────────────────────────────────────────
@@ -583,18 +584,8 @@ function buildServer(): McpServer {
 
   // MCP Resource: course://[courseId]
   server.resource("course", "course://{courseId}", async (uri) => {
-    const courseId = uri.pathname.replace(/^\/+/, "");
     const { bbClient } = await import("./bb-client.js");
-    const course = await bbClient.getCourse(courseId);
-    return {
-      contents: [
-        {
-          uri: uri.href,
-          text: JSON.stringify(course, null, 2),
-          mimeType: "application/json",
-        },
-      ],
-    };
+    return readCourseResource(uri, bbClient);
   });
 
   return server;

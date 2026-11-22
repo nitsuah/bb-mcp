@@ -4,7 +4,11 @@
 
 import { z } from "zod";
 import { bbClient } from "../bb-client.js";
-import { checkAuthorization, parseIdentity } from "../auth.js";
+import {
+  checkAuthorization,
+  checkCourseMemberEntitlement,
+  parseIdentity,
+} from "../auth.js";
 import { withMetrics } from "../metrics.js";
 
 export const SearchCourseMaterialsInput = z.object({
@@ -17,11 +21,15 @@ export const searchCourseMaterialsHandler = withMetrics(
   "search_course_materials",
   async (args: z.infer<typeof SearchCourseMaterialsInput>) => {
     const identity = parseIdentity(args.caller_identity);
-    checkAuthorization({
+    const authCtx = {
       identity,
       toolName: "search_course_materials",
       courseId: args.courseId,
-    });
+    };
+    checkAuthorization(authCtx);
+    if (authCtx.courseId) {
+      await checkCourseMemberEntitlement(authCtx, bbClient);
+    }
 
     const courses = args.courseId
       ? [await bbClient.getCourse(args.courseId)]
