@@ -39,17 +39,17 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@modelcontextprotocol/inspector": "^2.14.0",
-    "@playwright/test": "1.65.0",
+    "@modelcontextprotocol/inspector": "^2.16.0",
+    "@playwright/test": "1.65.1",
     "@types/node": "^26.6.6",
-    "@vitest/coverage-v8": "^5.1.0",
-    "eslint": "^10.14.0",
+    "@vitest/coverage-v8": "^5.1.1",
+    "eslint": "^10.15.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.7",
     "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.1",
+    "typescript-eslint": "^8.73.0",
     "vitest": "^5.0.0"
   },
   "engines": {
