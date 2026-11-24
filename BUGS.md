@@ -1,5 +1,5 @@
 # Bugs
 
-> Generated from open `bot:journey` / `bot:review` issues in [nitsuah/bb-mcp](https://github.com/nitsuah/bb-mcp/issues). Don’t edit this file by hand: fix or close the issue. Updated 2026-11-23 by [the nightly journey run](https://github.com/nitsuah/bb-mcp/actions/runs/45133108076).
+> Generated from open `bot:journey` / `bot:review` issues in [nitsuah/bb-mcp](https://github.com/nitsuah/bb-mcp/issues). Don’t edit this file by hand: fix or close the issue. Updated 2026-11-24 by [the nightly journey run](https://github.com/nitsuah/bb-mcp/actions/runs/45350154017).
 
 No open bot issues. 🎉
