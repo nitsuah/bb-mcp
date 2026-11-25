@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Closed the `search_users` task: `list_users` already supports name, userId, and email search; no separate tool is needed (#194).
+
 - CI: repo-health shared kit pinned to `nitsuah/.github@a0df883` (was `7d3c243`), which no longer ships the stale `msgpack` advisory row.
 - Dependencies: Playwright 1.65 (journeys workflow image bumped to `v1.65.0-jammy` to match), Vitest 5.1, MCP Inspector 2.15, `@hono/node-server` 2.1.8, and an in-range lockfile refresh.
 - `npm audit fix`: follow-redirects, vite and hono bumped in the lockfile to clear the high-severity audit gate.
