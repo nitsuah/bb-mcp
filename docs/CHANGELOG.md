@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added a standalone Zod schema and parser for normalized Blackboard grade, submission, login, and course-update activity events (#191). Webhook wiring remains out of scope.
+
 ### Security
 
 - Network defaults: `HOST` now defaults to loopback, the Docker image sets `HOST=0.0.0.0` inside the container, and compose publishes the port on `${BIND_ADDRESS:-127.0.0.1}`. `/health` returns only `{"status":"ok"}`; on network-reachable binds `/metrics`, `/manifest` and the JSON form of `/oauth/authorize` require the same credentials as `/mcp` (the browser redirect form stays open), and pending OAuth authorization flows are capped.
