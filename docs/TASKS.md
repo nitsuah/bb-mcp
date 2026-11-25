@@ -24,8 +24,9 @@ _All completed foundation, 2026 Q2, and 2026 Q3 work is shipped and condensed in
 
 ### P3 - Exploratory
 
-- [ ] Add `search_users` (admin directory lookup).
+- [x] Add `search_users` (admin directory lookup).
   - Priority: P3
+  - Done: covered by `list_users`'s `search` filter (name, userId or email); no separate tool.
   - Context: admin directory lookup is useful, but not part of the initial foundation path.
   - Acceptance Criteria: administrators can query user records safely.
 
