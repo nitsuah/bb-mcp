@@ -30,7 +30,7 @@ _All completed foundation, 2026 Q2, and 2026 Q3 work is shipped and condensed in
   - Acceptance Criteria: administrators can query user records safely.
 
 - [ ] **Analytics/Product Owner tools**: event telemetry tap, engagement metrics aggregation, AI recommendation signal export. See ROADMAP.md 2027 Q1 — depends on the event pipeline below.
-- [ ] **Blackboard activity ingestion**: define an event schema for grade posts, submission events, login activity, and course changes. See ROADMAP.md 2027 Q1.
+- [ ] **Blackboard activity ingestion**: normalized event schema shipped in #191; webhook bridge, durable storage, and downstream consumers remain open. See ROADMAP.md 2027 Q1.
 
 ### 2027 Q1 — needs scoping (moved from 2026 Q3; a real subsystem, not a tool-sized change)
 
