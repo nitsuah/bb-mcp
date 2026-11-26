@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Unit tests for `get_upcoming_assignments` date-window boundaries (#198), `search_course_materials` snippets and empty matches (#199), `list_users` pagination and empty responses (#200), `list_roster` partial display names (#201) and `get_my_courses` optional fields (#202).
 - Added `src/webhook-signature.ts`, a constant-time HMAC-SHA256 verifier for inbound webhook bodies (#193). Route and secret wiring remain out of scope.
 - Added a standalone Zod schema and parser for normalized Blackboard grade, submission, login, and course-update activity events (#191). Webhook wiring remains out of scope.
 
