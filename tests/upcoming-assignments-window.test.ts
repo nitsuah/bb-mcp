@@ -26,7 +26,12 @@ vi.mock("../src/auth.js", () => ({
 }));
 vi.mock("../src/bb-client.js", () => ({ bbClient: bbClientMock }));
 
-const parse = (result: any): any => JSON.parse(result.content[0].text);
+type Item = { id: string; course: string | null; courseId: string | null };
+type ToolResult = { content: Array<{ text?: unknown }> };
+type Assignment = { id: string; title: string; due: string };
+
+const parse = (result: ToolResult): Item[] =>
+  JSON.parse(String(result.content[0].text)) as Item[];
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -35,7 +40,7 @@ beforeEach(() => {
 const NOW = Date.parse("2026-05-24T00:00:00.000Z");
 const DAY = 86_400_000;
 const caller = { userId: "u1", role: "student" };
-const dueAt = (id: string, offsetMs: number) => ({
+const dueAt = (id: string, offsetMs: number): Assignment => ({
   id,
   title: id,
   due: new Date(NOW + offsetMs).toISOString(),
@@ -53,7 +58,7 @@ describe("get_upcoming_assignments date window", () => {
     vi.useRealTimers();
   });
 
-  async function run(input: Record<string, unknown>) {
+  async function run(input: Record<string, unknown>): Promise<Item[]> {
     const { getUpcomingAssignmentsHandler, GetUpcomingAssignmentsInput } =
       await import("../src/tools/student.js");
     return parse(
@@ -78,7 +83,7 @@ describe("get_upcoming_assignments date window", () => {
       dueAt("before", -1),
     ]);
 
-    const ids = (await run(input)).map((a: any) => a.id);
+    const ids = (await run(input)).map((a) => a.id);
 
     expect(ids).toEqual(["start", "end"]);
   });
@@ -109,12 +114,12 @@ describe("get_upcoming_assignments date window", () => {
       { id: "b", courseId: "B", name: "Course B" },
     ]);
     bbClientMock.getAssignments
-      .mockResolvedValueOnce([dueAt("a-late", 3 * DAY), dueAt("a-tie", DAY)])
+      .mockResolvedValueOnce([dueAt("a-late", 3 * DAY), dueAt("z-tie", DAY)])
       .mockResolvedValueOnce([dueAt("b-tie", DAY), dueAt("b-mid", 2 * DAY)]);
 
-    const ids = (await run({})).map((a: any) => a.id);
+    const ids = (await run({})).map((a) => a.id);
 
-    expect(ids).toEqual(["a-tie", "b-tie", "b-mid", "a-late"]);
+    expect(ids).toEqual(["z-tie", "b-tie", "b-mid", "a-late"]);
   });
 
   it("returns an empty list when nothing is due", async () => {
