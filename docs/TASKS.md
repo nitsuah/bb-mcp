@@ -38,6 +38,7 @@ _All completed foundation, 2026 Q2, and 2026 Q3 work is shipped and condensed in
 See ROADMAP.md `## 2027 Q1` → *Needs scoping* for the full writeup on each of these.
 
 - [ ] Webhook-to-SSE bridge — receive and authenticate inbound Blackboard webhook calls, fan out to active SSE sessions.
+  - verification primitive: `src/webhook-signature.ts` (#193); route and secret wiring remain
 - [ ] Event-driven pipeline scaling — normalized event schema + durable storage decision, ahead of "scaling" being a meaningful question.
 - [ ] Vector store integration for semantic course content search and AI recommendation signals — needs an RBAC/FERPA-safe indexing pipeline, not just a vector store.
 - [ ] Publish a stable MCP client SDK / integration contract — a versioned deliverable on top of `GET /manifest`, separate from bb-mcp itself.

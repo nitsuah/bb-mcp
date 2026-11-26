@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added `src/webhook-signature.ts`, a constant-time HMAC-SHA256 verifier for inbound webhook bodies (#193). Route and secret wiring remain out of scope.
 - Added a standalone Zod schema and parser for normalized Blackboard grade, submission, login, and course-update activity events (#191). Webhook wiring remains out of scope.
 
 ### Security
