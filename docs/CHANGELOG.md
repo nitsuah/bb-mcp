@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- CI: the Pages artifact is now named per run attempt, so re-running a failed deploy no longer fails on a duplicate `github-pages` artifact.
+
 ### Added
 
 - Added `src/webhook-signature.ts`, a constant-time HMAC-SHA256 verifier for inbound webhook bodies (#193). Route and secret wiring remain out of scope.

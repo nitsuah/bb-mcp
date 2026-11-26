@@ -80,8 +80,12 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
+          # Per-attempt name: a re-run would otherwise find two "github-pages" artifacts and fail.
+          name: github-pages-${{ github.run_attempt }}
           path: docs/brag
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
