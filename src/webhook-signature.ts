@@ -1,3 +1,7 @@
+/**
+ * Constant-time HMAC-SHA256 verification for inbound webhook bodies.
+ * Verification primitive only; route and secret wiring live elsewhere.
+ */
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /** Lowercase hex HMAC-SHA256 of the raw request body. */

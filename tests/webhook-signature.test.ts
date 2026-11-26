@@ -5,6 +5,16 @@ const BODY = '{"event":"grade.updated"}';
 const SECRET = 'shared-secret';
 
 describe('signWebhookBody', () => {
+  // Published HMAC-SHA256 test vector (RFC 4231 style, widely cited), independent of this module.
+  const VECTOR_BODY = 'The quick brown fox jumps over the lazy dog';
+  const VECTOR_SECRET = 'key';
+  const VECTOR_DIGEST = 'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8';
+
+  it('matches a known HMAC-SHA256 digest', () => {
+    expect(signWebhookBody(VECTOR_BODY, VECTOR_SECRET)).toBe(VECTOR_DIGEST);
+    expect(verifyWebhookSignature(VECTOR_BODY, VECTOR_DIGEST, VECTOR_SECRET)).toBe(true);
+  });
+
   it('returns 64 lowercase hex characters', () => {
     expect(signWebhookBody('a', 'k')).toMatch(/^[0-9a-f]{64}$/);
   });
