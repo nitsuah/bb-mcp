@@ -115,13 +115,14 @@ function toBbApiError(err: unknown): BbApiError {
       : undefined;
   const status = response?.status ?? 0;
   const data = response?.data;
-  const rawDetail =
-    (data as Record<string, string> | undefined)?.message ??
+  const errorMessage =
     err instanceof Error
       ? err.message
       : typeof err === "string"
         ? err
         : "Blackboard API error";
+  const rawDetail =
+    (data as Record<string, string> | undefined)?.message ?? errorMessage;
   const category = categorizeBbStatus(status);
   return new BbApiError(
     mapBbErrorMessage(status, category, rawDetail),
