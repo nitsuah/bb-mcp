@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- CI: pull requests now run the shared risk guard check (`.github/workflows/risk-guard.yml`) (#209).
 - CI: the Pages artifact is now named per run attempt, so re-running a failed deploy no longer fails on a duplicate `github-pages` artifact.
 
 ### Added
