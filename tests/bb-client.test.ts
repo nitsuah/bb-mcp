@@ -225,6 +225,20 @@ describe('BlackboardClient', () => {
     await expect(client.getDiscussionPosts('c1', 't1')).resolves.toEqual([]);
   });
 
+  it('rejects a token response that has no access token', async () => {
+    const { BlackboardClient } = await import('../src/bb-client.js');
+    const client = new BlackboardClient();
+    tokenPost.mockResolvedValue({ data: { expires_in: 3600 } });
+
+    await expect(client.authenticate()).rejects.toThrow('no access_token');
+    // Nothing was cached, so the next call asks again.
+    await expect(client.authenticate()).rejects.toThrow('no access_token');
+    expect(tokenPost).toHaveBeenCalledTimes(2);
+
+    tokenPost.mockResolvedValue({ data: { access_token: 't', expires_in: 3600 } });
+    await expect(client.authenticate()).resolves.toBeUndefined();
+  });
+
   it('probes connectivity using a tiny course query', async () => {
     const { BlackboardClient } = await import('../src/bb-client.js');
     const client = new BlackboardClient();

@@ -105,6 +105,39 @@ export class BbApiError extends Error {
   }
 }
 
+/** Turns a transport or HTTP failure into a categorized BbApiError. */
+function toBbApiError(err: unknown): BbApiError {
+  // Already categorized, e.g. a token failure passing through the interceptor.
+  if (err instanceof BbApiError) return err;
+  const response =
+    typeof err === "object" && err !== null && "response" in err
+      ? (err as { response?: { status?: number; data?: unknown } }).response
+      : undefined;
+  const status = response?.status ?? 0;
+  const data = response?.data;
+  const message =
+    typeof err === "object" && err !== null && "message" in err
+      ? (err as { message?: unknown }).message
+      : undefined;
+  const errorMessage =
+    err instanceof Error
+      ? err.message
+      : typeof err === "string"
+        ? err
+        : typeof message === "string"
+          ? message
+          : "Blackboard API error";
+  const rawDetail =
+    (data as Record<string, string> | undefined)?.message ?? errorMessage;
+  const category = categorizeBbStatus(status);
+  return new BbApiError(
+    mapBbErrorMessage(status, category, rawDetail),
+    status,
+    data,
+    category,
+  );
+}
+
 export class BlackboardClient {
   private http: AxiosInstance;
   private tokenCache: TokenCache | null = null;
@@ -131,19 +164,7 @@ export class BlackboardClient {
     this.http.interceptors.response.use(
       (r) => r,
       (err: AxiosError) => {
-        const status = err.response?.status ?? 0;
-        const data = err.response?.data;
-        const rawDetail =
-          (data as Record<string, string> | undefined)?.message ??
-          err.message ??
-          "Blackboard API error";
-        const category = categorizeBbStatus(status);
-        throw new BbApiError(
-          mapBbErrorMessage(status, category, rawDetail),
-          status,
-          data,
-          category,
-        );
+        throw toBbApiError(err);
       },
     );
   }
@@ -172,11 +193,34 @@ export class BlackboardClient {
       },
     );
 
+    const accessToken = res.data?.access_token;
+    if (typeof accessToken !== "string" || !accessToken) {
+      throw new BbApiError(
+        mapBbErrorMessage(
+          0,
+          "authentication",
+          "the token response had no access_token",
+        ),
+        0,
+        undefined,
+        "authentication",
+      );
+    }
+
     this.tokenCache = {
-      accessToken: res.data.access_token,
+      accessToken,
       expiresAt: now + res.data.expires_in * 1000,
     };
     return this.tokenCache.accessToken;
+  }
+
+  /** Runs the OAuth token exchange alone, so a probe can report it separately. */
+  async authenticate(): Promise<void> {
+    try {
+      await this.getAccessToken();
+    } catch (err) {
+      throw toBbApiError(err);
+    }
   }
 
   // ── Courses ──────────────────────────────────────────────────────────────
