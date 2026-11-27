@@ -66,8 +66,58 @@ bb-mcp has no web UI, so these are generated from the real tool manifest, RBAC p
 
 ## Quick start
 
+Runs on your machine over stdio. Needs Node.js 20.19 or newer, git, and REST application credentials from [developer.blackboard.com](https://developer.blackboard.com).
+
+1. Clone and build:
+
+   ```bash
+   git clone https://github.com/nitsuah/bb-mcp
+   cd bb-mcp
+   npm ci
+   npm run build
+   ```
+
+2. Create `.env` with `cp .env.example .env`, then set `BB_CLIENT_ID`, `BB_CLIENT_SECRET` and `BB_BASE_URL`. Leave the other values as they are.
+
+3. Check the settings, then the connection. `--doctor` only checks that values are set (placeholders count). `--probe` calls your Blackboard instance; a working setup shows `ok` for both the token exchange and the API request.
+
+   ```bash
+   node dist/index.js --doctor
+   node dist/index.js --probe
+   ```
+
+4. Add the server to your MCP client. For Claude Desktop this is `claude_desktop_config.json`. The client does not read your `.env`, so repeat the three values:
+
+   ```json
+   {
+     "mcpServers": {
+       "blackboard-learn": {
+         "command": "node",
+         "args": ["/path/to/bb-mcp/dist/index.js", "--stdio"],
+         "env": {
+           "BB_CLIENT_ID": "your-client-id",
+           "BB_CLIENT_SECRET": "your-client-secret",
+           "BB_BASE_URL": "https://your-instance.blackboard.com"
+         }
+       }
+     }
+   }
+   ```
+
+5. Restart the client and ask: "What do I have due this week? My Blackboard user ID is bbuser123 and my role is student."
+
+To run the HTTP server on loopback instead, use `node dist/index.js`, then open `http://localhost:3100/health`.
+
+## Docker and network deployments
+
+The Docker image and `config/docker-compose.yml` listen on `HOST=0.0.0.0` inside the container, which the server treats as network-reachable. The three Blackboard values are not enough: it exits at startup unless you also set
+
+- OIDC: `OIDC_ISSUER`, `OIDC_AUDIENCE`, `OIDC_JWKS_URI` and `OIDC_ROLE_MAP`, and
+- TLS: `TLS_CERT_PATH` and `TLS_KEY_PATH` (the files must be mounted into the container), or `TRUST_PROXY_TLS=true` with a TLS-terminating proxy that shares the container's network namespace.
+
+See [Configuration](#configuration) and [Identity & access control](#identity--access-control). Once those are set:
+
 ```bash
-cp .env.example .env   # Fill in BB_CLIENT_ID, BB_CLIENT_SECRET, BB_BASE_URL
 docker compose -f config/docker-compose.yml up -d
 ```
 
@@ -107,13 +157,9 @@ make docker-tools     # Print the published tool catalog from the built image
 make docker-down      # Stop the standalone stack
 ```
 
-### Docker (recommended)
+### Docker Make targets
 
-```bash
-cp .env.example .env
-# Fill in BB_CLIENT_ID, BB_CLIENT_SECRET, BB_BASE_URL
-docker compose -f config/docker-compose.yml up -d
-```
+Meet the [network deployment requirements](#docker-and-network-deployments) before `make docker-up`.
 
 Repo-local standalone commands:
 
@@ -129,7 +175,7 @@ make docker-down      # Stop the standalone stack
 
 The standalone compose stack keeps the same Dockerfile path used by agent-board, but now adds a more confined runtime posture: read-only filesystem, dropped Linux capabilities, `no-new-privileges`, and a small `/tmp` tmpfs for Node runtime needs.
 
-Server is live at `http://localhost:3100`.
+Endpoints (default port 3100; a TLS deployment serves them over HTTPS):
 
 | Endpoint | Description |
 |---|---|

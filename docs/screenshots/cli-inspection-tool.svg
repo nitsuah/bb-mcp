@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="940" viewBox="0 0 1200 940">
+<rect width="1200" height="940" fill="#0f172a"/>
+<text x="48" y="56" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#38bdf8" xml:space="preserve">$ node dist/index.js --help</text>
+<text x="48" y="84" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">blackboard-learn-mcp v0.1.0</text>
+<text x="48" y="112" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve"></text>
+<text x="48" y="140" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">Usage:</text>
+<text x="48" y="168" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  bb-mcp                 Start the HTTP MCP server</text>
+<text x="48" y="196" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  bb-mcp --stdio         Start the stdio MCP server</text>
+<text x="48" y="224" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  bb-mcp --help          Show CLI help</text>
+<text x="48" y="252" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  bb-mcp --version       Show version</text>
+<text x="48" y="280" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  bb-mcp --manifest      Print provider manifest JSON</text>
+<text x="48" y="308" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  bb-mcp --tools         Print tool catalog</text>
+<text x="48" y="336" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  bb-mcp --doctor        Print environment readiness report</text>
+<text x="48" y="364" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  bb-mcp --probe         Validate Blackboard auth + a minimal API call</text>
+<text x="48" y="392" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve"></text>
+<text x="48" y="420" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">Options:</text>
+<text x="48" y="448" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  --base-url &lt;url&gt;       Override manifest base URL for --manifest/--tools</text>
+<text x="48" y="476" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  --json                 Print machine-readable JSON for --tools/--doctor</text>
+<text x="48" y="504" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve"></text>
+<text x="48" y="532" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#38bdf8" xml:space="preserve">$ node dist/index.js --doctor</text>
+<text x="48" y="560" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">blackboard-learn-mcp v0.1.0</text>
+<text x="48" y="588" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">Doctor report</text>
+<text x="48" y="616" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  Blackboard client ID     : set</text>
+<text x="48" y="644" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  Blackboard client secret : set</text>
+<text x="48" y="672" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  Blackboard base URL      : https://blackboard.example.edu</text>
+<text x="48" y="700" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  OAuth redirect URI       : (derived from PUBLIC_BASE_URL)</text>
+<text x="48" y="728" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  OAuth scope              : (provider default)</text>
+<text x="48" y="756" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  HTTP port                : 3100</text>
+<text x="48" y="784" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  Public base URL          : http://localhost:3100</text>
+<text x="48" y="812" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  Metrics push URL         : not set</text>
+<text x="48" y="840" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  Restricted tools         : 8</text>
+<text x="48" y="868" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  Blackboard ready         : yes</text>
+<text x="48" y="896" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="20" fill="#e2e8f0" xml:space="preserve">  Auth code flow ready     : yes</text>
+</svg>

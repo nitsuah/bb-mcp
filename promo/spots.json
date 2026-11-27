@@ -128,6 +128,14 @@
       "visual": "none"
     },
     {
+      "id": "verified-http-caller-identity",
+      "title": "Verified HTTP Caller Identity",
+      "category": "Security",
+      "screenshots": [],
+      "spots": [],
+      "visual": "none"
+    },
+    {
       "id": "getmycourses",
       "title": "get_my_courses",
       "category": "Student tools (9)",
@@ -479,7 +487,7 @@
       "id": "cli-inspection-tool",
       "title": "CLI Inspection Tool",
       "category": "CLI & Operations",
-      "screenshots": [],
+      "screenshots": ["docs/screenshots/cli-inspection-tool.png"],
       "spots": [],
       "visual": "none"
     },
@@ -503,7 +511,7 @@
       "id": "blackboard-probe-command",
       "title": "Blackboard Probe Command",
       "category": "CLI & Operations",
-      "screenshots": [],
+      "screenshots": ["docs/screenshots/cli-inspection-tool.png"],
       "spots": [],
       "visual": "none"
     },
@@ -550,6 +558,14 @@
     {
       "id": "node-js-optimized",
       "title": "Node.js Optimized",
+      "category": "DevOps & Infrastructure",
+      "screenshots": [],
+      "spots": [],
+      "visual": "none"
+    },
+    {
+      "id": "nightly-journeys",
+      "title": "Nightly Journeys",
       "category": "DevOps & Infrastructure",
       "screenshots": [],
       "spots": [],
@@ -619,22 +635,13 @@
       ],
       "published": "docs/brag/bb-mcp-21s-vert.mp4",
       "rendered": "2026-10-15"
-    },
-    {
-      "id": "brag-21s",
-      "seconds": 21,
-      "format": "landscape",
-      "tool": "brag (plan in brag-plan.md)",
-      "features": [],
-      "published": "docs/brag/brag.mp4",
-      "rendered": "2026-10-02"
     }
   ],
   "reels": [
     {
       "id": "hero",
-      "spots": ["bb-mcp-21s", "brag-21s"],
-      "published": "docs/brag/brag.mp4"
+      "spots": ["bb-mcp-21s"],
+      "published": "docs/brag/bb-mcp-21s.mp4"
     }
   ],
   "brand": {

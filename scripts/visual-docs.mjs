@@ -21,6 +21,9 @@ const outDir = join(root, "docs", "screenshots");
 const { buildProviderManifest } = await import(
   new URL("../dist/manifest.js", import.meta.url)
 );
+const { buildDoctorReport, formatDoctorReport, getCliHelpText } = await import(
+  new URL("../dist/cli.js", import.meta.url)
+);
 const manifest = buildProviderManifest("http://localhost:3100");
 const tools = manifest.tools;
 
@@ -245,7 +248,42 @@ function toolCall() {
   return svgDoc(W, y + 20, body);
 }
 
+// ── 4. CLI inspection: real --help and --doctor formatters, fixed env ──────
+function cliInspection() {
+  const W = 1200;
+  const report = buildDoctorReport({
+    BB_CLIENT_ID: "example-id",
+    BB_CLIENT_SECRET: "example-secret",
+    BB_BASE_URL: "https://blackboard.example.edu",
+    PUBLIC_BASE_URL: "http://localhost:3100",
+    // The eight tools .env.example lists.
+    RESTRICTED_TOOLS:
+      "get_at_risk_students,get_grade_distribution,get_submission_status,get_grades,list_users,get_user,list_enrollments,list_audit_logs",
+  });
+  const lines = [
+    "$ node dist/index.js --help",
+    ...getCliHelpText().split("\n"),
+    "",
+    "$ node dist/index.js --doctor",
+    ...formatDoctorReport(report).split("\n"),
+  ];
+  const body = lines
+    .map((line, i) =>
+      text(
+        48,
+        56 + i * 28,
+        line,
+        20,
+        line.startsWith("$") ? C.accent : C.text,
+        'xml:space="preserve"',
+      ),
+    )
+    .join("\n");
+  return svgDoc(W, 56 + lines.length * 28 + 16, body);
+}
+
 const outputs = {
+  "cli-inspection-tool": cliInspection(),
   "standardized-tool-schema": toolCatalog(),
   "rbac-middleware": rbacMatrix(),
   getmygrades: toolCall(),
