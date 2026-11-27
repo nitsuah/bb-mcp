@@ -107,6 +107,8 @@ export class BbApiError extends Error {
 
 /** Turns a transport or HTTP failure into a categorized BbApiError. */
 function toBbApiError(err: AxiosError): BbApiError {
+  // Already categorized, e.g. a token failure passing through the interceptor.
+  if (err instanceof BbApiError) return err;
   const status = err.response?.status ?? 0;
   const data = err.response?.data;
   const rawDetail =
@@ -177,8 +179,22 @@ export class BlackboardClient {
       },
     );
 
+    const accessToken = res.data?.access_token;
+    if (typeof accessToken !== "string" || !accessToken) {
+      throw new BbApiError(
+        mapBbErrorMessage(
+          0,
+          "unknown",
+          "the token response had no access_token",
+        ),
+        0,
+        undefined,
+        "authentication",
+      );
+    }
+
     this.tokenCache = {
-      accessToken: res.data.access_token,
+      accessToken,
       expiresAt: now + res.data.expires_in * 1000,
     };
     return this.tokenCache.accessToken;
