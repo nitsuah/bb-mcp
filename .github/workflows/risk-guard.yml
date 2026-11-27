@@ -1,8 +1,8 @@
 name: Risk guard
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
 
 permissions:
   contents: read
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   guard:
-    uses: nitsuah/.github/.github/workflows/risk-guard.yml@cf8f5098a1f3f4f8385eb7b59a71f322668df4e6 # main
+    uses: nitsuah/.github/.github/workflows/risk-guard.yml@a94cae3fa28c0a330d39cd95b276a1bdcec6aeb2 # main
     permissions:
       contents: read
       pull-requests: read
