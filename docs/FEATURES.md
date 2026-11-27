@@ -109,7 +109,7 @@
 - **MCP Inspector Validation** - `npm run inspect` / `make docker-inspect` run the official `@modelcontextprotocol/inspector` CLI against `node dist/index.js --stdio` (0 `tools/list` errors across all 40 tools); config template in `config/mcp-inspector.config.example.json`
 - **Per-Request Lifecycle Tracing** - `src/trace.ts` emits a structured trace (request ID, latency, upstream call count, error flag) per tool call to stdout and a 1000-entry ring buffer
 - **Blackboard Probe Command** - `--probe` validates credential readiness and exercises a minimal Blackboard API call for standalone operator checks
-- **Standalone Docker Compose** - Hardened runtime with read-only filesystem, dropped capabilities, and `no-new-privileges`; `Makefile` targets for `docker-up`, `docker-down`, `docker-logs`, `docker-doctor`, `docker-probe`, `docker-manifest`, `docker-tools`
+- **Standalone Docker Compose** - Hardened runtime with read-only filesystem, dropped capabilities, and `no-new-privileges`; `Makefile` targets for `docker-up`, `docker-down`, `docker-logs`, `docker-doctor`, `docker-probe`, `docker-manifest`, `docker-tools`; the container binds `0.0.0.0`, so it needs OIDC and TLS before it will start
 
 ## Developer Experience
 - **TypeScript Type Safety** - Fully typed codebase ensuring reliable data structures when interacting with complex Blackboard objects.

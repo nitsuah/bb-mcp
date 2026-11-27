@@ -8,6 +8,8 @@
   <meta property="og:title" content="bb-mcp — MCP Server for Blackboard Learn">
   <meta property="og:description" content="bb-mcp: MCP server for Blackboard Learn. 40 tools, 4 roles, email scrubbing on successful tool responses.">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nitsuah.github.io/bb-mcp/">
+  <link rel="canonical" href="https://nitsuah.github.io/bb-mcp/">
   <meta property="og:video" content="https://nitsuah.github.io/bb-mcp/bb-mcp-21s.mp4">
   <meta property="og:video:type" content="video/mp4">
   <meta property="og:video:width" content="3840">
@@ -28,7 +30,7 @@
       --bg: #1a1a2e;
       --accent: #00d4ff;
       --text: #f5f5f5;
-      --muted: #6b7280;
+      --muted: #a8b0c0;
       --card: rgba(255,255,255,0.03);
       --border: rgba(0,212,255,0.2);
     }
@@ -36,7 +38,8 @@
       :root {
         --bg: #f8fafc;
         --text: #1e293b;
-        --muted: #64748b;
+        --accent: #0369a1;
+        --muted: #475569;
         --card: rgba(255,255,255,0.8);
         --border: rgba(0,212,255,0.4);
       }
@@ -55,18 +58,27 @@
     h1 { font-size: clamp(32px, 5vw, 48px); font-weight: 700; letter-spacing: -0.02em; background: linear-gradient(90deg, var(--text) 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 16px; }
     .tagline { font-size: clamp(16px, 2.5vw, 20px); color: var(--muted); max-width: 600px; margin: 0 auto 32px; }
     .video-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 16px; overflow: hidden; background: #0d0d1a; border: 1px solid var(--border); margin-bottom: 48px; }
-    .video-wrapper.vertical { width: min(100%, 340px); aspect-ratio: 9/16; margin: 0 auto 48px; }
-    .short-label { text-align: center; color: var(--muted); font-size: 14px; margin: -24px 0 16px; }
     video { width: 100%; height: 100%; object-fit: cover; }
     .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 48px; }
     .feature { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: transform 0.2s, box-shadow 0.2s; }
     .feature:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,212,255,0.15); }
     .feature-icon { width: 40px; height: 40px; stroke: var(--accent); margin-bottom: 16px; }
-    .feature h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .feature h3, .install h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
     .feature p { font-size: 14px; color: var(--muted); }
-    .install { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; text-align: center; margin-bottom: 32px; }
+    .install { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px 20px; text-align: center; margin-bottom: 32px; }
     .install h2 { font-size: 24px; margin-bottom: 16px; }
-    .install-code { font-family: 'JetBrains Mono', monospace; font-size: 16px; color: var(--accent); background: rgba(0,212,255,0.1); border: 1px solid var(--border); padding: 12px 24px; border-radius: 8px; display: inline-block; }
+    .section-title { text-align: center; font-size: 24px; margin-bottom: 16px; }
+    .section-lead { text-align: center; color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+    .hero-links { margin-top: -8px; }
+    .audience { color: var(--muted); font-size: 15px; max-width: 620px; margin: -16px auto 24px; }
+    .shot { margin: 0 0 24px; }
+    .shot img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--border); }
+    .shot figcaption { color: var(--muted); font-size: 14px; text-align: center; margin-top: 8px; }
+    .steps { list-style-position: inside; text-align: left; }
+    .steps li { margin-bottom: 20px; }
+    .code-block { position: relative; margin-top: 8px; }
+    .code-block pre { font-family: 'JetBrains Mono', monospace; font-size: 13px; background: rgba(0,212,255,0.08); border: 1px solid var(--border); border-radius: 8px; padding: 40px 16px 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .copy-btn { position: absolute; top: 8px; right: 8px; font: inherit; font-size: 12px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 2px 12px; cursor: pointer; }
     .links { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
     .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 8px; font-weight: 500; text-decoration: none; transition: all 0.2s; }
     .btn-primary { background: var(--accent); color: var(--bg); }
@@ -87,8 +99,15 @@
     <header>
       <div class="logo" aria-hidden="true"></div>
       <h1>bb-mcp</h1>
-      <p class="tagline">MCP server for Blackboard Learn. 40 tools, 4 roles, email scrubbing on successful tool responses.</p>
+      <p class="tagline">Ask an AI assistant about your Blackboard Learn courses. An MCP server with 40 tools and 4 roles.</p>
+      <p class="audience">For schools and developers who want students, instructors, admins and parents to ask things like &ldquo;What do I have due this week?&rdquo; MCP (Model Context Protocol) is the plug-in standard that assistants such as Claude Desktop and Cursor use to call outside tools.</p>
+      <div class="links hero-links">
+        <a href="#quick-start" class="btn btn-primary">Quick start</a>
+        <a href="https://github.com/nitsuah/bb-mcp" class="btn btn-secondary" target="_blank" rel="noopener">GitHub</a>
+      </div>
     </header>
+
+    <main>
 
     <div class="video-wrapper">
       <video
@@ -104,19 +123,18 @@
       </video>
     </div>
 
-    <p class="short-label">Vertical cut for Shorts, Reels and TikTok (23 s, narrated, captions on)</p>
-    <div class="video-wrapper vertical">
-      <video
-        id="shortVideo"
-        poster="bb-mcp-21s-vert.jpg"
-        playsinline
-        preload="none"
-        controls
-      >
-        <source src="bb-mcp-21s-vert.mp4" type="video/mp4">
-      </video>
-    </div>
+    <h2 class="section-title">One question, one tool call</h2>
+    <p class="section-lead">Generated from the code with a fictional student and course. No real Blackboard data.</p>
+    <figure class="shot">
+      <img src="getmygrades.png" alt="A student asks how they are doing in Intro to Biology; the assistant calls get_my_grades and answers with an average of 88.5 on two graded items.">
+      <figcaption>The assistant calls <code>get_my_grades</code> and answers from the result.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="cli-inspection-tool.png" alt="Terminal output of bb-mcp --help and --doctor, listing the runtime modes and an environment readiness report that shows no secret values.">
+      <figcaption>Check a setup from the command line: <code>--help</code> lists the modes, <code>--doctor</code> reports readiness without printing secrets.</figcaption>
+    </figure>
 
+    <h2 class="section-title">Tools by role</h2>
     <div class="features">
       <article class="feature">
         <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -173,13 +191,42 @@
 
     <p style="color: var(--muted); font-size: 14px; text-align: center; margin: -24px 0 48px;">Plus 1 shared tool, <code>search_course_materials</code>, open to students, instructors and admins. 9 + 7 + 6 + 12 + 5 + 1 = 40 tools.</p>
 
-    <div class="install">
-      <h2>Get Started</h2>
-      <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
-        <code class="install-code">git clone https://github.com/nitsuah/bb-mcp && cd bb-mcp && npm ci && npm run build && node dist/index.js --stdio</code>
-      </div>
-      <p style="color: var(--muted); font-size: 14px;">Free Blackboard developer sandbox at <a href="https://developer.blackboard.com" target="_blank" style="color: var(--accent);">developer.blackboard.com</a></p>
-    </div>
+    <section class="install" id="quick-start">
+      <h2>Quick start</h2>
+      <p class="section-lead">Runs on your machine over stdio. Needs Node.js 20.19 or newer, git, and REST application credentials from <a href="https://developer.blackboard.com" target="_blank" rel="noopener" style="color: var(--accent);">developer.blackboard.com</a>.</p>
+      <ol class="steps">
+        <li>Clone and build.
+          <div class="code-block"><button type="button" class="copy-btn">Copy</button><pre><code>git clone https://github.com/nitsuah/bb-mcp
+cd bb-mcp
+npm ci
+npm run build</code></pre></div>
+        </li>
+        <li>Create <code>.env</code>, then set <code>BB_CLIENT_ID</code>, <code>BB_CLIENT_SECRET</code> and <code>BB_BASE_URL</code> in it.
+          <div class="code-block"><button type="button" class="copy-btn">Copy</button><pre><code>cp .env.example .env</code></pre></div>
+        </li>
+        <li>Check the settings, then the connection. <code>--doctor</code> only checks that values are set; <code>--probe</code> calls your Blackboard instance, and a working setup shows <code>ok</code> for both the token exchange and the API request.
+          <div class="code-block"><button type="button" class="copy-btn">Copy</button><pre><code>node dist/index.js --doctor
+node dist/index.js --probe</code></pre></div>
+        </li>
+        <li>Add the server to your MCP client (for Claude Desktop, <code>claude_desktop_config.json</code>). The client does not read your <code>.env</code>, so repeat the three values here.
+          <div class="code-block"><button type="button" class="copy-btn">Copy</button><pre><code>{
+  "mcpServers": {
+    "blackboard-learn": {
+      "command": "node",
+      "args": ["/path/to/bb-mcp/dist/index.js", "--stdio"],
+      "env": {
+        "BB_CLIENT_ID": "your-client-id",
+        "BB_CLIENT_SECRET": "your-client-secret",
+        "BB_BASE_URL": "https://your-instance.blackboard.com"
+      }
+    }
+  }
+}</code></pre></div>
+        </li>
+        <li>Restart the client and ask: &ldquo;What do I have due this week? My Blackboard user ID is bbuser123 and my role is student.&rdquo;</li>
+      </ol>
+      <p style="color: var(--muted); font-size: 14px;">Serving it over a network, including from the Docker image, needs OIDC and TLS first. See the <a href="https://github.com/nitsuah/bb-mcp#docker-and-network-deployments" target="_blank" rel="noopener" style="color: var(--accent);">README</a>.</p>
+    </section>
 
     <div class="links">
       <a href="https://github.com/nitsuah/bb-mcp" class="btn btn-primary" target="_blank">
@@ -196,12 +243,14 @@
       </a>
     </div>
 
+    </main>
+
     <div class="disclaimer">
       <p>bb-mcp is an independent open-source project. It is not affiliated with, endorsed by, or sponsored by Anthology Inc. or Blackboard Inc. All trademarks are the property of their respective owners. Blackboard® and Blackboard Learn® are registered trademarks of Anthology Inc.</p>
     </div>
 
     <footer>
-      <p>Built for the Anthology AI Product Engineer portfolio · <a href="https://github.com/nitsuah/bb-mcp" style="color: var(--accent);" target="_blank">View source</a></p>
+      <p><a href="https://github.com/nitsuah/bb-mcp" style="color: var(--accent);" target="_blank" rel="noopener">View source</a></p>
     </footer>
   </div>
 
@@ -220,6 +269,16 @@
       });
     }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
     observer.observe(video);
+
+    document.querySelectorAll('.copy-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const text = btn.parentElement.querySelector('code').textContent;
+        navigator.clipboard.writeText(text).then(
+          () => { btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); },
+          () => { btn.textContent = 'Select and copy'; }
+        );
+      });
+    });
   </script>
 </body>
 </html>

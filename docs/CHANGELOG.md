@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Pages site: plainer hero with an audience line, example question and Quick start button; a tool-call visual and a new CLI inspection visual; numbered quick start with Copy buttons and client config; canonical and `og:url` tags; higher-contrast text, a `<main>` landmark and an ordered heading outline. The vertical video is no longer embedded.
+- README: the quick start now leads with the local stdio path, and the requirements for the Docker image come before its start command.
+- `promo/spots.json`: added Verified HTTP Caller Identity and Nightly Journeys, and retired the unused `brag-21s` entry.
+
 ### Fixed
 
 - CI: the Pages artifact is now named per run attempt, so re-running a failed deploy no longer fails on a duplicate `github-pages` artifact.

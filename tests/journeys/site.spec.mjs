@@ -32,6 +32,7 @@ async function settle(page) {
 const OUTBOUND = [
   "https://github.com/nitsuah/bb-mcp",
   "https://github.com/nitsuah/bb-mcp/blob/main/README.md",
+  "https://github.com/nitsuah/bb-mcp#docker-and-network-deployments",
   "https://developer.blackboard.com",
 ];
 
@@ -51,34 +52,29 @@ test(
 
     await step(
       page,
-      "the hero video and the vertical cut have a poster and a source",
+      "the hero video has a poster and a source",
       async () => {
-        for (const [id, base] of [
-          ["#bragVideo", "bb-mcp-21s"],
-          ["#shortVideo", "bb-mcp-21s-vert"],
-        ]) {
-          const video = page.locator(id);
-          await expect(video).toHaveAttribute("poster", `${base}.jpg`);
-          await expect(video.locator("source")).toHaveAttribute(
-            "src",
-            `${base}.mp4`,
-          );
-          const poster = await request.get(`/${base}.jpg`);
-          expect(poster.status()).toBe(200);
-          expect(poster.headers()["content-type"]).toBe("image/jpeg");
-          const mp4 = await request.get(`/${base}.mp4`, {
-            headers: { Range: "bytes=0-1023" },
-          });
-          expect(mp4.status()).toBe(206);
-          expect(mp4.headers()["content-type"]).toBe("video/mp4");
-        }
+        const video = page.locator("#bragVideo");
+        await expect(video).toHaveAttribute("poster", "bb-mcp-21s.jpg");
+        await expect(video.locator("source")).toHaveAttribute(
+          "src",
+          "bb-mcp-21s.mp4",
+        );
+        const poster = await request.get("/bb-mcp-21s.jpg");
+        expect(poster.status()).toBe(200);
+        expect(poster.headers()["content-type"]).toBe("image/jpeg");
+        const mp4 = await request.get("/bb-mcp-21s.mp4", {
+          headers: { Range: "bytes=0-1023" },
+        });
+        expect(mp4.status()).toBe(206);
+        expect(mp4.headers()["content-type"]).toBe("video/mp4");
       },
       { screenshot: false },
     );
 
     await step(
       page,
-      "the expand kit loads and puts a fullscreen button on each video",
+      "the expand kit loads and puts a fullscreen button on the video",
       async () => {
         await expect(
           page.locator("script[src*='showcase/expand.js']"),
@@ -89,7 +85,7 @@ test(
         await expect
           .poll(() => page.evaluate(() => window.__showcaseExpand))
           .toBeTruthy();
-        await expect(page.locator(".sx-vbtn")).toHaveCount(2);
+        await expect(page.locator(".sx-vbtn")).toHaveCount(1);
       },
       { screenshot: false },
     );
@@ -98,7 +94,7 @@ test(
       page,
       "every link, image and video file on the page resolves",
       async () => {
-        const hrefs = await page.$$eval("a[href]", (as) => [
+        const hrefs = await page.$$eval('a[href]:not([href^="#"])', (as) => [
           ...new Set(as.map((a) => a.getAttribute("href"))),
         ]);
         expect(hrefs.sort()).toEqual([...OUTBOUND].sort());
@@ -166,12 +162,6 @@ test.describe("phone width", () => {
         },
         { screenshot: false },
       );
-      await step(page, "the vertical cut sits in the page column", async () => {
-        const box = await page.locator(".video-wrapper.vertical").boundingBox();
-        expect(box.width).toBeLessThanOrEqual(340);
-        expect(box.height / box.width).toBeCloseTo(16 / 9, 1);
-        await page.locator(".video-wrapper.vertical").scrollIntoViewIfNeeded();
-      });
     },
   );
 });
