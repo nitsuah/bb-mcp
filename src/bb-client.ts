@@ -191,7 +191,7 @@ export class BlackboardClient {
       throw new BbApiError(
         mapBbErrorMessage(
           0,
-          "unknown",
+          "authentication",
           "the token response had no access_token",
         ),
         0,
