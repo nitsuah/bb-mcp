@@ -106,14 +106,15 @@ export class BbApiError extends Error {
 }
 
 /** Turns a transport or HTTP failure into a categorized BbApiError. */
-function toBbApiError(err: AxiosError): BbApiError {
+function toBbApiError(err: unknown): BbApiError {
   // Already categorized, e.g. a token failure passing through the interceptor.
   if (err instanceof BbApiError) return err;
-  const status = err.response?.status ?? 0;
-  const data = err.response?.data;
+  const axiosError = axios.isAxiosError(err) ? err : null;
+  const status = axiosError?.response?.status ?? 0;
+  const data = axiosError?.response?.data;
   const rawDetail =
     (data as Record<string, string> | undefined)?.message ??
-    err.message ??
+    (err instanceof Error ? err.message : String(err)) ??
     "Blackboard API error";
   const category = categorizeBbStatus(status);
   return new BbApiError(
@@ -205,7 +206,7 @@ export class BlackboardClient {
     try {
       await this.getAccessToken();
     } catch (err) {
-      throw toBbApiError(err as AxiosError);
+      throw toBbApiError(err);
     }
   }
 
