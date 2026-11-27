@@ -221,7 +221,12 @@ export function formatToolCatalog(baseUrl?: string): string {
 export async function runBlackboardProbe(): Promise<BlackboardProbeReport> {
   const { bbClient } = await import("./bb-client.js");
 
+  // Only a completed token exchange counts as OAuth "ok": a DNS or network
+  // failure carries no auth wording, so the error text cannot tell the steps apart.
+  let oauth = false;
   try {
+    await bbClient.authenticate();
+    oauth = true;
     const sampleCourseCount = await bbClient.probeConnectivity();
     return {
       provider: {
@@ -241,12 +246,6 @@ export async function runBlackboardProbe(): Promise<BlackboardProbeReport> {
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const lowerMessage = message.toLowerCase();
-    const oauthFailure =
-      lowerMessage.includes("oauth") ||
-      lowerMessage.includes("unauthorized") ||
-      lowerMessage.includes("401") ||
-      lowerMessage.includes("invalid_client");
 
     return {
       provider: {
@@ -257,7 +256,7 @@ export async function runBlackboardProbe(): Promise<BlackboardProbeReport> {
         baseUrl: (
           process.env.BB_BASE_URL ?? "https://developer.blackboard.com"
         ).replace(/\/$/, ""),
-        oauth: !oauthFailure,
+        oauth,
         api: false,
         sampleCourseCount: null,
         message,

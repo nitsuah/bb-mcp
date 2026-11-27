@@ -105,6 +105,23 @@ export class BbApiError extends Error {
   }
 }
 
+/** Turns a transport or HTTP failure into a categorized BbApiError. */
+function toBbApiError(err: AxiosError): BbApiError {
+  const status = err.response?.status ?? 0;
+  const data = err.response?.data;
+  const rawDetail =
+    (data as Record<string, string> | undefined)?.message ??
+    err.message ??
+    "Blackboard API error";
+  const category = categorizeBbStatus(status);
+  return new BbApiError(
+    mapBbErrorMessage(status, category, rawDetail),
+    status,
+    data,
+    category,
+  );
+}
+
 export class BlackboardClient {
   private http: AxiosInstance;
   private tokenCache: TokenCache | null = null;
@@ -131,19 +148,7 @@ export class BlackboardClient {
     this.http.interceptors.response.use(
       (r) => r,
       (err: AxiosError) => {
-        const status = err.response?.status ?? 0;
-        const data = err.response?.data;
-        const rawDetail =
-          (data as Record<string, string> | undefined)?.message ??
-          err.message ??
-          "Blackboard API error";
-        const category = categorizeBbStatus(status);
-        throw new BbApiError(
-          mapBbErrorMessage(status, category, rawDetail),
-          status,
-          data,
-          category,
-        );
+        throw toBbApiError(err);
       },
     );
   }
@@ -177,6 +182,15 @@ export class BlackboardClient {
       expiresAt: now + res.data.expires_in * 1000,
     };
     return this.tokenCache.accessToken;
+  }
+
+  /** Runs the OAuth token exchange alone, so a probe can report it separately. */
+  async authenticate(): Promise<void> {
+    try {
+      await this.getAccessToken();
+    } catch (err) {
+      throw toBbApiError(err as AxiosError);
+    }
   }
 
   // ── Courses ──────────────────────────────────────────────────────────────

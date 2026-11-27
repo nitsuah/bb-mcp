@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `--probe` reports the OAuth token exchange as `ok` only when it succeeded; an unreachable Blackboard host no longer shows it as `ok`.
+
 ### Changed
 
 - Pages site: plainer hero with an audience line, example question and Quick start button; a tool-call visual and a new CLI inspection visual; numbered quick start with Copy buttons and client config; canonical and `og:url` tags; higher-contrast text, a `<main>` landmark and an ordered heading outline. The vertical video is no longer embedded.
