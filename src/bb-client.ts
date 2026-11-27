@@ -109,13 +109,15 @@ export class BbApiError extends Error {
 function toBbApiError(err: unknown): BbApiError {
   // Already categorized, e.g. a token failure passing through the interceptor.
   if (err instanceof BbApiError) return err;
-  const axiosError = axios.isAxiosError(err) ? err : null;
-  const status = axiosError?.response?.status ?? 0;
-  const data = axiosError?.response?.data;
+  const response =
+    typeof err === "object" && err !== null && "response" in err
+      ? (err as { response?: { status?: number; data?: unknown } }).response
+      : undefined;
+  const status = response?.status ?? 0;
+  const data = response?.data;
   const rawDetail =
     (data as Record<string, string> | undefined)?.message ??
-    (err instanceof Error ? err.message : String(err)) ??
-    "Blackboard API error";
+    (err instanceof Error ? err.message : typeof err === "string" ? err : "Blackboard API error");
   const category = categorizeBbStatus(status);
   return new BbApiError(
     mapBbErrorMessage(status, category, rawDetail),
