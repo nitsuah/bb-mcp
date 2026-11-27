@@ -272,7 +272,8 @@ node dist/index.js --probe</code></pre></div>
 
     document.querySelectorAll('.copy-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const text = btn.parentElement.querySelector('code').textContent;
+        const text = btn.parentElement?.querySelector('code')?.textContent;
+        if (!text || !navigator.clipboard) { btn.textContent = 'Select and copy'; return; }
         navigator.clipboard.writeText(text).then(
           () => { btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); },
           () => { btn.textContent = 'Select and copy'; }
